@@ -1,6 +1,12 @@
 package schema
 
-import "github.com/facebook/ent"
+import (
+	"github.com/facebook/ent"
+	"github.com/facebook/ent/schema/edge"
+	"github.com/facebook/ent/schema/field"
+	"github.com/facebook/ent/schema/index"
+	"time"
+)
 
 // PostImage holds the schema definition for the PostImage entity.
 type PostImage struct {
@@ -9,10 +15,28 @@ type PostImage struct {
 
 // Fields of the PostImage.
 func (PostImage) Fields() []ent.Field {
-	return nil
+	return []ent.Field{
+		field.String("uuid"),
+		field.Uint64("index"),
+		field.Uint32("width"),
+		field.Uint32("height"),
+		field.String("hash").MaxLen(64),
+		field.String("url").MaxLen(256).Unique(),
+		field.Time("created_at").Default(time.Now),
+	}
 }
 
 // Edges of the PostImage.
 func (PostImage) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.From("post", Post.Type).Ref("images").Unique().Required(),
+	}
+}
+
+// Indices of the PostImage.
+func (PostImage) Indices() []ent.Index {
+	return []ent.Index{
+		index.Fields("uuid", "post").Unique(),
+		index.Fields("index", "post").Unique(),
+	}
 }

@@ -15,9 +15,9 @@ type Admin struct {
 // Fields of the Admin.
 func (Admin) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("email").Unique().MaxLen(128),
-		field.String("username").Unique().MaxLen(64),
-		field.String("pw").MaxLen(60),
+		field.String("email").MaxLen(128).Unique(),
+		field.String("username").MaxLen(64).Unique(),
+		field.String("password").MaxLen(60),
 		field.Time("joined_at").Default(time.Now),
 	}
 }
@@ -25,6 +25,6 @@ func (Admin) Fields() []ent.Field {
 // Edges of the Admin.
 func (Admin) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("sessions", AdminSession.Type).Ref("user").Unique(),
+		edge.To("sessions", AdminSession.Type),
 	}
 }
