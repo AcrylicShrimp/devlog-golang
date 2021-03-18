@@ -34,9 +34,9 @@ func main() {
 		}
 	})
 
-	v1 := e.Group("v1")
+	v1 := e.Group("/v1")
 
-	admin.Attach(v1)
+	admin.Attach(v1.Group("/admin"))
 
 	e.Logger.Fatal(e.Start("0.0.0.0:8000"))
 }
