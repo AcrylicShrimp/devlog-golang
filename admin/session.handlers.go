@@ -4,6 +4,7 @@ import (
 	"devlog/common"
 	"devlog/ent"
 	"devlog/ent/admin"
+	"devlog/ent/adminsession"
 	"devlog/util"
 	"github.com/labstack/echo"
 	"golang.org/x/crypto/bcrypt"
@@ -12,6 +13,7 @@ import (
 
 func AttachSession(group *echo.Group) {
 	group.POST("", NewSessionHandler)
+	group.POST("/:token", DeleteSessionHandler)
 }
 
 func NewSessionHandler(c echo.Context) error {
@@ -56,4 +58,27 @@ func NewSessionHandler(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusCreated, Token{Token: token})
+}
+
+func DeleteSessionHandler(c echo.Context) error {
+	type TokenInfo struct {
+		Token string `param:"token" validate:"required"`
+	}
+
+	tokenInfo := new(TokenInfo)
+	if err := c.Bind(tokenInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(tokenInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	client := c.(*common.Context).Client()
+	ctx := c.(*common.Context).Ctx()
+
+	if _, err := client.AdminSession.Delete().Where(adminsession.TokenEQ(tokenInfo.Token)).Exec(ctx); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
