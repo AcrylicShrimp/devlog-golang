@@ -22,11 +22,9 @@ func NewSessionHandler(c echo.Context) error {
 	}
 
 	authInfo := new(AuthInfo)
-
 	if err := c.Bind(authInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-
 	if err := c.Validate(authInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
@@ -35,12 +33,10 @@ func NewSessionHandler(c echo.Context) error {
 	ctx := c.(*common.Context).Ctx()
 
 	user, err := client.Admin.Query().Where(admin.UsernameEQ(authInfo.Username)).Select(admin.FieldID, admin.FieldPassword).First(ctx)
-
 	if err != nil {
 		if _, ok := err.(*ent.NotFoundError); ok {
 			return echo.NewHTTPError(http.StatusUnauthorized)
 		}
-
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
@@ -49,7 +45,6 @@ func NewSessionHandler(c echo.Context) error {
 	}
 
 	bytes := make([]byte, 128)
-
 	if _, err := rand.Read(bytes); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}

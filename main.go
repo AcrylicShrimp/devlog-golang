@@ -11,17 +11,14 @@ import (
 
 func main() {
 	err := godotenv.Load()
-
 	if err != nil {
 		panic(err)
 	}
 
 	e := echo.New()
-
 	e.Validator = NewValidator()
 
 	client, err := InitDB()
-
 	if err != nil {
 		panic(err)
 	}
@@ -35,7 +32,6 @@ func main() {
 	})
 
 	v1 := e.Group("/v1")
-
 	admin.Attach(v1.Group("/admin"))
 
 	e.Logger.Fatal(e.Start("0.0.0.0:8000"))
