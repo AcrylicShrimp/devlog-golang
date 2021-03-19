@@ -1,11 +1,10 @@
 package admin
 
 import (
-	"crypto/rand"
 	"devlog/common"
 	"devlog/ent"
 	"devlog/ent/admin"
-	"encoding/hex"
+	"devlog/util"
 	"github.com/labstack/echo"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -44,13 +43,10 @@ func NewSessionHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
 
-	bytes := make([]byte, 128)
-	if _, err := rand.Read(bytes); err != nil {
+	token, err := util.GenerateToken256()
+	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
-
-	token := hex.EncodeToString(bytes)
-
 	if _, err := client.AdminSession.Create().SetUser(user).SetToken(token).Save(ctx); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
