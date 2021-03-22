@@ -27,9 +27,9 @@ func (pvc *PostVideoCreate) SetUUID(s string) *PostVideoCreate {
 	return pvc
 }
 
-// SetIndex sets the "index" field.
-func (pvc *PostVideoCreate) SetIndex(u uint64) *PostVideoCreate {
-	pvc.mutation.SetIndex(u)
+// SetTitle sets the "title" field.
+func (pvc *PostVideoCreate) SetTitle(s string) *PostVideoCreate {
+	pvc.mutation.SetTitle(s)
 	return pvc
 }
 
@@ -127,8 +127,13 @@ func (pvc *PostVideoCreate) check() error {
 	if _, ok := pvc.mutation.UUID(); !ok {
 		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
 	}
-	if _, ok := pvc.mutation.Index(); !ok {
-		return &ValidationError{Name: "index", err: errors.New("ent: missing required field \"index\"")}
+	if _, ok := pvc.mutation.Title(); !ok {
+		return &ValidationError{Name: "title", err: errors.New("ent: missing required field \"title\"")}
+	}
+	if v, ok := pvc.mutation.Title(); ok {
+		if err := postvideo.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+		}
 	}
 	if _, ok := pvc.mutation.URL(); !ok {
 		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
@@ -179,13 +184,13 @@ func (pvc *PostVideoCreate) createSpec() (*PostVideo, *sqlgraph.CreateSpec) {
 		})
 		_node.UUID = value
 	}
-	if value, ok := pvc.mutation.Index(); ok {
+	if value, ok := pvc.mutation.Title(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
+			Type:   field.TypeString,
 			Value:  value,
-			Column: postvideo.FieldIndex,
+			Column: postvideo.FieldTitle,
 		})
-		_node.Index = value
+		_node.Title = value
 	}
 	if value, ok := pvc.mutation.URL(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

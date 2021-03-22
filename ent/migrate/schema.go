@@ -50,7 +50,7 @@ var (
 	CategoriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString, Unique: true, Size: 32},
-		{Name: "description", Type: field.TypeString, Nullable: true, Size: 256},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "modified_at", Type: field.TypeTime},
 	}
@@ -65,14 +65,12 @@ var (
 	PostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "uuid", Type: field.TypeString, Unique: true, Size: 64},
-		{Name: "slug", Type: field.TypeString, Unique: true, Size: 256},
+		{Name: "slug", Type: field.TypeString, Unique: true, Size: 255},
 		{Name: "access_level", Type: field.TypeEnum, Enums: []string{"public", "unlisted", "private"}},
-		{Name: "title", Type: field.TypeString, Size: 128},
-		{Name: "content", Type: field.TypeString, Nullable: true},
-		{Name: "html_content", Type: field.TypeString, Nullable: true},
-		{Name: "preview_content", Type: field.TypeString, Nullable: true, Size: 256},
-		{Name: "accumulated_image_index", Type: field.TypeUint64},
-		{Name: "accumulated_video_index", Type: field.TypeUint64},
+		{Name: "title", Type: field.TypeString, Size: 255},
+		{Name: "content", Type: field.TypeString, Size: 2147483647},
+		{Name: "html_content", Type: field.TypeString, Size: 2147483647},
+		{Name: "preview_content", Type: field.TypeString, Size: 255},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "modified_at", Type: field.TypeTime},
 		{Name: "category_posts", Type: field.TypeInt, Nullable: true},
@@ -85,9 +83,35 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:  "posts_categories_posts",
-				Columns: []*schema.Column{PostsColumns[12]},
+				Columns: []*schema.Column{PostsColumns[10]},
 
 				RefColumns: []*schema.Column{CategoriesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
+	// PostAttachmentsColumns holds the columns for the "post_attachments" table.
+	PostAttachmentsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "uuid", Type: field.TypeString},
+		{Name: "size", Type: field.TypeUint64},
+		{Name: "name", Type: field.TypeString, Size: 255},
+		{Name: "mime", Type: field.TypeString, Size: 64},
+		{Name: "url", Type: field.TypeString, Unique: true, Size: 512},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "post_attachments", Type: field.TypeInt, Nullable: true},
+	}
+	// PostAttachmentsTable holds the schema information for the "post_attachments" table.
+	PostAttachmentsTable = &schema.Table{
+		Name:       "post_attachments",
+		Columns:    PostAttachmentsColumns,
+		PrimaryKey: []*schema.Column{PostAttachmentsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "post_attachments_posts_attachments",
+				Columns: []*schema.Column{PostAttachmentsColumns[7]},
+
+				RefColumns: []*schema.Column{PostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -96,11 +120,11 @@ var (
 	PostImagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "uuid", Type: field.TypeString},
-		{Name: "index", Type: field.TypeUint64},
 		{Name: "width", Type: field.TypeUint32},
 		{Name: "height", Type: field.TypeUint32},
 		{Name: "hash", Type: field.TypeString, Size: 64},
-		{Name: "url", Type: field.TypeString, Unique: true, Size: 256},
+		{Name: "title", Type: field.TypeString, Size: 255},
+		{Name: "url", Type: field.TypeString, Unique: true, Size: 512},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "post_images", Type: field.TypeInt, Nullable: true},
 	}
@@ -125,7 +149,7 @@ var (
 		{Name: "width", Type: field.TypeUint32},
 		{Name: "height", Type: field.TypeUint32},
 		{Name: "hash", Type: field.TypeString, Size: 64},
-		{Name: "url", Type: field.TypeString, Unique: true, Size: 256},
+		{Name: "url", Type: field.TypeString, Unique: true, Size: 512},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "post_thumbnail", Type: field.TypeInt, Unique: true, Nullable: true},
 	}
@@ -148,8 +172,8 @@ var (
 	PostVideosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "uuid", Type: field.TypeString},
-		{Name: "index", Type: field.TypeUint64},
-		{Name: "url", Type: field.TypeString, Unique: true, Size: 256},
+		{Name: "title", Type: field.TypeString, Size: 255},
+		{Name: "url", Type: field.TypeString, Unique: true, Size: 512},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "post_videos", Type: field.TypeInt, Nullable: true},
 	}
@@ -168,22 +192,54 @@ var (
 			},
 		},
 	}
+	// AdminPostsColumns holds the columns for the "admin_posts" table.
+	AdminPostsColumns = []*schema.Column{
+		{Name: "admin_id", Type: field.TypeInt},
+		{Name: "post_id", Type: field.TypeInt},
+	}
+	// AdminPostsTable holds the schema information for the "admin_posts" table.
+	AdminPostsTable = &schema.Table{
+		Name:       "admin_posts",
+		Columns:    AdminPostsColumns,
+		PrimaryKey: []*schema.Column{AdminPostsColumns[0], AdminPostsColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:  "admin_posts_admin_id",
+				Columns: []*schema.Column{AdminPostsColumns[0]},
+
+				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:  "admin_posts_post_id",
+				Columns: []*schema.Column{AdminPostsColumns[1]},
+
+				RefColumns: []*schema.Column{PostsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminsTable,
 		AdminSessionsTable,
 		CategoriesTable,
 		PostsTable,
+		PostAttachmentsTable,
 		PostImagesTable,
 		PostThumbnailsTable,
 		PostVideosTable,
+		AdminPostsTable,
 	}
 )
 
 func init() {
 	AdminSessionsTable.ForeignKeys[0].RefTable = AdminsTable
 	PostsTable.ForeignKeys[0].RefTable = CategoriesTable
+	PostAttachmentsTable.ForeignKeys[0].RefTable = PostsTable
 	PostImagesTable.ForeignKeys[0].RefTable = PostsTable
 	PostThumbnailsTable.ForeignKeys[0].RefTable = PostsTable
 	PostVideosTable.ForeignKeys[0].RefTable = PostsTable
+	AdminPostsTable.ForeignKeys[0].RefTable = AdminsTable
+	AdminPostsTable.ForeignKeys[1].RefTable = PostsTable
 }

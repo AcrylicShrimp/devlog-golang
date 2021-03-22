@@ -32,10 +32,6 @@ type Post struct {
 	HTMLContent string `json:"html_content,omitempty"`
 	// PreviewContent holds the value of the "preview_content" field.
 	PreviewContent string `json:"preview_content,omitempty"`
-	// AccumulatedImageIndex holds the value of the "accumulated_image_index" field.
-	AccumulatedImageIndex uint64 `json:"accumulated_image_index,omitempty"`
-	// AccumulatedVideoIndex holds the value of the "accumulated_video_index" field.
-	AccumulatedVideoIndex uint64 `json:"accumulated_video_index,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// ModifiedAt holds the value of the "modified_at" field.
@@ -48,6 +44,8 @@ type Post struct {
 
 // PostEdges holds the relations/edges for other nodes in the graph.
 type PostEdges struct {
+	// Author holds the value of the author edge.
+	Author []*Admin
 	// Category holds the value of the category edge.
 	Category *Category
 	// Thumbnail holds the value of the thumbnail edge.
@@ -56,15 +54,26 @@ type PostEdges struct {
 	Images []*PostImage
 	// Videos holds the value of the videos edge.
 	Videos []*PostVideo
+	// Attachments holds the value of the attachments edge.
+	Attachments []*PostAttachment
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [6]bool
+}
+
+// AuthorOrErr returns the Author value or an error if the edge
+// was not loaded in eager-loading.
+func (e PostEdges) AuthorOrErr() ([]*Admin, error) {
+	if e.loadedTypes[0] {
+		return e.Author, nil
+	}
+	return nil, &NotLoadedError{edge: "author"}
 }
 
 // CategoryOrErr returns the Category value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e PostEdges) CategoryOrErr() (*Category, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		if e.Category == nil {
 			// The edge category was loaded in eager-loading,
 			// but was not found.
@@ -78,7 +87,7 @@ func (e PostEdges) CategoryOrErr() (*Category, error) {
 // ThumbnailOrErr returns the Thumbnail value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e PostEdges) ThumbnailOrErr() (*PostThumbnail, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		if e.Thumbnail == nil {
 			// The edge thumbnail was loaded in eager-loading,
 			// but was not found.
@@ -92,7 +101,7 @@ func (e PostEdges) ThumbnailOrErr() (*PostThumbnail, error) {
 // ImagesOrErr returns the Images value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) ImagesOrErr() ([]*PostImage, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Images, nil
 	}
 	return nil, &NotLoadedError{edge: "images"}
@@ -101,10 +110,19 @@ func (e PostEdges) ImagesOrErr() ([]*PostImage, error) {
 // VideosOrErr returns the Videos value or an error if the edge
 // was not loaded in eager-loading.
 func (e PostEdges) VideosOrErr() ([]*PostVideo, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Videos, nil
 	}
 	return nil, &NotLoadedError{edge: "videos"}
+}
+
+// AttachmentsOrErr returns the Attachments value or an error if the edge
+// was not loaded in eager-loading.
+func (e PostEdges) AttachmentsOrErr() ([]*PostAttachment, error) {
+	if e.loadedTypes[5] {
+		return e.Attachments, nil
+	}
+	return nil, &NotLoadedError{edge: "attachments"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -112,7 +130,7 @@ func (*Post) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case post.FieldID, post.FieldAccumulatedImageIndex, post.FieldAccumulatedVideoIndex:
+		case post.FieldID:
 			values[i] = &sql.NullInt64{}
 		case post.FieldUUID, post.FieldSlug, post.FieldAccessLevel, post.FieldTitle, post.FieldContent, post.FieldHTMLContent, post.FieldPreviewContent:
 			values[i] = &sql.NullString{}
@@ -183,18 +201,6 @@ func (po *Post) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				po.PreviewContent = value.String
 			}
-		case post.FieldAccumulatedImageIndex:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field accumulated_image_index", values[i])
-			} else if value.Valid {
-				po.AccumulatedImageIndex = uint64(value.Int64)
-			}
-		case post.FieldAccumulatedVideoIndex:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field accumulated_video_index", values[i])
-			} else if value.Valid {
-				po.AccumulatedVideoIndex = uint64(value.Int64)
-			}
 		case post.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -219,6 +225,11 @@ func (po *Post) assignValues(columns []string, values []interface{}) error {
 	return nil
 }
 
+// QueryAuthor queries the "author" edge of the Post entity.
+func (po *Post) QueryAuthor() *AdminQuery {
+	return (&PostClient{config: po.config}).QueryAuthor(po)
+}
+
 // QueryCategory queries the "category" edge of the Post entity.
 func (po *Post) QueryCategory() *CategoryQuery {
 	return (&PostClient{config: po.config}).QueryCategory(po)
@@ -237,6 +248,11 @@ func (po *Post) QueryImages() *PostImageQuery {
 // QueryVideos queries the "videos" edge of the Post entity.
 func (po *Post) QueryVideos() *PostVideoQuery {
 	return (&PostClient{config: po.config}).QueryVideos(po)
+}
+
+// QueryAttachments queries the "attachments" edge of the Post entity.
+func (po *Post) QueryAttachments() *PostAttachmentQuery {
+	return (&PostClient{config: po.config}).QueryAttachments(po)
 }
 
 // Update returns a builder for updating this Post.
@@ -276,10 +292,6 @@ func (po *Post) String() string {
 	builder.WriteString(po.HTMLContent)
 	builder.WriteString(", preview_content=")
 	builder.WriteString(po.PreviewContent)
-	builder.WriteString(", accumulated_image_index=")
-	builder.WriteString(fmt.Sprintf("%v", po.AccumulatedImageIndex))
-	builder.WriteString(", accumulated_video_index=")
-	builder.WriteString(fmt.Sprintf("%v", po.AccumulatedVideoIndex))
 	builder.WriteString(", created_at=")
 	builder.WriteString(po.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", modified_at=")

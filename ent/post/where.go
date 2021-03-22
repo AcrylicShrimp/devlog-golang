@@ -135,20 +135,6 @@ func PreviewContent(v string) predicate.Post {
 	})
 }
 
-// AccumulatedImageIndex applies equality check predicate on the "accumulated_image_index" field. It's identical to AccumulatedImageIndexEQ.
-func AccumulatedImageIndex(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAccumulatedImageIndex), v))
-	})
-}
-
-// AccumulatedVideoIndex applies equality check predicate on the "accumulated_video_index" field. It's identical to AccumulatedVideoIndexEQ.
-func AccumulatedVideoIndex(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAccumulatedVideoIndex), v))
-	})
-}
-
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
@@ -641,20 +627,6 @@ func ContentHasSuffix(v string) predicate.Post {
 	})
 }
 
-// ContentIsNil applies the IsNil predicate on the "content" field.
-func ContentIsNil() predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldContent)))
-	})
-}
-
-// ContentNotNil applies the NotNil predicate on the "content" field.
-func ContentNotNil() predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldContent)))
-	})
-}
-
 // ContentEqualFold applies the EqualFold predicate on the "content" field.
 func ContentEqualFold(v string) predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
@@ -763,20 +735,6 @@ func HTMLContentHasPrefix(v string) predicate.Post {
 func HTMLContentHasSuffix(v string) predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
 		s.Where(sql.HasSuffix(s.C(FieldHTMLContent), v))
-	})
-}
-
-// HTMLContentIsNil applies the IsNil predicate on the "html_content" field.
-func HTMLContentIsNil() predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldHTMLContent)))
-	})
-}
-
-// HTMLContentNotNil applies the NotNil predicate on the "html_content" field.
-func HTMLContentNotNil() predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldHTMLContent)))
 	})
 }
 
@@ -891,20 +849,6 @@ func PreviewContentHasSuffix(v string) predicate.Post {
 	})
 }
 
-// PreviewContentIsNil applies the IsNil predicate on the "preview_content" field.
-func PreviewContentIsNil() predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldPreviewContent)))
-	})
-}
-
-// PreviewContentNotNil applies the NotNil predicate on the "preview_content" field.
-func PreviewContentNotNil() predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldPreviewContent)))
-	})
-}
-
 // PreviewContentEqualFold applies the EqualFold predicate on the "preview_content" field.
 func PreviewContentEqualFold(v string) predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
@@ -916,158 +860,6 @@ func PreviewContentEqualFold(v string) predicate.Post {
 func PreviewContentContainsFold(v string) predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldPreviewContent), v))
-	})
-}
-
-// AccumulatedImageIndexEQ applies the EQ predicate on the "accumulated_image_index" field.
-func AccumulatedImageIndexEQ(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAccumulatedImageIndex), v))
-	})
-}
-
-// AccumulatedImageIndexNEQ applies the NEQ predicate on the "accumulated_image_index" field.
-func AccumulatedImageIndexNEQ(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldAccumulatedImageIndex), v))
-	})
-}
-
-// AccumulatedImageIndexIn applies the In predicate on the "accumulated_image_index" field.
-func AccumulatedImageIndexIn(vs ...uint64) predicate.Post {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Post(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldAccumulatedImageIndex), v...))
-	})
-}
-
-// AccumulatedImageIndexNotIn applies the NotIn predicate on the "accumulated_image_index" field.
-func AccumulatedImageIndexNotIn(vs ...uint64) predicate.Post {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Post(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldAccumulatedImageIndex), v...))
-	})
-}
-
-// AccumulatedImageIndexGT applies the GT predicate on the "accumulated_image_index" field.
-func AccumulatedImageIndexGT(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldAccumulatedImageIndex), v))
-	})
-}
-
-// AccumulatedImageIndexGTE applies the GTE predicate on the "accumulated_image_index" field.
-func AccumulatedImageIndexGTE(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldAccumulatedImageIndex), v))
-	})
-}
-
-// AccumulatedImageIndexLT applies the LT predicate on the "accumulated_image_index" field.
-func AccumulatedImageIndexLT(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldAccumulatedImageIndex), v))
-	})
-}
-
-// AccumulatedImageIndexLTE applies the LTE predicate on the "accumulated_image_index" field.
-func AccumulatedImageIndexLTE(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldAccumulatedImageIndex), v))
-	})
-}
-
-// AccumulatedVideoIndexEQ applies the EQ predicate on the "accumulated_video_index" field.
-func AccumulatedVideoIndexEQ(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldAccumulatedVideoIndex), v))
-	})
-}
-
-// AccumulatedVideoIndexNEQ applies the NEQ predicate on the "accumulated_video_index" field.
-func AccumulatedVideoIndexNEQ(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldAccumulatedVideoIndex), v))
-	})
-}
-
-// AccumulatedVideoIndexIn applies the In predicate on the "accumulated_video_index" field.
-func AccumulatedVideoIndexIn(vs ...uint64) predicate.Post {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Post(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.In(s.C(FieldAccumulatedVideoIndex), v...))
-	})
-}
-
-// AccumulatedVideoIndexNotIn applies the NotIn predicate on the "accumulated_video_index" field.
-func AccumulatedVideoIndexNotIn(vs ...uint64) predicate.Post {
-	v := make([]interface{}, len(vs))
-	for i := range v {
-		v[i] = vs[i]
-	}
-	return predicate.Post(func(s *sql.Selector) {
-		// if not arguments were provided, append the FALSE constants,
-		// since we can't apply "IN ()". This will make this predicate falsy.
-		if len(v) == 0 {
-			s.Where(sql.False())
-			return
-		}
-		s.Where(sql.NotIn(s.C(FieldAccumulatedVideoIndex), v...))
-	})
-}
-
-// AccumulatedVideoIndexGT applies the GT predicate on the "accumulated_video_index" field.
-func AccumulatedVideoIndexGT(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldAccumulatedVideoIndex), v))
-	})
-}
-
-// AccumulatedVideoIndexGTE applies the GTE predicate on the "accumulated_video_index" field.
-func AccumulatedVideoIndexGTE(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldAccumulatedVideoIndex), v))
-	})
-}
-
-// AccumulatedVideoIndexLT applies the LT predicate on the "accumulated_video_index" field.
-func AccumulatedVideoIndexLT(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldAccumulatedVideoIndex), v))
-	})
-}
-
-// AccumulatedVideoIndexLTE applies the LTE predicate on the "accumulated_video_index" field.
-func AccumulatedVideoIndexLTE(v uint64) predicate.Post {
-	return predicate.Post(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldAccumulatedVideoIndex), v))
 	})
 }
 
@@ -1223,6 +1015,34 @@ func ModifiedAtLTE(v time.Time) predicate.Post {
 	})
 }
 
+// HasAuthor applies the HasEdge predicate on the "author" edge.
+func HasAuthor() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AuthorTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, AuthorTable, AuthorPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAuthorWith applies the HasEdge predicate on the "author" edge with a given conditions (other predicates).
+func HasAuthorWith(preds ...predicate.Admin) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AuthorInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, AuthorTable, AuthorPrimaryKey...),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // HasCategory applies the HasEdge predicate on the "category" edge.
 func HasCategory() predicate.Post {
 	return predicate.Post(func(s *sql.Selector) {
@@ -1326,6 +1146,34 @@ func HasVideosWith(preds ...predicate.PostVideo) predicate.Post {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(VideosInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, VideosTable, VideosColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasAttachments applies the HasEdge predicate on the "attachments" edge.
+func HasAttachments() predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AttachmentsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AttachmentsTable, AttachmentsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasAttachmentsWith applies the HasEdge predicate on the "attachments" edge with a given conditions (other predicates).
+func HasAttachmentsWith(preds ...predicate.PostAttachment) predicate.Post {
+	return predicate.Post(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(AttachmentsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, AttachmentsTable, AttachmentsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

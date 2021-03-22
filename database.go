@@ -9,7 +9,6 @@ import (
 
 func InitDB() (*ent.Client, error) {
 	client, err := ent.Open(os.Getenv("DB_DRIVER"), os.Getenv("DB_DSN"))
-
 	if err != nil {
 		return nil, err
 	}

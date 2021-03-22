@@ -100,10 +100,10 @@ func UUID(v string) predicate.PostVideo {
 	})
 }
 
-// Index applies equality check predicate on the "index" field. It's identical to IndexEQ.
-func Index(v uint64) predicate.PostVideo {
+// Title applies equality check predicate on the "title" field. It's identical to TitleEQ.
+func Title(v string) predicate.PostVideo {
 	return predicate.PostVideo(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldIndex), v))
+		s.Where(sql.EQ(s.C(FieldTitle), v))
 	})
 }
 
@@ -232,22 +232,22 @@ func UUIDContainsFold(v string) predicate.PostVideo {
 	})
 }
 
-// IndexEQ applies the EQ predicate on the "index" field.
-func IndexEQ(v uint64) predicate.PostVideo {
+// TitleEQ applies the EQ predicate on the "title" field.
+func TitleEQ(v string) predicate.PostVideo {
 	return predicate.PostVideo(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldIndex), v))
+		s.Where(sql.EQ(s.C(FieldTitle), v))
 	})
 }
 
-// IndexNEQ applies the NEQ predicate on the "index" field.
-func IndexNEQ(v uint64) predicate.PostVideo {
+// TitleNEQ applies the NEQ predicate on the "title" field.
+func TitleNEQ(v string) predicate.PostVideo {
 	return predicate.PostVideo(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldIndex), v))
+		s.Where(sql.NEQ(s.C(FieldTitle), v))
 	})
 }
 
-// IndexIn applies the In predicate on the "index" field.
-func IndexIn(vs ...uint64) predicate.PostVideo {
+// TitleIn applies the In predicate on the "title" field.
+func TitleIn(vs ...string) predicate.PostVideo {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -259,12 +259,12 @@ func IndexIn(vs ...uint64) predicate.PostVideo {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldIndex), v...))
+		s.Where(sql.In(s.C(FieldTitle), v...))
 	})
 }
 
-// IndexNotIn applies the NotIn predicate on the "index" field.
-func IndexNotIn(vs ...uint64) predicate.PostVideo {
+// TitleNotIn applies the NotIn predicate on the "title" field.
+func TitleNotIn(vs ...string) predicate.PostVideo {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -276,35 +276,70 @@ func IndexNotIn(vs ...uint64) predicate.PostVideo {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldIndex), v...))
+		s.Where(sql.NotIn(s.C(FieldTitle), v...))
 	})
 }
 
-// IndexGT applies the GT predicate on the "index" field.
-func IndexGT(v uint64) predicate.PostVideo {
+// TitleGT applies the GT predicate on the "title" field.
+func TitleGT(v string) predicate.PostVideo {
 	return predicate.PostVideo(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldIndex), v))
+		s.Where(sql.GT(s.C(FieldTitle), v))
 	})
 }
 
-// IndexGTE applies the GTE predicate on the "index" field.
-func IndexGTE(v uint64) predicate.PostVideo {
+// TitleGTE applies the GTE predicate on the "title" field.
+func TitleGTE(v string) predicate.PostVideo {
 	return predicate.PostVideo(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldIndex), v))
+		s.Where(sql.GTE(s.C(FieldTitle), v))
 	})
 }
 
-// IndexLT applies the LT predicate on the "index" field.
-func IndexLT(v uint64) predicate.PostVideo {
+// TitleLT applies the LT predicate on the "title" field.
+func TitleLT(v string) predicate.PostVideo {
 	return predicate.PostVideo(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldIndex), v))
+		s.Where(sql.LT(s.C(FieldTitle), v))
 	})
 }
 
-// IndexLTE applies the LTE predicate on the "index" field.
-func IndexLTE(v uint64) predicate.PostVideo {
+// TitleLTE applies the LTE predicate on the "title" field.
+func TitleLTE(v string) predicate.PostVideo {
 	return predicate.PostVideo(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldIndex), v))
+		s.Where(sql.LTE(s.C(FieldTitle), v))
+	})
+}
+
+// TitleContains applies the Contains predicate on the "title" field.
+func TitleContains(v string) predicate.PostVideo {
+	return predicate.PostVideo(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldTitle), v))
+	})
+}
+
+// TitleHasPrefix applies the HasPrefix predicate on the "title" field.
+func TitleHasPrefix(v string) predicate.PostVideo {
+	return predicate.PostVideo(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldTitle), v))
+	})
+}
+
+// TitleHasSuffix applies the HasSuffix predicate on the "title" field.
+func TitleHasSuffix(v string) predicate.PostVideo {
+	return predicate.PostVideo(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldTitle), v))
+	})
+}
+
+// TitleEqualFold applies the EqualFold predicate on the "title" field.
+func TitleEqualFold(v string) predicate.PostVideo {
+	return predicate.PostVideo(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldTitle), v))
+	})
+}
+
+// TitleContainsFold applies the ContainsFold predicate on the "title" field.
+func TitleContainsFold(v string) predicate.PostVideo {
+	return predicate.PostVideo(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldTitle), v))
 	})
 }
 

@@ -16,14 +16,12 @@ type Post struct {
 func (Post) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("uuid").MaxLen(64).Unique(),
-		field.String("slug").MaxLen(256).Unique(),
+		field.String("slug").MaxLen(255).Unique(),
 		field.Enum("access_level").Values("public", "unlisted", "private"),
-		field.String("title").MaxLen(128),
-		field.String("content").Optional(),
-		field.String("html_content").Optional(),
-		field.String("preview_content").MaxLen(256).Optional(),
-		field.Uint64("accumulated_image_index").Default(0),
-		field.Uint64("accumulated_video_index").Default(0),
+		field.String("title").MaxLen(255),
+		field.Text("content"),
+		field.Text("html_content"),
+		field.String("preview_content").MaxLen(255),
 		field.Time("created_at").Default(time.Now),
 		field.Time("modified_at").UpdateDefault(time.Now),
 	}
@@ -32,9 +30,11 @@ func (Post) Fields() []ent.Field {
 // Edges of the Post.
 func (Post) Edges() []ent.Edge {
 	return []ent.Edge{
+		edge.From("author", Admin.Type).Ref("posts"),
 		edge.From("category", Category.Type).Ref("posts").Unique(),
 		edge.To("thumbnail", PostThumbnail.Type).Unique(),
 		edge.To("images", PostImage.Type),
 		edge.To("videos", PostVideo.Type),
+		edge.To("attachments", PostAttachment.Type),
 	}
 }

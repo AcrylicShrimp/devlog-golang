@@ -17,11 +17,11 @@ type PostImage struct {
 func (PostImage) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("uuid"),
-		field.Uint64("index"),
 		field.Uint32("width"),
 		field.Uint32("height"),
 		field.String("hash").MaxLen(64),
-		field.String("url").MaxLen(256).Unique(),
+		field.String("title").MaxLen(255),
+		field.String("url").MaxLen(512).Unique(),
 		field.Time("created_at").Default(time.Now),
 	}
 }
@@ -37,6 +37,5 @@ func (PostImage) Edges() []ent.Edge {
 func (PostImage) Indices() []ent.Index {
 	return []ent.Index{
 		index.Fields("uuid", "post").Unique(),
-		index.Fields("index", "post").Unique(),
 	}
 }

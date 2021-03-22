@@ -13,8 +13,8 @@ const (
 	FieldID = "id"
 	// FieldUUID holds the string denoting the uuid field in the database.
 	FieldUUID = "uuid"
-	// FieldIndex holds the string denoting the index field in the database.
-	FieldIndex = "index"
+	// FieldTitle holds the string denoting the title field in the database.
+	FieldTitle = "title"
 	// FieldURL holds the string denoting the url field in the database.
 	FieldURL = "url"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -38,7 +38,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldUUID,
-	FieldIndex,
+	FieldTitle,
 	FieldURL,
 	FieldCreatedAt,
 }
@@ -64,6 +64,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	TitleValidator func(string) error
 	// URLValidator is a validator for the "url" field. It is called by the builders before save.
 	URLValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.

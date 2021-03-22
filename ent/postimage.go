@@ -19,14 +19,14 @@ type PostImage struct {
 	ID int `json:"id,omitempty"`
 	// UUID holds the value of the "uuid" field.
 	UUID string `json:"uuid,omitempty"`
-	// Index holds the value of the "index" field.
-	Index uint64 `json:"index,omitempty"`
 	// Width holds the value of the "width" field.
 	Width uint32 `json:"width,omitempty"`
 	// Height holds the value of the "height" field.
 	Height uint32 `json:"height,omitempty"`
 	// Hash holds the value of the "hash" field.
 	Hash string `json:"hash,omitempty"`
+	// Title holds the value of the "title" field.
+	Title string `json:"title,omitempty"`
 	// URL holds the value of the "url" field.
 	URL string `json:"url,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -65,9 +65,9 @@ func (*PostImage) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case postimage.FieldID, postimage.FieldIndex, postimage.FieldWidth, postimage.FieldHeight:
+		case postimage.FieldID, postimage.FieldWidth, postimage.FieldHeight:
 			values[i] = &sql.NullInt64{}
-		case postimage.FieldUUID, postimage.FieldHash, postimage.FieldURL:
+		case postimage.FieldUUID, postimage.FieldHash, postimage.FieldTitle, postimage.FieldURL:
 			values[i] = &sql.NullString{}
 		case postimage.FieldCreatedAt:
 			values[i] = &sql.NullTime{}
@@ -100,12 +100,6 @@ func (pi *PostImage) assignValues(columns []string, values []interface{}) error 
 			} else if value.Valid {
 				pi.UUID = value.String
 			}
-		case postimage.FieldIndex:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field index", values[i])
-			} else if value.Valid {
-				pi.Index = uint64(value.Int64)
-			}
 		case postimage.FieldWidth:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field width", values[i])
@@ -123,6 +117,12 @@ func (pi *PostImage) assignValues(columns []string, values []interface{}) error 
 				return fmt.Errorf("unexpected type %T for field hash", values[i])
 			} else if value.Valid {
 				pi.Hash = value.String
+			}
+		case postimage.FieldTitle:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field title", values[i])
+			} else if value.Valid {
+				pi.Title = value.String
 			}
 		case postimage.FieldURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -178,14 +178,14 @@ func (pi *PostImage) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", pi.ID))
 	builder.WriteString(", uuid=")
 	builder.WriteString(pi.UUID)
-	builder.WriteString(", index=")
-	builder.WriteString(fmt.Sprintf("%v", pi.Index))
 	builder.WriteString(", width=")
 	builder.WriteString(fmt.Sprintf("%v", pi.Width))
 	builder.WriteString(", height=")
 	builder.WriteString(fmt.Sprintf("%v", pi.Height))
 	builder.WriteString(", hash=")
 	builder.WriteString(pi.Hash)
+	builder.WriteString(", title=")
+	builder.WriteString(pi.Title)
 	builder.WriteString(", url=")
 	builder.WriteString(pi.URL)
 	builder.WriteString(", created_at=")

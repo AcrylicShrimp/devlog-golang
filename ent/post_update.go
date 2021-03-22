@@ -4,8 +4,10 @@ package ent
 
 import (
 	"context"
+	"devlog/ent/admin"
 	"devlog/ent/category"
 	"devlog/ent/post"
+	"devlog/ent/postattachment"
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
@@ -61,99 +63,15 @@ func (pu *PostUpdate) SetContent(s string) *PostUpdate {
 	return pu
 }
 
-// SetNillableContent sets the "content" field if the given value is not nil.
-func (pu *PostUpdate) SetNillableContent(s *string) *PostUpdate {
-	if s != nil {
-		pu.SetContent(*s)
-	}
-	return pu
-}
-
-// ClearContent clears the value of the "content" field.
-func (pu *PostUpdate) ClearContent() *PostUpdate {
-	pu.mutation.ClearContent()
-	return pu
-}
-
 // SetHTMLContent sets the "html_content" field.
 func (pu *PostUpdate) SetHTMLContent(s string) *PostUpdate {
 	pu.mutation.SetHTMLContent(s)
 	return pu
 }
 
-// SetNillableHTMLContent sets the "html_content" field if the given value is not nil.
-func (pu *PostUpdate) SetNillableHTMLContent(s *string) *PostUpdate {
-	if s != nil {
-		pu.SetHTMLContent(*s)
-	}
-	return pu
-}
-
-// ClearHTMLContent clears the value of the "html_content" field.
-func (pu *PostUpdate) ClearHTMLContent() *PostUpdate {
-	pu.mutation.ClearHTMLContent()
-	return pu
-}
-
 // SetPreviewContent sets the "preview_content" field.
 func (pu *PostUpdate) SetPreviewContent(s string) *PostUpdate {
 	pu.mutation.SetPreviewContent(s)
-	return pu
-}
-
-// SetNillablePreviewContent sets the "preview_content" field if the given value is not nil.
-func (pu *PostUpdate) SetNillablePreviewContent(s *string) *PostUpdate {
-	if s != nil {
-		pu.SetPreviewContent(*s)
-	}
-	return pu
-}
-
-// ClearPreviewContent clears the value of the "preview_content" field.
-func (pu *PostUpdate) ClearPreviewContent() *PostUpdate {
-	pu.mutation.ClearPreviewContent()
-	return pu
-}
-
-// SetAccumulatedImageIndex sets the "accumulated_image_index" field.
-func (pu *PostUpdate) SetAccumulatedImageIndex(u uint64) *PostUpdate {
-	pu.mutation.ResetAccumulatedImageIndex()
-	pu.mutation.SetAccumulatedImageIndex(u)
-	return pu
-}
-
-// SetNillableAccumulatedImageIndex sets the "accumulated_image_index" field if the given value is not nil.
-func (pu *PostUpdate) SetNillableAccumulatedImageIndex(u *uint64) *PostUpdate {
-	if u != nil {
-		pu.SetAccumulatedImageIndex(*u)
-	}
-	return pu
-}
-
-// AddAccumulatedImageIndex adds u to the "accumulated_image_index" field.
-func (pu *PostUpdate) AddAccumulatedImageIndex(u uint64) *PostUpdate {
-	pu.mutation.AddAccumulatedImageIndex(u)
-	return pu
-}
-
-// SetAccumulatedVideoIndex sets the "accumulated_video_index" field.
-func (pu *PostUpdate) SetAccumulatedVideoIndex(u uint64) *PostUpdate {
-	pu.mutation.ResetAccumulatedVideoIndex()
-	pu.mutation.SetAccumulatedVideoIndex(u)
-	return pu
-}
-
-// SetNillableAccumulatedVideoIndex sets the "accumulated_video_index" field if the given value is not nil.
-func (pu *PostUpdate) SetNillableAccumulatedVideoIndex(u *uint64) *PostUpdate {
-	if u != nil {
-		pu.SetAccumulatedVideoIndex(*u)
-	}
-	return pu
-}
-
-// AddAccumulatedVideoIndex adds u to the "accumulated_video_index" field.
-func (pu *PostUpdate) AddAccumulatedVideoIndex(u uint64) *PostUpdate {
-	pu.mutation.AddAccumulatedVideoIndex(u)
 	return pu
 }
 
@@ -175,6 +93,21 @@ func (pu *PostUpdate) SetNillableCreatedAt(t *time.Time) *PostUpdate {
 func (pu *PostUpdate) SetModifiedAt(t time.Time) *PostUpdate {
 	pu.mutation.SetModifiedAt(t)
 	return pu
+}
+
+// AddAuthorIDs adds the "author" edge to the Admin entity by IDs.
+func (pu *PostUpdate) AddAuthorIDs(ids ...int) *PostUpdate {
+	pu.mutation.AddAuthorIDs(ids...)
+	return pu
+}
+
+// AddAuthor adds the "author" edges to the Admin entity.
+func (pu *PostUpdate) AddAuthor(a ...*Admin) *PostUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return pu.AddAuthorIDs(ids...)
 }
 
 // SetCategoryID sets the "category" edge to the Category entity by ID.
@@ -245,9 +178,45 @@ func (pu *PostUpdate) AddVideos(p ...*PostVideo) *PostUpdate {
 	return pu.AddVideoIDs(ids...)
 }
 
+// AddAttachmentIDs adds the "attachments" edge to the PostAttachment entity by IDs.
+func (pu *PostUpdate) AddAttachmentIDs(ids ...int) *PostUpdate {
+	pu.mutation.AddAttachmentIDs(ids...)
+	return pu
+}
+
+// AddAttachments adds the "attachments" edges to the PostAttachment entity.
+func (pu *PostUpdate) AddAttachments(p ...*PostAttachment) *PostUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.AddAttachmentIDs(ids...)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (pu *PostUpdate) Mutation() *PostMutation {
 	return pu.mutation
+}
+
+// ClearAuthor clears all "author" edges to the Admin entity.
+func (pu *PostUpdate) ClearAuthor() *PostUpdate {
+	pu.mutation.ClearAuthor()
+	return pu
+}
+
+// RemoveAuthorIDs removes the "author" edge to Admin entities by IDs.
+func (pu *PostUpdate) RemoveAuthorIDs(ids ...int) *PostUpdate {
+	pu.mutation.RemoveAuthorIDs(ids...)
+	return pu
+}
+
+// RemoveAuthor removes "author" edges to Admin entities.
+func (pu *PostUpdate) RemoveAuthor(a ...*Admin) *PostUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return pu.RemoveAuthorIDs(ids...)
 }
 
 // ClearCategory clears the "category" edge to the Category entity.
@@ -302,6 +271,27 @@ func (pu *PostUpdate) RemoveVideos(p ...*PostVideo) *PostUpdate {
 		ids[i] = p[i].ID
 	}
 	return pu.RemoveVideoIDs(ids...)
+}
+
+// ClearAttachments clears all "attachments" edges to the PostAttachment entity.
+func (pu *PostUpdate) ClearAttachments() *PostUpdate {
+	pu.mutation.ClearAttachments()
+	return pu
+}
+
+// RemoveAttachmentIDs removes the "attachments" edge to PostAttachment entities by IDs.
+func (pu *PostUpdate) RemoveAttachmentIDs(ids ...int) *PostUpdate {
+	pu.mutation.RemoveAttachmentIDs(ids...)
+	return pu
+}
+
+// RemoveAttachments removes "attachments" edges to PostAttachment entities.
+func (pu *PostUpdate) RemoveAttachments(p ...*PostAttachment) *PostUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pu.RemoveAttachmentIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -453,22 +443,10 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: post.FieldContent,
 		})
 	}
-	if pu.mutation.ContentCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: post.FieldContent,
-		})
-	}
 	if value, ok := pu.mutation.HTMLContent(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: post.FieldHTMLContent,
-		})
-	}
-	if pu.mutation.HTMLContentCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
 			Column: post.FieldHTMLContent,
 		})
 	}
@@ -477,40 +455,6 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: post.FieldPreviewContent,
-		})
-	}
-	if pu.mutation.PreviewContentCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: post.FieldPreviewContent,
-		})
-	}
-	if value, ok := pu.mutation.AccumulatedImageIndex(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedImageIndex,
-		})
-	}
-	if value, ok := pu.mutation.AddedAccumulatedImageIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedImageIndex,
-		})
-	}
-	if value, ok := pu.mutation.AccumulatedVideoIndex(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedVideoIndex,
-		})
-	}
-	if value, ok := pu.mutation.AddedAccumulatedVideoIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedVideoIndex,
 		})
 	}
 	if value, ok := pu.mutation.CreatedAt(); ok {
@@ -526,6 +470,60 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Value:  value,
 			Column: post.FieldModifiedAt,
 		})
+	}
+	if pu.mutation.AuthorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.AuthorTable,
+			Columns: post.AuthorPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedAuthorIDs(); len(nodes) > 0 && !pu.mutation.AuthorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.AuthorTable,
+			Columns: post.AuthorPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.AuthorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.AuthorTable,
+			Columns: post.AuthorPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if pu.mutation.CategoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -705,6 +703,60 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if pu.mutation.AttachmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.AttachmentsTable,
+			Columns: []string{post.AttachmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: postattachment.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.RemovedAttachmentsIDs(); len(nodes) > 0 && !pu.mutation.AttachmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.AttachmentsTable,
+			Columns: []string{post.AttachmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: postattachment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := pu.mutation.AttachmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.AttachmentsTable,
+			Columns: []string{post.AttachmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: postattachment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{post.Label}
@@ -753,99 +805,15 @@ func (puo *PostUpdateOne) SetContent(s string) *PostUpdateOne {
 	return puo
 }
 
-// SetNillableContent sets the "content" field if the given value is not nil.
-func (puo *PostUpdateOne) SetNillableContent(s *string) *PostUpdateOne {
-	if s != nil {
-		puo.SetContent(*s)
-	}
-	return puo
-}
-
-// ClearContent clears the value of the "content" field.
-func (puo *PostUpdateOne) ClearContent() *PostUpdateOne {
-	puo.mutation.ClearContent()
-	return puo
-}
-
 // SetHTMLContent sets the "html_content" field.
 func (puo *PostUpdateOne) SetHTMLContent(s string) *PostUpdateOne {
 	puo.mutation.SetHTMLContent(s)
 	return puo
 }
 
-// SetNillableHTMLContent sets the "html_content" field if the given value is not nil.
-func (puo *PostUpdateOne) SetNillableHTMLContent(s *string) *PostUpdateOne {
-	if s != nil {
-		puo.SetHTMLContent(*s)
-	}
-	return puo
-}
-
-// ClearHTMLContent clears the value of the "html_content" field.
-func (puo *PostUpdateOne) ClearHTMLContent() *PostUpdateOne {
-	puo.mutation.ClearHTMLContent()
-	return puo
-}
-
 // SetPreviewContent sets the "preview_content" field.
 func (puo *PostUpdateOne) SetPreviewContent(s string) *PostUpdateOne {
 	puo.mutation.SetPreviewContent(s)
-	return puo
-}
-
-// SetNillablePreviewContent sets the "preview_content" field if the given value is not nil.
-func (puo *PostUpdateOne) SetNillablePreviewContent(s *string) *PostUpdateOne {
-	if s != nil {
-		puo.SetPreviewContent(*s)
-	}
-	return puo
-}
-
-// ClearPreviewContent clears the value of the "preview_content" field.
-func (puo *PostUpdateOne) ClearPreviewContent() *PostUpdateOne {
-	puo.mutation.ClearPreviewContent()
-	return puo
-}
-
-// SetAccumulatedImageIndex sets the "accumulated_image_index" field.
-func (puo *PostUpdateOne) SetAccumulatedImageIndex(u uint64) *PostUpdateOne {
-	puo.mutation.ResetAccumulatedImageIndex()
-	puo.mutation.SetAccumulatedImageIndex(u)
-	return puo
-}
-
-// SetNillableAccumulatedImageIndex sets the "accumulated_image_index" field if the given value is not nil.
-func (puo *PostUpdateOne) SetNillableAccumulatedImageIndex(u *uint64) *PostUpdateOne {
-	if u != nil {
-		puo.SetAccumulatedImageIndex(*u)
-	}
-	return puo
-}
-
-// AddAccumulatedImageIndex adds u to the "accumulated_image_index" field.
-func (puo *PostUpdateOne) AddAccumulatedImageIndex(u uint64) *PostUpdateOne {
-	puo.mutation.AddAccumulatedImageIndex(u)
-	return puo
-}
-
-// SetAccumulatedVideoIndex sets the "accumulated_video_index" field.
-func (puo *PostUpdateOne) SetAccumulatedVideoIndex(u uint64) *PostUpdateOne {
-	puo.mutation.ResetAccumulatedVideoIndex()
-	puo.mutation.SetAccumulatedVideoIndex(u)
-	return puo
-}
-
-// SetNillableAccumulatedVideoIndex sets the "accumulated_video_index" field if the given value is not nil.
-func (puo *PostUpdateOne) SetNillableAccumulatedVideoIndex(u *uint64) *PostUpdateOne {
-	if u != nil {
-		puo.SetAccumulatedVideoIndex(*u)
-	}
-	return puo
-}
-
-// AddAccumulatedVideoIndex adds u to the "accumulated_video_index" field.
-func (puo *PostUpdateOne) AddAccumulatedVideoIndex(u uint64) *PostUpdateOne {
-	puo.mutation.AddAccumulatedVideoIndex(u)
 	return puo
 }
 
@@ -867,6 +835,21 @@ func (puo *PostUpdateOne) SetNillableCreatedAt(t *time.Time) *PostUpdateOne {
 func (puo *PostUpdateOne) SetModifiedAt(t time.Time) *PostUpdateOne {
 	puo.mutation.SetModifiedAt(t)
 	return puo
+}
+
+// AddAuthorIDs adds the "author" edge to the Admin entity by IDs.
+func (puo *PostUpdateOne) AddAuthorIDs(ids ...int) *PostUpdateOne {
+	puo.mutation.AddAuthorIDs(ids...)
+	return puo
+}
+
+// AddAuthor adds the "author" edges to the Admin entity.
+func (puo *PostUpdateOne) AddAuthor(a ...*Admin) *PostUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return puo.AddAuthorIDs(ids...)
 }
 
 // SetCategoryID sets the "category" edge to the Category entity by ID.
@@ -937,9 +920,45 @@ func (puo *PostUpdateOne) AddVideos(p ...*PostVideo) *PostUpdateOne {
 	return puo.AddVideoIDs(ids...)
 }
 
+// AddAttachmentIDs adds the "attachments" edge to the PostAttachment entity by IDs.
+func (puo *PostUpdateOne) AddAttachmentIDs(ids ...int) *PostUpdateOne {
+	puo.mutation.AddAttachmentIDs(ids...)
+	return puo
+}
+
+// AddAttachments adds the "attachments" edges to the PostAttachment entity.
+func (puo *PostUpdateOne) AddAttachments(p ...*PostAttachment) *PostUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.AddAttachmentIDs(ids...)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (puo *PostUpdateOne) Mutation() *PostMutation {
 	return puo.mutation
+}
+
+// ClearAuthor clears all "author" edges to the Admin entity.
+func (puo *PostUpdateOne) ClearAuthor() *PostUpdateOne {
+	puo.mutation.ClearAuthor()
+	return puo
+}
+
+// RemoveAuthorIDs removes the "author" edge to Admin entities by IDs.
+func (puo *PostUpdateOne) RemoveAuthorIDs(ids ...int) *PostUpdateOne {
+	puo.mutation.RemoveAuthorIDs(ids...)
+	return puo
+}
+
+// RemoveAuthor removes "author" edges to Admin entities.
+func (puo *PostUpdateOne) RemoveAuthor(a ...*Admin) *PostUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return puo.RemoveAuthorIDs(ids...)
 }
 
 // ClearCategory clears the "category" edge to the Category entity.
@@ -994,6 +1013,27 @@ func (puo *PostUpdateOne) RemoveVideos(p ...*PostVideo) *PostUpdateOne {
 		ids[i] = p[i].ID
 	}
 	return puo.RemoveVideoIDs(ids...)
+}
+
+// ClearAttachments clears all "attachments" edges to the PostAttachment entity.
+func (puo *PostUpdateOne) ClearAttachments() *PostUpdateOne {
+	puo.mutation.ClearAttachments()
+	return puo
+}
+
+// RemoveAttachmentIDs removes the "attachments" edge to PostAttachment entities by IDs.
+func (puo *PostUpdateOne) RemoveAttachmentIDs(ids ...int) *PostUpdateOne {
+	puo.mutation.RemoveAttachmentIDs(ids...)
+	return puo
+}
+
+// RemoveAttachments removes "attachments" edges to PostAttachment entities.
+func (puo *PostUpdateOne) RemoveAttachments(p ...*PostAttachment) *PostUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return puo.RemoveAttachmentIDs(ids...)
 }
 
 // Save executes the query and returns the updated Post entity.
@@ -1143,22 +1183,10 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 			Column: post.FieldContent,
 		})
 	}
-	if puo.mutation.ContentCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: post.FieldContent,
-		})
-	}
 	if value, ok := puo.mutation.HTMLContent(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
-			Column: post.FieldHTMLContent,
-		})
-	}
-	if puo.mutation.HTMLContentCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
 			Column: post.FieldHTMLContent,
 		})
 	}
@@ -1167,40 +1195,6 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 			Type:   field.TypeString,
 			Value:  value,
 			Column: post.FieldPreviewContent,
-		})
-	}
-	if puo.mutation.PreviewContentCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: post.FieldPreviewContent,
-		})
-	}
-	if value, ok := puo.mutation.AccumulatedImageIndex(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedImageIndex,
-		})
-	}
-	if value, ok := puo.mutation.AddedAccumulatedImageIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedImageIndex,
-		})
-	}
-	if value, ok := puo.mutation.AccumulatedVideoIndex(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedVideoIndex,
-		})
-	}
-	if value, ok := puo.mutation.AddedAccumulatedVideoIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedVideoIndex,
 		})
 	}
 	if value, ok := puo.mutation.CreatedAt(); ok {
@@ -1216,6 +1210,60 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 			Value:  value,
 			Column: post.FieldModifiedAt,
 		})
+	}
+	if puo.mutation.AuthorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.AuthorTable,
+			Columns: post.AuthorPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedAuthorIDs(); len(nodes) > 0 && !puo.mutation.AuthorCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.AuthorTable,
+			Columns: post.AuthorPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.AuthorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.AuthorTable,
+			Columns: post.AuthorPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if puo.mutation.CategoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1387,6 +1435,60 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: postvideo.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if puo.mutation.AttachmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.AttachmentsTable,
+			Columns: []string{post.AttachmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: postattachment.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.RemovedAttachmentsIDs(); len(nodes) > 0 && !puo.mutation.AttachmentsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.AttachmentsTable,
+			Columns: []string{post.AttachmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: postattachment.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := puo.mutation.AttachmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.AttachmentsTable,
+			Columns: []string{post.AttachmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: postattachment.FieldID,
 				},
 			},
 		}

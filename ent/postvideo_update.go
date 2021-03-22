@@ -35,16 +35,9 @@ func (pvu *PostVideoUpdate) SetUUID(s string) *PostVideoUpdate {
 	return pvu
 }
 
-// SetIndex sets the "index" field.
-func (pvu *PostVideoUpdate) SetIndex(u uint64) *PostVideoUpdate {
-	pvu.mutation.ResetIndex()
-	pvu.mutation.SetIndex(u)
-	return pvu
-}
-
-// AddIndex adds u to the "index" field.
-func (pvu *PostVideoUpdate) AddIndex(u uint64) *PostVideoUpdate {
-	pvu.mutation.AddIndex(u)
+// SetTitle sets the "title" field.
+func (pvu *PostVideoUpdate) SetTitle(s string) *PostVideoUpdate {
+	pvu.mutation.SetTitle(s)
 	return pvu
 }
 
@@ -149,6 +142,11 @@ func (pvu *PostVideoUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pvu *PostVideoUpdate) check() error {
+	if v, ok := pvu.mutation.Title(); ok {
+		if err := postvideo.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+		}
+	}
 	if v, ok := pvu.mutation.URL(); ok {
 		if err := postvideo.URLValidator(v); err != nil {
 			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
@@ -185,18 +183,11 @@ func (pvu *PostVideoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: postvideo.FieldUUID,
 		})
 	}
-	if value, ok := pvu.mutation.Index(); ok {
+	if value, ok := pvu.mutation.Title(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
+			Type:   field.TypeString,
 			Value:  value,
-			Column: postvideo.FieldIndex,
-		})
-	}
-	if value, ok := pvu.mutation.AddedIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: postvideo.FieldIndex,
+			Column: postvideo.FieldTitle,
 		})
 	}
 	if value, ok := pvu.mutation.URL(); ok {
@@ -272,16 +263,9 @@ func (pvuo *PostVideoUpdateOne) SetUUID(s string) *PostVideoUpdateOne {
 	return pvuo
 }
 
-// SetIndex sets the "index" field.
-func (pvuo *PostVideoUpdateOne) SetIndex(u uint64) *PostVideoUpdateOne {
-	pvuo.mutation.ResetIndex()
-	pvuo.mutation.SetIndex(u)
-	return pvuo
-}
-
-// AddIndex adds u to the "index" field.
-func (pvuo *PostVideoUpdateOne) AddIndex(u uint64) *PostVideoUpdateOne {
-	pvuo.mutation.AddIndex(u)
+// SetTitle sets the "title" field.
+func (pvuo *PostVideoUpdateOne) SetTitle(s string) *PostVideoUpdateOne {
+	pvuo.mutation.SetTitle(s)
 	return pvuo
 }
 
@@ -386,6 +370,11 @@ func (pvuo *PostVideoUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pvuo *PostVideoUpdateOne) check() error {
+	if v, ok := pvuo.mutation.Title(); ok {
+		if err := postvideo.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+		}
+	}
 	if v, ok := pvuo.mutation.URL(); ok {
 		if err := postvideo.URLValidator(v); err != nil {
 			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
@@ -420,18 +409,11 @@ func (pvuo *PostVideoUpdateOne) sqlSave(ctx context.Context) (_node *PostVideo, 
 			Column: postvideo.FieldUUID,
 		})
 	}
-	if value, ok := pvuo.mutation.Index(); ok {
+	if value, ok := pvuo.mutation.Title(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
+			Type:   field.TypeString,
 			Value:  value,
-			Column: postvideo.FieldIndex,
-		})
-	}
-	if value, ok := pvuo.mutation.AddedIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: postvideo.FieldIndex,
+			Column: postvideo.FieldTitle,
 		})
 	}
 	if value, ok := pvuo.mutation.URL(); ok {

@@ -20,6 +20,8 @@ type Tx struct {
 	Category *CategoryClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
+	// PostAttachment is the client for interacting with the PostAttachment builders.
+	PostAttachment *PostAttachmentClient
 	// PostImage is the client for interacting with the PostImage builders.
 	PostImage *PostImageClient
 	// PostThumbnail is the client for interacting with the PostThumbnail builders.
@@ -165,6 +167,7 @@ func (tx *Tx) init() {
 	tx.AdminSession = NewAdminSessionClient(tx.config)
 	tx.Category = NewCategoryClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
+	tx.PostAttachment = NewPostAttachmentClient(tx.config)
 	tx.PostImage = NewPostImageClient(tx.config)
 	tx.PostThumbnail = NewPostThumbnailClient(tx.config)
 	tx.PostVideo = NewPostVideoClient(tx.config)

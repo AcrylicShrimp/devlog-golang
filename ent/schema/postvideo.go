@@ -17,8 +17,8 @@ type PostVideo struct {
 func (PostVideo) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("uuid"),
-		field.Uint64("index"),
-		field.String("url").MaxLen(256).Unique(),
+		field.String("title").MaxLen(255),
+		field.String("url").MaxLen(512).Unique(),
 		field.Time("created_at").Default(time.Now),
 	}
 }
@@ -34,6 +34,5 @@ func (PostVideo) Edges() []ent.Edge {
 func (PostVideo) Indices() []ent.Index {
 	return []ent.Index{
 		index.Fields("uuid", "post").Unique(),
-		index.Fields("index", "post").Unique(),
 	}
 }

@@ -27,12 +27,6 @@ func (pic *PostImageCreate) SetUUID(s string) *PostImageCreate {
 	return pic
 }
 
-// SetIndex sets the "index" field.
-func (pic *PostImageCreate) SetIndex(u uint64) *PostImageCreate {
-	pic.mutation.SetIndex(u)
-	return pic
-}
-
 // SetWidth sets the "width" field.
 func (pic *PostImageCreate) SetWidth(u uint32) *PostImageCreate {
 	pic.mutation.SetWidth(u)
@@ -48,6 +42,12 @@ func (pic *PostImageCreate) SetHeight(u uint32) *PostImageCreate {
 // SetHash sets the "hash" field.
 func (pic *PostImageCreate) SetHash(s string) *PostImageCreate {
 	pic.mutation.SetHash(s)
+	return pic
+}
+
+// SetTitle sets the "title" field.
+func (pic *PostImageCreate) SetTitle(s string) *PostImageCreate {
+	pic.mutation.SetTitle(s)
 	return pic
 }
 
@@ -145,9 +145,6 @@ func (pic *PostImageCreate) check() error {
 	if _, ok := pic.mutation.UUID(); !ok {
 		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
 	}
-	if _, ok := pic.mutation.Index(); !ok {
-		return &ValidationError{Name: "index", err: errors.New("ent: missing required field \"index\"")}
-	}
 	if _, ok := pic.mutation.Width(); !ok {
 		return &ValidationError{Name: "width", err: errors.New("ent: missing required field \"width\"")}
 	}
@@ -160,6 +157,14 @@ func (pic *PostImageCreate) check() error {
 	if v, ok := pic.mutation.Hash(); ok {
 		if err := postimage.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
+		}
+	}
+	if _, ok := pic.mutation.Title(); !ok {
+		return &ValidationError{Name: "title", err: errors.New("ent: missing required field \"title\"")}
+	}
+	if v, ok := pic.mutation.Title(); ok {
+		if err := postimage.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
 		}
 	}
 	if _, ok := pic.mutation.URL(); !ok {
@@ -211,14 +216,6 @@ func (pic *PostImageCreate) createSpec() (*PostImage, *sqlgraph.CreateSpec) {
 		})
 		_node.UUID = value
 	}
-	if value, ok := pic.mutation.Index(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: postimage.FieldIndex,
-		})
-		_node.Index = value
-	}
 	if value, ok := pic.mutation.Width(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -242,6 +239,14 @@ func (pic *PostImageCreate) createSpec() (*PostImage, *sqlgraph.CreateSpec) {
 			Column: postimage.FieldHash,
 		})
 		_node.Hash = value
+	}
+	if value, ok := pic.mutation.Title(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: postimage.FieldTitle,
+		})
+		_node.Title = value
 	}
 	if value, ok := pic.mutation.URL(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

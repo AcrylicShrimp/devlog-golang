@@ -7,6 +7,7 @@ import (
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
+	"devlog/ent/postattachment"
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
@@ -86,28 +87,42 @@ func init() {
 	postDescPreviewContent := postFields[6].Descriptor()
 	// post.PreviewContentValidator is a validator for the "preview_content" field. It is called by the builders before save.
 	post.PreviewContentValidator = postDescPreviewContent.Validators[0].(func(string) error)
-	// postDescAccumulatedImageIndex is the schema descriptor for accumulated_image_index field.
-	postDescAccumulatedImageIndex := postFields[7].Descriptor()
-	// post.DefaultAccumulatedImageIndex holds the default value on creation for the accumulated_image_index field.
-	post.DefaultAccumulatedImageIndex = postDescAccumulatedImageIndex.Default.(uint64)
-	// postDescAccumulatedVideoIndex is the schema descriptor for accumulated_video_index field.
-	postDescAccumulatedVideoIndex := postFields[8].Descriptor()
-	// post.DefaultAccumulatedVideoIndex holds the default value on creation for the accumulated_video_index field.
-	post.DefaultAccumulatedVideoIndex = postDescAccumulatedVideoIndex.Default.(uint64)
 	// postDescCreatedAt is the schema descriptor for created_at field.
-	postDescCreatedAt := postFields[9].Descriptor()
+	postDescCreatedAt := postFields[7].Descriptor()
 	// post.DefaultCreatedAt holds the default value on creation for the created_at field.
 	post.DefaultCreatedAt = postDescCreatedAt.Default.(func() time.Time)
 	// postDescModifiedAt is the schema descriptor for modified_at field.
-	postDescModifiedAt := postFields[10].Descriptor()
+	postDescModifiedAt := postFields[8].Descriptor()
 	// post.UpdateDefaultModifiedAt holds the default value on update for the modified_at field.
 	post.UpdateDefaultModifiedAt = postDescModifiedAt.UpdateDefault.(func() time.Time)
+	postattachmentFields := schema.PostAttachment{}.Fields()
+	_ = postattachmentFields
+	// postattachmentDescName is the schema descriptor for name field.
+	postattachmentDescName := postattachmentFields[2].Descriptor()
+	// postattachment.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	postattachment.NameValidator = postattachmentDescName.Validators[0].(func(string) error)
+	// postattachmentDescMime is the schema descriptor for mime field.
+	postattachmentDescMime := postattachmentFields[3].Descriptor()
+	// postattachment.MimeValidator is a validator for the "mime" field. It is called by the builders before save.
+	postattachment.MimeValidator = postattachmentDescMime.Validators[0].(func(string) error)
+	// postattachmentDescURL is the schema descriptor for url field.
+	postattachmentDescURL := postattachmentFields[4].Descriptor()
+	// postattachment.URLValidator is a validator for the "url" field. It is called by the builders before save.
+	postattachment.URLValidator = postattachmentDescURL.Validators[0].(func(string) error)
+	// postattachmentDescCreatedAt is the schema descriptor for created_at field.
+	postattachmentDescCreatedAt := postattachmentFields[5].Descriptor()
+	// postattachment.DefaultCreatedAt holds the default value on creation for the created_at field.
+	postattachment.DefaultCreatedAt = postattachmentDescCreatedAt.Default.(func() time.Time)
 	postimageFields := schema.PostImage{}.Fields()
 	_ = postimageFields
 	// postimageDescHash is the schema descriptor for hash field.
-	postimageDescHash := postimageFields[4].Descriptor()
+	postimageDescHash := postimageFields[3].Descriptor()
 	// postimage.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	postimage.HashValidator = postimageDescHash.Validators[0].(func(string) error)
+	// postimageDescTitle is the schema descriptor for title field.
+	postimageDescTitle := postimageFields[4].Descriptor()
+	// postimage.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	postimage.TitleValidator = postimageDescTitle.Validators[0].(func(string) error)
 	// postimageDescURL is the schema descriptor for url field.
 	postimageDescURL := postimageFields[5].Descriptor()
 	// postimage.URLValidator is a validator for the "url" field. It is called by the builders before save.
@@ -132,6 +147,10 @@ func init() {
 	postthumbnail.DefaultCreatedAt = postthumbnailDescCreatedAt.Default.(func() time.Time)
 	postvideoFields := schema.PostVideo{}.Fields()
 	_ = postvideoFields
+	// postvideoDescTitle is the schema descriptor for title field.
+	postvideoDescTitle := postvideoFields[1].Descriptor()
+	// postvideo.TitleValidator is a validator for the "title" field. It is called by the builders before save.
+	postvideo.TitleValidator = postvideoDescTitle.Validators[0].(func(string) error)
 	// postvideoDescURL is the schema descriptor for url field.
 	postvideoDescURL := postvideoFields[2].Descriptor()
 	// postvideo.URLValidator is a validator for the "url" field. It is called by the builders before save.

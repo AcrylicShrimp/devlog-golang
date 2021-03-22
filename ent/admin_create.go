@@ -6,6 +6,7 @@ import (
 	"context"
 	"devlog/ent/admin"
 	"devlog/ent/adminsession"
+	"devlog/ent/post"
 	"errors"
 	"fmt"
 	"time"
@@ -66,6 +67,21 @@ func (ac *AdminCreate) AddSessions(a ...*AdminSession) *AdminCreate {
 		ids[i] = a[i].ID
 	}
 	return ac.AddSessionIDs(ids...)
+}
+
+// AddPostIDs adds the "posts" edge to the Post entity by IDs.
+func (ac *AdminCreate) AddPostIDs(ids ...int) *AdminCreate {
+	ac.mutation.AddPostIDs(ids...)
+	return ac
+}
+
+// AddPosts adds the "posts" edges to the Post entity.
+func (ac *AdminCreate) AddPosts(p ...*Post) *AdminCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return ac.AddPostIDs(ids...)
 }
 
 // Mutation returns the AdminMutation object of the builder.
@@ -225,6 +241,25 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: adminsession.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.PostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.PostsTable,
+			Columns: admin.PostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: post.FieldID,
 				},
 			},
 		}

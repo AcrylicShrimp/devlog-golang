@@ -18,6 +18,9 @@ type Category func(*sql.Selector)
 // Post is the predicate function for post builders.
 type Post func(*sql.Selector)
 
+// PostAttachment is the predicate function for postattachment builders.
+type PostAttachment func(*sql.Selector)
+
 // PostImage is the predicate function for postimage builders.
 type PostImage func(*sql.Selector)
 

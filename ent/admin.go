@@ -33,9 +33,11 @@ type Admin struct {
 type AdminEdges struct {
 	// Sessions holds the value of the sessions edge.
 	Sessions []*AdminSession
+	// Posts holds the value of the posts edge.
+	Posts []*Post
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -45,6 +47,15 @@ func (e AdminEdges) SessionsOrErr() ([]*AdminSession, error) {
 		return e.Sessions, nil
 	}
 	return nil, &NotLoadedError{edge: "sessions"}
+}
+
+// PostsOrErr returns the Posts value or an error if the edge
+// was not loaded in eager-loading.
+func (e AdminEdges) PostsOrErr() ([]*Post, error) {
+	if e.loadedTypes[1] {
+		return e.Posts, nil
+	}
+	return nil, &NotLoadedError{edge: "posts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -111,6 +122,11 @@ func (a *Admin) assignValues(columns []string, values []interface{}) error {
 // QuerySessions queries the "sessions" edge of the Admin entity.
 func (a *Admin) QuerySessions() *AdminSessionQuery {
 	return (&AdminClient{config: a.config}).QuerySessions(a)
+}
+
+// QueryPosts queries the "posts" edge of the Admin entity.
+func (a *Admin) QueryPosts() *PostQuery {
+	return (&AdminClient{config: a.config}).QueryPosts(a)
 }
 
 // Update returns a builder for updating this Admin.

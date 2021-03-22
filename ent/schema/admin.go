@@ -26,5 +26,6 @@ func (Admin) Fields() []ent.Field {
 func (Admin) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("sessions", AdminSession.Type),
+		edge.To("posts", Post.Type),
 	}
 }

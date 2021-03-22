@@ -6,6 +6,7 @@ import (
 	"devlog/ent/admin"
 	"devlog/ent/adminsession"
 	"devlog/util"
+	"encoding/hex"
 	"github.com/labstack/echo"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 
 func AttachSession(group *echo.Group) {
 	group.POST("", NewSessionHandler)
-	group.POST("/:token", DeleteSessionHandler)
+	group.DELETE("/:token", DeleteSessionHandler)
 }
 
 func NewSessionHandler(c echo.Context) error {
@@ -24,10 +25,10 @@ func NewSessionHandler(c echo.Context) error {
 
 	authInfo := new(AuthInfo)
 	if err := c.Bind(authInfo); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 	if err := c.Validate(authInfo); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
+		return echo.NewHTTPError(http.StatusBadRequest, err)
 	}
 
 	client := c.(*common.Context).Client()
@@ -41,7 +42,12 @@ func NewSessionHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	if bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(authInfo.Password)) != nil {
+	password, err := hex.DecodeString(user.Password)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	if bcrypt.CompareHashAndPassword(password, []byte(authInfo.Password)) != nil {
 		return echo.NewHTTPError(http.StatusUnauthorized)
 	}
 

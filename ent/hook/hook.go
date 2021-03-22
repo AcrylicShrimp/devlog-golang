@@ -60,6 +60,19 @@ func (f PostFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error)
 	return f(ctx, mv)
 }
 
+// The PostAttachmentFunc type is an adapter to allow the use of ordinary
+// function as PostAttachment mutator.
+type PostAttachmentFunc func(context.Context, *ent.PostAttachmentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f PostAttachmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.PostAttachmentMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PostAttachmentMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // The PostImageFunc type is an adapter to allow the use of ordinary
 // function as PostImage mutator.
 type PostImageFunc func(context.Context, *ent.PostImageMutation) (ent.Value, error)

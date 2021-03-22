@@ -35,19 +35,6 @@ func (piu *PostImageUpdate) SetUUID(s string) *PostImageUpdate {
 	return piu
 }
 
-// SetIndex sets the "index" field.
-func (piu *PostImageUpdate) SetIndex(u uint64) *PostImageUpdate {
-	piu.mutation.ResetIndex()
-	piu.mutation.SetIndex(u)
-	return piu
-}
-
-// AddIndex adds u to the "index" field.
-func (piu *PostImageUpdate) AddIndex(u uint64) *PostImageUpdate {
-	piu.mutation.AddIndex(u)
-	return piu
-}
-
 // SetWidth sets the "width" field.
 func (piu *PostImageUpdate) SetWidth(u uint32) *PostImageUpdate {
 	piu.mutation.ResetWidth()
@@ -77,6 +64,12 @@ func (piu *PostImageUpdate) AddHeight(u uint32) *PostImageUpdate {
 // SetHash sets the "hash" field.
 func (piu *PostImageUpdate) SetHash(s string) *PostImageUpdate {
 	piu.mutation.SetHash(s)
+	return piu
+}
+
+// SetTitle sets the "title" field.
+func (piu *PostImageUpdate) SetTitle(s string) *PostImageUpdate {
+	piu.mutation.SetTitle(s)
 	return piu
 }
 
@@ -186,6 +179,11 @@ func (piu *PostImageUpdate) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
 		}
 	}
+	if v, ok := piu.mutation.Title(); ok {
+		if err := postimage.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+		}
+	}
 	if v, ok := piu.mutation.URL(); ok {
 		if err := postimage.URLValidator(v); err != nil {
 			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
@@ -222,20 +220,6 @@ func (piu *PostImageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: postimage.FieldUUID,
 		})
 	}
-	if value, ok := piu.mutation.Index(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: postimage.FieldIndex,
-		})
-	}
-	if value, ok := piu.mutation.AddedIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: postimage.FieldIndex,
-		})
-	}
 	if value, ok := piu.mutation.Width(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -269,6 +253,13 @@ func (piu *PostImageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: postimage.FieldHash,
+		})
+	}
+	if value, ok := piu.mutation.Title(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: postimage.FieldTitle,
 		})
 	}
 	if value, ok := piu.mutation.URL(); ok {
@@ -344,19 +335,6 @@ func (piuo *PostImageUpdateOne) SetUUID(s string) *PostImageUpdateOne {
 	return piuo
 }
 
-// SetIndex sets the "index" field.
-func (piuo *PostImageUpdateOne) SetIndex(u uint64) *PostImageUpdateOne {
-	piuo.mutation.ResetIndex()
-	piuo.mutation.SetIndex(u)
-	return piuo
-}
-
-// AddIndex adds u to the "index" field.
-func (piuo *PostImageUpdateOne) AddIndex(u uint64) *PostImageUpdateOne {
-	piuo.mutation.AddIndex(u)
-	return piuo
-}
-
 // SetWidth sets the "width" field.
 func (piuo *PostImageUpdateOne) SetWidth(u uint32) *PostImageUpdateOne {
 	piuo.mutation.ResetWidth()
@@ -386,6 +364,12 @@ func (piuo *PostImageUpdateOne) AddHeight(u uint32) *PostImageUpdateOne {
 // SetHash sets the "hash" field.
 func (piuo *PostImageUpdateOne) SetHash(s string) *PostImageUpdateOne {
 	piuo.mutation.SetHash(s)
+	return piuo
+}
+
+// SetTitle sets the "title" field.
+func (piuo *PostImageUpdateOne) SetTitle(s string) *PostImageUpdateOne {
+	piuo.mutation.SetTitle(s)
 	return piuo
 }
 
@@ -495,6 +479,11 @@ func (piuo *PostImageUpdateOne) check() error {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
 		}
 	}
+	if v, ok := piuo.mutation.Title(); ok {
+		if err := postimage.TitleValidator(v); err != nil {
+			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+		}
+	}
 	if v, ok := piuo.mutation.URL(); ok {
 		if err := postimage.URLValidator(v); err != nil {
 			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
@@ -527,20 +516,6 @@ func (piuo *PostImageUpdateOne) sqlSave(ctx context.Context) (_node *PostImage, 
 			Type:   field.TypeString,
 			Value:  value,
 			Column: postimage.FieldUUID,
-		})
-	}
-	if value, ok := piuo.mutation.Index(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: postimage.FieldIndex,
-		})
-	}
-	if value, ok := piuo.mutation.AddedIndex(); ok {
-		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: postimage.FieldIndex,
 		})
 	}
 	if value, ok := piuo.mutation.Width(); ok {
@@ -576,6 +551,13 @@ func (piuo *PostImageUpdateOne) sqlSave(ctx context.Context) (_node *PostImage, 
 			Type:   field.TypeString,
 			Value:  value,
 			Column: postimage.FieldHash,
+		})
+	}
+	if value, ok := piuo.mutation.Title(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: postimage.FieldTitle,
 		})
 	}
 	if value, ok := piuo.mutation.URL(); ok {

@@ -22,6 +22,8 @@ const (
 
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
+	// EdgePosts holds the string denoting the posts edge name in mutations.
+	EdgePosts = "posts"
 
 	// Table holds the table name of the admin in the database.
 	Table = "admins"
@@ -32,6 +34,11 @@ const (
 	SessionsInverseTable = "admin_sessions"
 	// SessionsColumn is the table column denoting the sessions relation/edge.
 	SessionsColumn = "admin_sessions"
+	// PostsTable is the table the holds the posts relation/edge. The primary key declared below.
+	PostsTable = "admin_posts"
+	// PostsInverseTable is the table name for the Post entity.
+	// It exists in this package in order to avoid circular dependency with the "post" package.
+	PostsInverseTable = "posts"
 )
 
 // Columns holds all SQL columns for admin fields.
@@ -42,6 +49,12 @@ var Columns = []string{
 	FieldPassword,
 	FieldJoinedAt,
 }
+
+var (
+	// PostsPrimaryKey and PostsColumn2 are the table columns denoting the
+	// primary key for the posts relation (M2M).
+	PostsPrimaryKey = []string{"admin_id", "post_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

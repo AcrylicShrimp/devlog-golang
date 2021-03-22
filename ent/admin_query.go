@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"devlog/ent/admin"
 	"devlog/ent/adminsession"
+	"devlog/ent/post"
 	"devlog/ent/predicate"
 	"errors"
 	"fmt"
@@ -27,6 +28,7 @@ type AdminQuery struct {
 	predicates []predicate.Admin
 	// eager-loading edges.
 	withSessions *AdminSessionQuery
+	withPosts    *PostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -71,6 +73,28 @@ func (aq *AdminQuery) QuerySessions() *AdminSessionQuery {
 			sqlgraph.From(admin.Table, admin.FieldID, selector),
 			sqlgraph.To(adminsession.Table, adminsession.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, admin.SessionsTable, admin.SessionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryPosts chains the current query on the "posts" edge.
+func (aq *AdminQuery) QueryPosts() *PostQuery {
+	query := &PostQuery{config: aq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(admin.Table, admin.FieldID, selector),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, admin.PostsTable, admin.PostsPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -260,6 +284,7 @@ func (aq *AdminQuery) Clone() *AdminQuery {
 		order:        append([]OrderFunc{}, aq.order...),
 		predicates:   append([]predicate.Admin{}, aq.predicates...),
 		withSessions: aq.withSessions.Clone(),
+		withPosts:    aq.withPosts.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
@@ -274,6 +299,17 @@ func (aq *AdminQuery) WithSessions(opts ...func(*AdminSessionQuery)) *AdminQuery
 		opt(query)
 	}
 	aq.withSessions = query
+	return aq
+}
+
+// WithPosts tells the query-builder to eager-load the nodes that are connected to
+// the "posts" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AdminQuery) WithPosts(opts ...func(*PostQuery)) *AdminQuery {
+	query := &PostQuery{config: aq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withPosts = query
 	return aq
 }
 
@@ -342,8 +378,9 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 	var (
 		nodes       = []*Admin{}
 		_spec       = aq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			aq.withSessions != nil,
+			aq.withPosts != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -392,6 +429,70 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "admin_sessions" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Sessions = append(node.Edges.Sessions, n)
+		}
+	}
+
+	if query := aq.withPosts; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Admin, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.Posts = []*Post{}
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Admin)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   admin.PostsTable,
+				Columns: admin.PostsPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(admin.PostsPrimaryKey[0], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, aq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "posts": %v`, err)
+		}
+		query.Where(post.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "posts" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Posts = append(nodes[i].Edges.Posts, n)
+			}
 		}
 	}
 

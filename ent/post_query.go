@@ -5,8 +5,10 @@ package ent
 import (
 	"context"
 	"database/sql/driver"
+	"devlog/ent/admin"
 	"devlog/ent/category"
 	"devlog/ent/post"
+	"devlog/ent/postattachment"
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
@@ -29,11 +31,13 @@ type PostQuery struct {
 	fields     []string
 	predicates []predicate.Post
 	// eager-loading edges.
-	withCategory  *CategoryQuery
-	withThumbnail *PostThumbnailQuery
-	withImages    *PostImageQuery
-	withVideos    *PostVideoQuery
-	withFKs       bool
+	withAuthor      *AdminQuery
+	withCategory    *CategoryQuery
+	withThumbnail   *PostThumbnailQuery
+	withImages      *PostImageQuery
+	withVideos      *PostVideoQuery
+	withAttachments *PostAttachmentQuery
+	withFKs         bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,6 +65,28 @@ func (pq *PostQuery) Offset(offset int) *PostQuery {
 func (pq *PostQuery) Order(o ...OrderFunc) *PostQuery {
 	pq.order = append(pq.order, o...)
 	return pq
+}
+
+// QueryAuthor chains the current query on the "author" edge.
+func (pq *PostQuery) QueryAuthor() *AdminQuery {
+	query := &AdminQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(admin.Table, admin.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, post.AuthorTable, post.AuthorPrimaryKey...),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // QueryCategory chains the current query on the "category" edge.
@@ -144,6 +170,28 @@ func (pq *PostQuery) QueryVideos() *PostVideoQuery {
 			sqlgraph.From(post.Table, post.FieldID, selector),
 			sqlgraph.To(postvideo.Table, postvideo.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, post.VideosTable, post.VideosColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryAttachments chains the current query on the "attachments" edge.
+func (pq *PostQuery) QueryAttachments() *PostAttachmentQuery {
+	query := &PostAttachmentQuery{config: pq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := pq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := pq.sqlQuery()
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, selector),
+			sqlgraph.To(postattachment.Table, postattachment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.AttachmentsTable, post.AttachmentsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -327,19 +375,32 @@ func (pq *PostQuery) Clone() *PostQuery {
 		return nil
 	}
 	return &PostQuery{
-		config:        pq.config,
-		limit:         pq.limit,
-		offset:        pq.offset,
-		order:         append([]OrderFunc{}, pq.order...),
-		predicates:    append([]predicate.Post{}, pq.predicates...),
-		withCategory:  pq.withCategory.Clone(),
-		withThumbnail: pq.withThumbnail.Clone(),
-		withImages:    pq.withImages.Clone(),
-		withVideos:    pq.withVideos.Clone(),
+		config:          pq.config,
+		limit:           pq.limit,
+		offset:          pq.offset,
+		order:           append([]OrderFunc{}, pq.order...),
+		predicates:      append([]predicate.Post{}, pq.predicates...),
+		withAuthor:      pq.withAuthor.Clone(),
+		withCategory:    pq.withCategory.Clone(),
+		withThumbnail:   pq.withThumbnail.Clone(),
+		withImages:      pq.withImages.Clone(),
+		withVideos:      pq.withVideos.Clone(),
+		withAttachments: pq.withAttachments.Clone(),
 		// clone intermediate query.
 		sql:  pq.sql.Clone(),
 		path: pq.path,
 	}
+}
+
+// WithAuthor tells the query-builder to eager-load the nodes that are connected to
+// the "author" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PostQuery) WithAuthor(opts ...func(*AdminQuery)) *PostQuery {
+	query := &AdminQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withAuthor = query
+	return pq
 }
 
 // WithCategory tells the query-builder to eager-load the nodes that are connected to
@@ -383,6 +444,17 @@ func (pq *PostQuery) WithVideos(opts ...func(*PostVideoQuery)) *PostQuery {
 		opt(query)
 	}
 	pq.withVideos = query
+	return pq
+}
+
+// WithAttachments tells the query-builder to eager-load the nodes that are connected to
+// the "attachments" edge. The optional arguments are used to configure the query builder of the edge.
+func (pq *PostQuery) WithAttachments(opts ...func(*PostAttachmentQuery)) *PostQuery {
+	query := &PostAttachmentQuery{config: pq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	pq.withAttachments = query
 	return pq
 }
 
@@ -452,11 +524,13 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 		nodes       = []*Post{}
 		withFKs     = pq.withFKs
 		_spec       = pq.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [6]bool{
+			pq.withAuthor != nil,
 			pq.withCategory != nil,
 			pq.withThumbnail != nil,
 			pq.withImages != nil,
 			pq.withVideos != nil,
+			pq.withAttachments != nil,
 		}
 	)
 	if pq.withCategory != nil {
@@ -483,6 +557,70 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 	}
 	if len(nodes) == 0 {
 		return nodes, nil
+	}
+
+	if query := pq.withAuthor; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Post, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.Author = []*Admin{}
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Post)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: true,
+				Table:   post.AuthorTable,
+				Columns: post.AuthorPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(post.AuthorPrimaryKey[1], fks...))
+			},
+
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				edgeids = append(edgeids, inValue)
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, pq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "author": %v`, err)
+		}
+		query.Where(admin.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "author" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Author = append(nodes[i].Edges.Author, n)
+			}
+		}
 	}
 
 	if query := pq.withCategory; query != nil {
@@ -593,6 +731,35 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "post_videos" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Videos = append(node.Edges.Videos, n)
+		}
+	}
+
+	if query := pq.withAttachments; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Post)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Attachments = []*PostAttachment{}
+		}
+		query.withFKs = true
+		query.Where(predicate.PostAttachment(func(s *sql.Selector) {
+			s.Where(sql.InValues(post.AttachmentsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.post_attachments
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "post_attachments" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "post_attachments" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.Attachments = append(node.Edges.Attachments, n)
 		}
 	}
 

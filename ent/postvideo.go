@@ -19,8 +19,8 @@ type PostVideo struct {
 	ID int `json:"id,omitempty"`
 	// UUID holds the value of the "uuid" field.
 	UUID string `json:"uuid,omitempty"`
-	// Index holds the value of the "index" field.
-	Index uint64 `json:"index,omitempty"`
+	// Title holds the value of the "title" field.
+	Title string `json:"title,omitempty"`
 	// URL holds the value of the "url" field.
 	URL string `json:"url,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -59,9 +59,9 @@ func (*PostVideo) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case postvideo.FieldID, postvideo.FieldIndex:
+		case postvideo.FieldID:
 			values[i] = &sql.NullInt64{}
-		case postvideo.FieldUUID, postvideo.FieldURL:
+		case postvideo.FieldUUID, postvideo.FieldTitle, postvideo.FieldURL:
 			values[i] = &sql.NullString{}
 		case postvideo.FieldCreatedAt:
 			values[i] = &sql.NullTime{}
@@ -94,11 +94,11 @@ func (pv *PostVideo) assignValues(columns []string, values []interface{}) error 
 			} else if value.Valid {
 				pv.UUID = value.String
 			}
-		case postvideo.FieldIndex:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field index", values[i])
+		case postvideo.FieldTitle:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field title", values[i])
 			} else if value.Valid {
-				pv.Index = uint64(value.Int64)
+				pv.Title = value.String
 			}
 		case postvideo.FieldURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -154,8 +154,8 @@ func (pv *PostVideo) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", pv.ID))
 	builder.WriteString(", uuid=")
 	builder.WriteString(pv.UUID)
-	builder.WriteString(", index=")
-	builder.WriteString(fmt.Sprintf("%v", pv.Index))
+	builder.WriteString(", title=")
+	builder.WriteString(pv.Title)
 	builder.WriteString(", url=")
 	builder.WriteString(pv.URL)
 	builder.WriteString(", created_at=")

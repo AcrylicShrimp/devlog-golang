@@ -4,8 +4,10 @@ package ent
 
 import (
 	"context"
+	"devlog/ent/admin"
 	"devlog/ent/category"
 	"devlog/ent/post"
+	"devlog/ent/postattachment"
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
@@ -54,67 +56,15 @@ func (pc *PostCreate) SetContent(s string) *PostCreate {
 	return pc
 }
 
-// SetNillableContent sets the "content" field if the given value is not nil.
-func (pc *PostCreate) SetNillableContent(s *string) *PostCreate {
-	if s != nil {
-		pc.SetContent(*s)
-	}
-	return pc
-}
-
 // SetHTMLContent sets the "html_content" field.
 func (pc *PostCreate) SetHTMLContent(s string) *PostCreate {
 	pc.mutation.SetHTMLContent(s)
 	return pc
 }
 
-// SetNillableHTMLContent sets the "html_content" field if the given value is not nil.
-func (pc *PostCreate) SetNillableHTMLContent(s *string) *PostCreate {
-	if s != nil {
-		pc.SetHTMLContent(*s)
-	}
-	return pc
-}
-
 // SetPreviewContent sets the "preview_content" field.
 func (pc *PostCreate) SetPreviewContent(s string) *PostCreate {
 	pc.mutation.SetPreviewContent(s)
-	return pc
-}
-
-// SetNillablePreviewContent sets the "preview_content" field if the given value is not nil.
-func (pc *PostCreate) SetNillablePreviewContent(s *string) *PostCreate {
-	if s != nil {
-		pc.SetPreviewContent(*s)
-	}
-	return pc
-}
-
-// SetAccumulatedImageIndex sets the "accumulated_image_index" field.
-func (pc *PostCreate) SetAccumulatedImageIndex(u uint64) *PostCreate {
-	pc.mutation.SetAccumulatedImageIndex(u)
-	return pc
-}
-
-// SetNillableAccumulatedImageIndex sets the "accumulated_image_index" field if the given value is not nil.
-func (pc *PostCreate) SetNillableAccumulatedImageIndex(u *uint64) *PostCreate {
-	if u != nil {
-		pc.SetAccumulatedImageIndex(*u)
-	}
-	return pc
-}
-
-// SetAccumulatedVideoIndex sets the "accumulated_video_index" field.
-func (pc *PostCreate) SetAccumulatedVideoIndex(u uint64) *PostCreate {
-	pc.mutation.SetAccumulatedVideoIndex(u)
-	return pc
-}
-
-// SetNillableAccumulatedVideoIndex sets the "accumulated_video_index" field if the given value is not nil.
-func (pc *PostCreate) SetNillableAccumulatedVideoIndex(u *uint64) *PostCreate {
-	if u != nil {
-		pc.SetAccumulatedVideoIndex(*u)
-	}
 	return pc
 }
 
@@ -136,6 +86,21 @@ func (pc *PostCreate) SetNillableCreatedAt(t *time.Time) *PostCreate {
 func (pc *PostCreate) SetModifiedAt(t time.Time) *PostCreate {
 	pc.mutation.SetModifiedAt(t)
 	return pc
+}
+
+// AddAuthorIDs adds the "author" edge to the Admin entity by IDs.
+func (pc *PostCreate) AddAuthorIDs(ids ...int) *PostCreate {
+	pc.mutation.AddAuthorIDs(ids...)
+	return pc
+}
+
+// AddAuthor adds the "author" edges to the Admin entity.
+func (pc *PostCreate) AddAuthor(a ...*Admin) *PostCreate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return pc.AddAuthorIDs(ids...)
 }
 
 // SetCategoryID sets the "category" edge to the Category entity by ID.
@@ -206,6 +171,21 @@ func (pc *PostCreate) AddVideos(p ...*PostVideo) *PostCreate {
 	return pc.AddVideoIDs(ids...)
 }
 
+// AddAttachmentIDs adds the "attachments" edge to the PostAttachment entity by IDs.
+func (pc *PostCreate) AddAttachmentIDs(ids ...int) *PostCreate {
+	pc.mutation.AddAttachmentIDs(ids...)
+	return pc
+}
+
+// AddAttachments adds the "attachments" edges to the PostAttachment entity.
+func (pc *PostCreate) AddAttachments(p ...*PostAttachment) *PostCreate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return pc.AddAttachmentIDs(ids...)
+}
+
 // Mutation returns the PostMutation object of the builder.
 func (pc *PostCreate) Mutation() *PostMutation {
 	return pc.mutation
@@ -258,14 +238,6 @@ func (pc *PostCreate) SaveX(ctx context.Context) *Post {
 
 // defaults sets the default values of the builder before save.
 func (pc *PostCreate) defaults() {
-	if _, ok := pc.mutation.AccumulatedImageIndex(); !ok {
-		v := post.DefaultAccumulatedImageIndex
-		pc.mutation.SetAccumulatedImageIndex(v)
-	}
-	if _, ok := pc.mutation.AccumulatedVideoIndex(); !ok {
-		v := post.DefaultAccumulatedVideoIndex
-		pc.mutation.SetAccumulatedVideoIndex(v)
-	}
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		v := post.DefaultCreatedAt()
 		pc.mutation.SetCreatedAt(v)
@@ -306,16 +278,19 @@ func (pc *PostCreate) check() error {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
 		}
 	}
+	if _, ok := pc.mutation.Content(); !ok {
+		return &ValidationError{Name: "content", err: errors.New("ent: missing required field \"content\"")}
+	}
+	if _, ok := pc.mutation.HTMLContent(); !ok {
+		return &ValidationError{Name: "html_content", err: errors.New("ent: missing required field \"html_content\"")}
+	}
+	if _, ok := pc.mutation.PreviewContent(); !ok {
+		return &ValidationError{Name: "preview_content", err: errors.New("ent: missing required field \"preview_content\"")}
+	}
 	if v, ok := pc.mutation.PreviewContent(); ok {
 		if err := post.PreviewContentValidator(v); err != nil {
 			return &ValidationError{Name: "preview_content", err: fmt.Errorf("ent: validator failed for field \"preview_content\": %w", err)}
 		}
-	}
-	if _, ok := pc.mutation.AccumulatedImageIndex(); !ok {
-		return &ValidationError{Name: "accumulated_image_index", err: errors.New("ent: missing required field \"accumulated_image_index\"")}
-	}
-	if _, ok := pc.mutation.AccumulatedVideoIndex(); !ok {
-		return &ValidationError{Name: "accumulated_video_index", err: errors.New("ent: missing required field \"accumulated_video_index\"")}
 	}
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
@@ -406,22 +381,6 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 		})
 		_node.PreviewContent = value
 	}
-	if value, ok := pc.mutation.AccumulatedImageIndex(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedImageIndex,
-		})
-		_node.AccumulatedImageIndex = value
-	}
-	if value, ok := pc.mutation.AccumulatedVideoIndex(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeUint64,
-			Value:  value,
-			Column: post.FieldAccumulatedVideoIndex,
-		})
-		_node.AccumulatedVideoIndex = value
-	}
 	if value, ok := pc.mutation.CreatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -437,6 +396,25 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			Column: post.FieldModifiedAt,
 		})
 		_node.ModifiedAt = value
+	}
+	if nodes := pc.mutation.AuthorIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: true,
+			Table:   post.AuthorTable,
+			Columns: post.AuthorPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := pc.mutation.CategoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -506,6 +484,25 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: postvideo.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := pc.mutation.AttachmentsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   post.AttachmentsTable,
+			Columns: []string{post.AttachmentsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: postattachment.FieldID,
 				},
 			},
 		}

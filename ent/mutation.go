@@ -8,6 +8,7 @@ import (
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
+	"devlog/ent/postattachment"
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
@@ -28,13 +29,14 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAdmin         = "Admin"
-	TypeAdminSession  = "AdminSession"
-	TypeCategory      = "Category"
-	TypePost          = "Post"
-	TypePostImage     = "PostImage"
-	TypePostThumbnail = "PostThumbnail"
-	TypePostVideo     = "PostVideo"
+	TypeAdmin          = "Admin"
+	TypeAdminSession   = "AdminSession"
+	TypeCategory       = "Category"
+	TypePost           = "Post"
+	TypePostAttachment = "PostAttachment"
+	TypePostImage      = "PostImage"
+	TypePostThumbnail  = "PostThumbnail"
+	TypePostVideo      = "PostVideo"
 )
 
 // AdminMutation represents an operation that mutates the Admin nodes in the graph.
@@ -51,6 +53,9 @@ type AdminMutation struct {
 	sessions        map[int]struct{}
 	removedsessions map[int]struct{}
 	clearedsessions bool
+	posts           map[int]struct{}
+	removedposts    map[int]struct{}
+	clearedposts    bool
 	done            bool
 	oldValue        func(context.Context) (*Admin, error)
 	predicates      []predicate.Admin
@@ -332,6 +337,59 @@ func (m *AdminMutation) ResetSessions() {
 	m.removedsessions = nil
 }
 
+// AddPostIDs adds the "posts" edge to the Post entity by ids.
+func (m *AdminMutation) AddPostIDs(ids ...int) {
+	if m.posts == nil {
+		m.posts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.posts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearPosts clears the "posts" edge to the Post entity.
+func (m *AdminMutation) ClearPosts() {
+	m.clearedposts = true
+}
+
+// PostsCleared returns if the "posts" edge to the Post entity was cleared.
+func (m *AdminMutation) PostsCleared() bool {
+	return m.clearedposts
+}
+
+// RemovePostIDs removes the "posts" edge to the Post entity by IDs.
+func (m *AdminMutation) RemovePostIDs(ids ...int) {
+	if m.removedposts == nil {
+		m.removedposts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedposts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedPosts returns the removed IDs of the "posts" edge to the Post entity.
+func (m *AdminMutation) RemovedPostsIDs() (ids []int) {
+	for id := range m.removedposts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// PostsIDs returns the "posts" edge IDs in the mutation.
+func (m *AdminMutation) PostsIDs() (ids []int) {
+	for id := range m.posts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetPosts resets all changes to the "posts" edge.
+func (m *AdminMutation) ResetPosts() {
+	m.posts = nil
+	m.clearedposts = false
+	m.removedposts = nil
+}
+
 // Op returns the operation name.
 func (m *AdminMutation) Op() Op {
 	return m.op
@@ -496,9 +554,12 @@ func (m *AdminMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AdminMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.sessions != nil {
 		edges = append(edges, admin.EdgeSessions)
+	}
+	if m.posts != nil {
+		edges = append(edges, admin.EdgePosts)
 	}
 	return edges
 }
@@ -513,15 +574,24 @@ func (m *AdminMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case admin.EdgePosts:
+		ids := make([]ent.Value, 0, len(m.posts))
+		for id := range m.posts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AdminMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedsessions != nil {
 		edges = append(edges, admin.EdgeSessions)
+	}
+	if m.removedposts != nil {
+		edges = append(edges, admin.EdgePosts)
 	}
 	return edges
 }
@@ -536,15 +606,24 @@ func (m *AdminMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case admin.EdgePosts:
+		ids := make([]ent.Value, 0, len(m.removedposts))
+		for id := range m.removedposts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AdminMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedsessions {
 		edges = append(edges, admin.EdgeSessions)
+	}
+	if m.clearedposts {
+		edges = append(edges, admin.EdgePosts)
 	}
 	return edges
 }
@@ -555,6 +634,8 @@ func (m *AdminMutation) EdgeCleared(name string) bool {
 	switch name {
 	case admin.EdgeSessions:
 		return m.clearedsessions
+	case admin.EdgePosts:
+		return m.clearedposts
 	}
 	return false
 }
@@ -573,6 +654,9 @@ func (m *AdminMutation) ResetEdge(name string) error {
 	switch name {
 	case admin.EdgeSessions:
 		m.ResetSessions()
+		return nil
+	case admin.EdgePosts:
+		m.ResetPosts()
 		return nil
 	}
 	return fmt.Errorf("unknown Admin edge %s", name)
@@ -1608,36 +1692,38 @@ func (m *CategoryMutation) ResetEdge(name string) error {
 // PostMutation represents an operation that mutates the Post nodes in the graph.
 type PostMutation struct {
 	config
-	op                         Op
-	typ                        string
-	id                         *int
-	uuid                       *string
-	slug                       *string
-	access_level               *post.AccessLevel
-	title                      *string
-	content                    *string
-	html_content               *string
-	preview_content            *string
-	accumulated_image_index    *uint64
-	addaccumulated_image_index *uint64
-	accumulated_video_index    *uint64
-	addaccumulated_video_index *uint64
-	created_at                 *time.Time
-	modified_at                *time.Time
-	clearedFields              map[string]struct{}
-	category                   *int
-	clearedcategory            bool
-	thumbnail                  *int
-	clearedthumbnail           bool
-	images                     map[int]struct{}
-	removedimages              map[int]struct{}
-	clearedimages              bool
-	videos                     map[int]struct{}
-	removedvideos              map[int]struct{}
-	clearedvideos              bool
-	done                       bool
-	oldValue                   func(context.Context) (*Post, error)
-	predicates                 []predicate.Post
+	op                 Op
+	typ                string
+	id                 *int
+	uuid               *string
+	slug               *string
+	access_level       *post.AccessLevel
+	title              *string
+	content            *string
+	html_content       *string
+	preview_content    *string
+	created_at         *time.Time
+	modified_at        *time.Time
+	clearedFields      map[string]struct{}
+	author             map[int]struct{}
+	removedauthor      map[int]struct{}
+	clearedauthor      bool
+	category           *int
+	clearedcategory    bool
+	thumbnail          *int
+	clearedthumbnail   bool
+	images             map[int]struct{}
+	removedimages      map[int]struct{}
+	clearedimages      bool
+	videos             map[int]struct{}
+	removedvideos      map[int]struct{}
+	clearedvideos      bool
+	attachments        map[int]struct{}
+	removedattachments map[int]struct{}
+	clearedattachments bool
+	done               bool
+	oldValue           func(context.Context) (*Post, error)
+	predicates         []predicate.Post
 }
 
 var _ ent.Mutation = (*PostMutation)(nil)
@@ -1894,22 +1980,9 @@ func (m *PostMutation) OldContent(ctx context.Context) (v string, err error) {
 	return oldValue.Content, nil
 }
 
-// ClearContent clears the value of the "content" field.
-func (m *PostMutation) ClearContent() {
-	m.content = nil
-	m.clearedFields[post.FieldContent] = struct{}{}
-}
-
-// ContentCleared returns if the "content" field was cleared in this mutation.
-func (m *PostMutation) ContentCleared() bool {
-	_, ok := m.clearedFields[post.FieldContent]
-	return ok
-}
-
 // ResetContent resets all changes to the "content" field.
 func (m *PostMutation) ResetContent() {
 	m.content = nil
-	delete(m.clearedFields, post.FieldContent)
 }
 
 // SetHTMLContent sets the "html_content" field.
@@ -1943,22 +2016,9 @@ func (m *PostMutation) OldHTMLContent(ctx context.Context) (v string, err error)
 	return oldValue.HTMLContent, nil
 }
 
-// ClearHTMLContent clears the value of the "html_content" field.
-func (m *PostMutation) ClearHTMLContent() {
-	m.html_content = nil
-	m.clearedFields[post.FieldHTMLContent] = struct{}{}
-}
-
-// HTMLContentCleared returns if the "html_content" field was cleared in this mutation.
-func (m *PostMutation) HTMLContentCleared() bool {
-	_, ok := m.clearedFields[post.FieldHTMLContent]
-	return ok
-}
-
 // ResetHTMLContent resets all changes to the "html_content" field.
 func (m *PostMutation) ResetHTMLContent() {
 	m.html_content = nil
-	delete(m.clearedFields, post.FieldHTMLContent)
 }
 
 // SetPreviewContent sets the "preview_content" field.
@@ -1992,134 +2052,9 @@ func (m *PostMutation) OldPreviewContent(ctx context.Context) (v string, err err
 	return oldValue.PreviewContent, nil
 }
 
-// ClearPreviewContent clears the value of the "preview_content" field.
-func (m *PostMutation) ClearPreviewContent() {
-	m.preview_content = nil
-	m.clearedFields[post.FieldPreviewContent] = struct{}{}
-}
-
-// PreviewContentCleared returns if the "preview_content" field was cleared in this mutation.
-func (m *PostMutation) PreviewContentCleared() bool {
-	_, ok := m.clearedFields[post.FieldPreviewContent]
-	return ok
-}
-
 // ResetPreviewContent resets all changes to the "preview_content" field.
 func (m *PostMutation) ResetPreviewContent() {
 	m.preview_content = nil
-	delete(m.clearedFields, post.FieldPreviewContent)
-}
-
-// SetAccumulatedImageIndex sets the "accumulated_image_index" field.
-func (m *PostMutation) SetAccumulatedImageIndex(u uint64) {
-	m.accumulated_image_index = &u
-	m.addaccumulated_image_index = nil
-}
-
-// AccumulatedImageIndex returns the value of the "accumulated_image_index" field in the mutation.
-func (m *PostMutation) AccumulatedImageIndex() (r uint64, exists bool) {
-	v := m.accumulated_image_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAccumulatedImageIndex returns the old "accumulated_image_index" field's value of the Post entity.
-// If the Post object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostMutation) OldAccumulatedImageIndex(ctx context.Context) (v uint64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldAccumulatedImageIndex is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldAccumulatedImageIndex requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAccumulatedImageIndex: %w", err)
-	}
-	return oldValue.AccumulatedImageIndex, nil
-}
-
-// AddAccumulatedImageIndex adds u to the "accumulated_image_index" field.
-func (m *PostMutation) AddAccumulatedImageIndex(u uint64) {
-	if m.addaccumulated_image_index != nil {
-		*m.addaccumulated_image_index += u
-	} else {
-		m.addaccumulated_image_index = &u
-	}
-}
-
-// AddedAccumulatedImageIndex returns the value that was added to the "accumulated_image_index" field in this mutation.
-func (m *PostMutation) AddedAccumulatedImageIndex() (r uint64, exists bool) {
-	v := m.addaccumulated_image_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetAccumulatedImageIndex resets all changes to the "accumulated_image_index" field.
-func (m *PostMutation) ResetAccumulatedImageIndex() {
-	m.accumulated_image_index = nil
-	m.addaccumulated_image_index = nil
-}
-
-// SetAccumulatedVideoIndex sets the "accumulated_video_index" field.
-func (m *PostMutation) SetAccumulatedVideoIndex(u uint64) {
-	m.accumulated_video_index = &u
-	m.addaccumulated_video_index = nil
-}
-
-// AccumulatedVideoIndex returns the value of the "accumulated_video_index" field in the mutation.
-func (m *PostMutation) AccumulatedVideoIndex() (r uint64, exists bool) {
-	v := m.accumulated_video_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAccumulatedVideoIndex returns the old "accumulated_video_index" field's value of the Post entity.
-// If the Post object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostMutation) OldAccumulatedVideoIndex(ctx context.Context) (v uint64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldAccumulatedVideoIndex is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldAccumulatedVideoIndex requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAccumulatedVideoIndex: %w", err)
-	}
-	return oldValue.AccumulatedVideoIndex, nil
-}
-
-// AddAccumulatedVideoIndex adds u to the "accumulated_video_index" field.
-func (m *PostMutation) AddAccumulatedVideoIndex(u uint64) {
-	if m.addaccumulated_video_index != nil {
-		*m.addaccumulated_video_index += u
-	} else {
-		m.addaccumulated_video_index = &u
-	}
-}
-
-// AddedAccumulatedVideoIndex returns the value that was added to the "accumulated_video_index" field in this mutation.
-func (m *PostMutation) AddedAccumulatedVideoIndex() (r uint64, exists bool) {
-	v := m.addaccumulated_video_index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetAccumulatedVideoIndex resets all changes to the "accumulated_video_index" field.
-func (m *PostMutation) ResetAccumulatedVideoIndex() {
-	m.accumulated_video_index = nil
-	m.addaccumulated_video_index = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -2192,6 +2127,59 @@ func (m *PostMutation) OldModifiedAt(ctx context.Context) (v time.Time, err erro
 // ResetModifiedAt resets all changes to the "modified_at" field.
 func (m *PostMutation) ResetModifiedAt() {
 	m.modified_at = nil
+}
+
+// AddAuthorIDs adds the "author" edge to the Admin entity by ids.
+func (m *PostMutation) AddAuthorIDs(ids ...int) {
+	if m.author == nil {
+		m.author = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.author[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAuthor clears the "author" edge to the Admin entity.
+func (m *PostMutation) ClearAuthor() {
+	m.clearedauthor = true
+}
+
+// AuthorCleared returns if the "author" edge to the Admin entity was cleared.
+func (m *PostMutation) AuthorCleared() bool {
+	return m.clearedauthor
+}
+
+// RemoveAuthorIDs removes the "author" edge to the Admin entity by IDs.
+func (m *PostMutation) RemoveAuthorIDs(ids ...int) {
+	if m.removedauthor == nil {
+		m.removedauthor = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedauthor[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAuthor returns the removed IDs of the "author" edge to the Admin entity.
+func (m *PostMutation) RemovedAuthorIDs() (ids []int) {
+	for id := range m.removedauthor {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AuthorIDs returns the "author" edge IDs in the mutation.
+func (m *PostMutation) AuthorIDs() (ids []int) {
+	for id := range m.author {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAuthor resets all changes to the "author" edge.
+func (m *PostMutation) ResetAuthor() {
+	m.author = nil
+	m.clearedauthor = false
+	m.removedauthor = nil
 }
 
 // SetCategoryID sets the "category" edge to the Category entity by id.
@@ -2378,6 +2366,59 @@ func (m *PostMutation) ResetVideos() {
 	m.removedvideos = nil
 }
 
+// AddAttachmentIDs adds the "attachments" edge to the PostAttachment entity by ids.
+func (m *PostMutation) AddAttachmentIDs(ids ...int) {
+	if m.attachments == nil {
+		m.attachments = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.attachments[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAttachments clears the "attachments" edge to the PostAttachment entity.
+func (m *PostMutation) ClearAttachments() {
+	m.clearedattachments = true
+}
+
+// AttachmentsCleared returns if the "attachments" edge to the PostAttachment entity was cleared.
+func (m *PostMutation) AttachmentsCleared() bool {
+	return m.clearedattachments
+}
+
+// RemoveAttachmentIDs removes the "attachments" edge to the PostAttachment entity by IDs.
+func (m *PostMutation) RemoveAttachmentIDs(ids ...int) {
+	if m.removedattachments == nil {
+		m.removedattachments = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedattachments[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAttachments returns the removed IDs of the "attachments" edge to the PostAttachment entity.
+func (m *PostMutation) RemovedAttachmentsIDs() (ids []int) {
+	for id := range m.removedattachments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AttachmentsIDs returns the "attachments" edge IDs in the mutation.
+func (m *PostMutation) AttachmentsIDs() (ids []int) {
+	for id := range m.attachments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAttachments resets all changes to the "attachments" edge.
+func (m *PostMutation) ResetAttachments() {
+	m.attachments = nil
+	m.clearedattachments = false
+	m.removedattachments = nil
+}
+
 // Op returns the operation name.
 func (m *PostMutation) Op() Op {
 	return m.op
@@ -2392,7 +2433,7 @@ func (m *PostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PostMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 9)
 	if m.uuid != nil {
 		fields = append(fields, post.FieldUUID)
 	}
@@ -2413,12 +2454,6 @@ func (m *PostMutation) Fields() []string {
 	}
 	if m.preview_content != nil {
 		fields = append(fields, post.FieldPreviewContent)
-	}
-	if m.accumulated_image_index != nil {
-		fields = append(fields, post.FieldAccumulatedImageIndex)
-	}
-	if m.accumulated_video_index != nil {
-		fields = append(fields, post.FieldAccumulatedVideoIndex)
 	}
 	if m.created_at != nil {
 		fields = append(fields, post.FieldCreatedAt)
@@ -2448,10 +2483,6 @@ func (m *PostMutation) Field(name string) (ent.Value, bool) {
 		return m.HTMLContent()
 	case post.FieldPreviewContent:
 		return m.PreviewContent()
-	case post.FieldAccumulatedImageIndex:
-		return m.AccumulatedImageIndex()
-	case post.FieldAccumulatedVideoIndex:
-		return m.AccumulatedVideoIndex()
 	case post.FieldCreatedAt:
 		return m.CreatedAt()
 	case post.FieldModifiedAt:
@@ -2479,10 +2510,6 @@ func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldHTMLContent(ctx)
 	case post.FieldPreviewContent:
 		return m.OldPreviewContent(ctx)
-	case post.FieldAccumulatedImageIndex:
-		return m.OldAccumulatedImageIndex(ctx)
-	case post.FieldAccumulatedVideoIndex:
-		return m.OldAccumulatedVideoIndex(ctx)
 	case post.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case post.FieldModifiedAt:
@@ -2545,20 +2572,6 @@ func (m *PostMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetPreviewContent(v)
 		return nil
-	case post.FieldAccumulatedImageIndex:
-		v, ok := value.(uint64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAccumulatedImageIndex(v)
-		return nil
-	case post.FieldAccumulatedVideoIndex:
-		v, ok := value.(uint64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAccumulatedVideoIndex(v)
-		return nil
 	case post.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -2580,26 +2593,13 @@ func (m *PostMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *PostMutation) AddedFields() []string {
-	var fields []string
-	if m.addaccumulated_image_index != nil {
-		fields = append(fields, post.FieldAccumulatedImageIndex)
-	}
-	if m.addaccumulated_video_index != nil {
-		fields = append(fields, post.FieldAccumulatedVideoIndex)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *PostMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case post.FieldAccumulatedImageIndex:
-		return m.AddedAccumulatedImageIndex()
-	case post.FieldAccumulatedVideoIndex:
-		return m.AddedAccumulatedVideoIndex()
-	}
 	return nil, false
 }
 
@@ -2608,20 +2608,6 @@ func (m *PostMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *PostMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case post.FieldAccumulatedImageIndex:
-		v, ok := value.(uint64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddAccumulatedImageIndex(v)
-		return nil
-	case post.FieldAccumulatedVideoIndex:
-		v, ok := value.(uint64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddAccumulatedVideoIndex(v)
-		return nil
 	}
 	return fmt.Errorf("unknown Post numeric field %s", name)
 }
@@ -2629,17 +2615,7 @@ func (m *PostMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *PostMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(post.FieldContent) {
-		fields = append(fields, post.FieldContent)
-	}
-	if m.FieldCleared(post.FieldHTMLContent) {
-		fields = append(fields, post.FieldHTMLContent)
-	}
-	if m.FieldCleared(post.FieldPreviewContent) {
-		fields = append(fields, post.FieldPreviewContent)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -2652,17 +2628,6 @@ func (m *PostMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *PostMutation) ClearField(name string) error {
-	switch name {
-	case post.FieldContent:
-		m.ClearContent()
-		return nil
-	case post.FieldHTMLContent:
-		m.ClearHTMLContent()
-		return nil
-	case post.FieldPreviewContent:
-		m.ClearPreviewContent()
-		return nil
-	}
 	return fmt.Errorf("unknown Post nullable field %s", name)
 }
 
@@ -2691,12 +2656,6 @@ func (m *PostMutation) ResetField(name string) error {
 	case post.FieldPreviewContent:
 		m.ResetPreviewContent()
 		return nil
-	case post.FieldAccumulatedImageIndex:
-		m.ResetAccumulatedImageIndex()
-		return nil
-	case post.FieldAccumulatedVideoIndex:
-		m.ResetAccumulatedVideoIndex()
-		return nil
 	case post.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
@@ -2709,7 +2668,10 @@ func (m *PostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *PostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
+	if m.author != nil {
+		edges = append(edges, post.EdgeAuthor)
+	}
 	if m.category != nil {
 		edges = append(edges, post.EdgeCategory)
 	}
@@ -2722,6 +2684,9 @@ func (m *PostMutation) AddedEdges() []string {
 	if m.videos != nil {
 		edges = append(edges, post.EdgeVideos)
 	}
+	if m.attachments != nil {
+		edges = append(edges, post.EdgeAttachments)
+	}
 	return edges
 }
 
@@ -2729,6 +2694,12 @@ func (m *PostMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *PostMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case post.EdgeAuthor:
+		ids := make([]ent.Value, 0, len(m.author))
+		for id := range m.author {
+			ids = append(ids, id)
+		}
+		return ids
 	case post.EdgeCategory:
 		if id := m.category; id != nil {
 			return []ent.Value{*id}
@@ -2749,18 +2720,30 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case post.EdgeAttachments:
+		ids := make([]ent.Value, 0, len(m.attachments))
+		for id := range m.attachments {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
+	if m.removedauthor != nil {
+		edges = append(edges, post.EdgeAuthor)
+	}
 	if m.removedimages != nil {
 		edges = append(edges, post.EdgeImages)
 	}
 	if m.removedvideos != nil {
 		edges = append(edges, post.EdgeVideos)
+	}
+	if m.removedattachments != nil {
+		edges = append(edges, post.EdgeAttachments)
 	}
 	return edges
 }
@@ -2769,6 +2752,12 @@ func (m *PostMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case post.EdgeAuthor:
+		ids := make([]ent.Value, 0, len(m.removedauthor))
+		for id := range m.removedauthor {
+			ids = append(ids, id)
+		}
+		return ids
 	case post.EdgeImages:
 		ids := make([]ent.Value, 0, len(m.removedimages))
 		for id := range m.removedimages {
@@ -2781,13 +2770,22 @@ func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case post.EdgeAttachments:
+		ids := make([]ent.Value, 0, len(m.removedattachments))
+		for id := range m.removedattachments {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *PostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 6)
+	if m.clearedauthor {
+		edges = append(edges, post.EdgeAuthor)
+	}
 	if m.clearedcategory {
 		edges = append(edges, post.EdgeCategory)
 	}
@@ -2800,6 +2798,9 @@ func (m *PostMutation) ClearedEdges() []string {
 	if m.clearedvideos {
 		edges = append(edges, post.EdgeVideos)
 	}
+	if m.clearedattachments {
+		edges = append(edges, post.EdgeAttachments)
+	}
 	return edges
 }
 
@@ -2807,6 +2808,8 @@ func (m *PostMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *PostMutation) EdgeCleared(name string) bool {
 	switch name {
+	case post.EdgeAuthor:
+		return m.clearedauthor
 	case post.EdgeCategory:
 		return m.clearedcategory
 	case post.EdgeThumbnail:
@@ -2815,6 +2818,8 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 		return m.clearedimages
 	case post.EdgeVideos:
 		return m.clearedvideos
+	case post.EdgeAttachments:
+		return m.clearedattachments
 	}
 	return false
 }
@@ -2837,6 +2842,9 @@ func (m *PostMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *PostMutation) ResetEdge(name string) error {
 	switch name {
+	case post.EdgeAuthor:
+		m.ResetAuthor()
+		return nil
 	case post.EdgeCategory:
 		m.ResetCategory()
 		return nil
@@ -2849,8 +2857,673 @@ func (m *PostMutation) ResetEdge(name string) error {
 	case post.EdgeVideos:
 		m.ResetVideos()
 		return nil
+	case post.EdgeAttachments:
+		m.ResetAttachments()
+		return nil
 	}
 	return fmt.Errorf("unknown Post edge %s", name)
+}
+
+// PostAttachmentMutation represents an operation that mutates the PostAttachment nodes in the graph.
+type PostAttachmentMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	uuid          *string
+	size          *uint64
+	addsize       *uint64
+	name          *string
+	mime          *string
+	url           *string
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	post          *int
+	clearedpost   bool
+	done          bool
+	oldValue      func(context.Context) (*PostAttachment, error)
+	predicates    []predicate.PostAttachment
+}
+
+var _ ent.Mutation = (*PostAttachmentMutation)(nil)
+
+// postattachmentOption allows management of the mutation configuration using functional options.
+type postattachmentOption func(*PostAttachmentMutation)
+
+// newPostAttachmentMutation creates new mutation for the PostAttachment entity.
+func newPostAttachmentMutation(c config, op Op, opts ...postattachmentOption) *PostAttachmentMutation {
+	m := &PostAttachmentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypePostAttachment,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withPostAttachmentID sets the ID field of the mutation.
+func withPostAttachmentID(id int) postattachmentOption {
+	return func(m *PostAttachmentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *PostAttachment
+		)
+		m.oldValue = func(ctx context.Context) (*PostAttachment, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().PostAttachment.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withPostAttachment sets the old PostAttachment of the mutation.
+func withPostAttachment(node *PostAttachment) postattachmentOption {
+	return func(m *PostAttachmentMutation) {
+		m.oldValue = func(context.Context) (*PostAttachment, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m PostAttachmentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m PostAttachmentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID
+// is only available if it was provided to the builder.
+func (m *PostAttachmentMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetUUID sets the "uuid" field.
+func (m *PostAttachmentMutation) SetUUID(s string) {
+	m.uuid = &s
+}
+
+// UUID returns the value of the "uuid" field in the mutation.
+func (m *PostAttachmentMutation) UUID() (r string, exists bool) {
+	v := m.uuid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUUID returns the old "uuid" field's value of the PostAttachment entity.
+// If the PostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostAttachmentMutation) OldUUID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUUID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUUID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUUID: %w", err)
+	}
+	return oldValue.UUID, nil
+}
+
+// ResetUUID resets all changes to the "uuid" field.
+func (m *PostAttachmentMutation) ResetUUID() {
+	m.uuid = nil
+}
+
+// SetSize sets the "size" field.
+func (m *PostAttachmentMutation) SetSize(u uint64) {
+	m.size = &u
+	m.addsize = nil
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *PostAttachmentMutation) Size() (r uint64, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the PostAttachment entity.
+// If the PostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostAttachmentMutation) OldSize(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// AddSize adds u to the "size" field.
+func (m *PostAttachmentMutation) AddSize(u uint64) {
+	if m.addsize != nil {
+		*m.addsize += u
+	} else {
+		m.addsize = &u
+	}
+}
+
+// AddedSize returns the value that was added to the "size" field in this mutation.
+func (m *PostAttachmentMutation) AddedSize() (r uint64, exists bool) {
+	v := m.addsize
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *PostAttachmentMutation) ResetSize() {
+	m.size = nil
+	m.addsize = nil
+}
+
+// SetName sets the "name" field.
+func (m *PostAttachmentMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *PostAttachmentMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the PostAttachment entity.
+// If the PostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostAttachmentMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *PostAttachmentMutation) ResetName() {
+	m.name = nil
+}
+
+// SetMime sets the "mime" field.
+func (m *PostAttachmentMutation) SetMime(s string) {
+	m.mime = &s
+}
+
+// Mime returns the value of the "mime" field in the mutation.
+func (m *PostAttachmentMutation) Mime() (r string, exists bool) {
+	v := m.mime
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMime returns the old "mime" field's value of the PostAttachment entity.
+// If the PostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostAttachmentMutation) OldMime(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMime: %w", err)
+	}
+	return oldValue.Mime, nil
+}
+
+// ResetMime resets all changes to the "mime" field.
+func (m *PostAttachmentMutation) ResetMime() {
+	m.mime = nil
+}
+
+// SetURL sets the "url" field.
+func (m *PostAttachmentMutation) SetURL(s string) {
+	m.url = &s
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *PostAttachmentMutation) URL() (r string, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the PostAttachment entity.
+// If the PostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostAttachmentMutation) OldURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *PostAttachmentMutation) ResetURL() {
+	m.url = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *PostAttachmentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *PostAttachmentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the PostAttachment entity.
+// If the PostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostAttachmentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *PostAttachmentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetPostID sets the "post" edge to the Post entity by id.
+func (m *PostAttachmentMutation) SetPostID(id int) {
+	m.post = &id
+}
+
+// ClearPost clears the "post" edge to the Post entity.
+func (m *PostAttachmentMutation) ClearPost() {
+	m.clearedpost = true
+}
+
+// PostCleared returns if the "post" edge to the Post entity was cleared.
+func (m *PostAttachmentMutation) PostCleared() bool {
+	return m.clearedpost
+}
+
+// PostID returns the "post" edge ID in the mutation.
+func (m *PostAttachmentMutation) PostID() (id int, exists bool) {
+	if m.post != nil {
+		return *m.post, true
+	}
+	return
+}
+
+// PostIDs returns the "post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// PostID instead. It exists only for internal usage by the builders.
+func (m *PostAttachmentMutation) PostIDs() (ids []int) {
+	if id := m.post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetPost resets all changes to the "post" edge.
+func (m *PostAttachmentMutation) ResetPost() {
+	m.post = nil
+	m.clearedpost = false
+}
+
+// Op returns the operation name.
+func (m *PostAttachmentMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (PostAttachment).
+func (m *PostAttachmentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *PostAttachmentMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.uuid != nil {
+		fields = append(fields, postattachment.FieldUUID)
+	}
+	if m.size != nil {
+		fields = append(fields, postattachment.FieldSize)
+	}
+	if m.name != nil {
+		fields = append(fields, postattachment.FieldName)
+	}
+	if m.mime != nil {
+		fields = append(fields, postattachment.FieldMime)
+	}
+	if m.url != nil {
+		fields = append(fields, postattachment.FieldURL)
+	}
+	if m.created_at != nil {
+		fields = append(fields, postattachment.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *PostAttachmentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case postattachment.FieldUUID:
+		return m.UUID()
+	case postattachment.FieldSize:
+		return m.Size()
+	case postattachment.FieldName:
+		return m.Name()
+	case postattachment.FieldMime:
+		return m.Mime()
+	case postattachment.FieldURL:
+		return m.URL()
+	case postattachment.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *PostAttachmentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case postattachment.FieldUUID:
+		return m.OldUUID(ctx)
+	case postattachment.FieldSize:
+		return m.OldSize(ctx)
+	case postattachment.FieldName:
+		return m.OldName(ctx)
+	case postattachment.FieldMime:
+		return m.OldMime(ctx)
+	case postattachment.FieldURL:
+		return m.OldURL(ctx)
+	case postattachment.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown PostAttachment field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PostAttachmentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case postattachment.FieldUUID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUUID(v)
+		return nil
+	case postattachment.FieldSize:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	case postattachment.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case postattachment.FieldMime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMime(v)
+		return nil
+	case postattachment.FieldURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	case postattachment.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PostAttachment field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *PostAttachmentMutation) AddedFields() []string {
+	var fields []string
+	if m.addsize != nil {
+		fields = append(fields, postattachment.FieldSize)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *PostAttachmentMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case postattachment.FieldSize:
+		return m.AddedSize()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *PostAttachmentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case postattachment.FieldSize:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown PostAttachment numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *PostAttachmentMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *PostAttachmentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *PostAttachmentMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown PostAttachment nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *PostAttachmentMutation) ResetField(name string) error {
+	switch name {
+	case postattachment.FieldUUID:
+		m.ResetUUID()
+		return nil
+	case postattachment.FieldSize:
+		m.ResetSize()
+		return nil
+	case postattachment.FieldName:
+		m.ResetName()
+		return nil
+	case postattachment.FieldMime:
+		m.ResetMime()
+		return nil
+	case postattachment.FieldURL:
+		m.ResetURL()
+		return nil
+	case postattachment.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown PostAttachment field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *PostAttachmentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.post != nil {
+		edges = append(edges, postattachment.EdgePost)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *PostAttachmentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case postattachment.EdgePost:
+		if id := m.post; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *PostAttachmentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *PostAttachmentMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *PostAttachmentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedpost {
+		edges = append(edges, postattachment.EdgePost)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *PostAttachmentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case postattachment.EdgePost:
+		return m.clearedpost
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *PostAttachmentMutation) ClearEdge(name string) error {
+	switch name {
+	case postattachment.EdgePost:
+		m.ClearPost()
+		return nil
+	}
+	return fmt.Errorf("unknown PostAttachment unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *PostAttachmentMutation) ResetEdge(name string) error {
+	switch name {
+	case postattachment.EdgePost:
+		m.ResetPost()
+		return nil
+	}
+	return fmt.Errorf("unknown PostAttachment edge %s", name)
 }
 
 // PostImageMutation represents an operation that mutates the PostImage nodes in the graph.
@@ -2860,13 +3533,12 @@ type PostImageMutation struct {
 	typ           string
 	id            *int
 	uuid          *string
-	index         *uint64
-	addindex      *uint64
 	width         *uint32
 	addwidth      *uint32
 	height        *uint32
 	addheight     *uint32
 	hash          *string
+	title         *string
 	url           *string
 	created_at    *time.Time
 	clearedFields map[string]struct{}
@@ -2990,62 +3662,6 @@ func (m *PostImageMutation) OldUUID(ctx context.Context) (v string, err error) {
 // ResetUUID resets all changes to the "uuid" field.
 func (m *PostImageMutation) ResetUUID() {
 	m.uuid = nil
-}
-
-// SetIndex sets the "index" field.
-func (m *PostImageMutation) SetIndex(u uint64) {
-	m.index = &u
-	m.addindex = nil
-}
-
-// Index returns the value of the "index" field in the mutation.
-func (m *PostImageMutation) Index() (r uint64, exists bool) {
-	v := m.index
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldIndex returns the old "index" field's value of the PostImage entity.
-// If the PostImage object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostImageMutation) OldIndex(ctx context.Context) (v uint64, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldIndex is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldIndex requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIndex: %w", err)
-	}
-	return oldValue.Index, nil
-}
-
-// AddIndex adds u to the "index" field.
-func (m *PostImageMutation) AddIndex(u uint64) {
-	if m.addindex != nil {
-		*m.addindex += u
-	} else {
-		m.addindex = &u
-	}
-}
-
-// AddedIndex returns the value that was added to the "index" field in this mutation.
-func (m *PostImageMutation) AddedIndex() (r uint64, exists bool) {
-	v := m.addindex
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetIndex resets all changes to the "index" field.
-func (m *PostImageMutation) ResetIndex() {
-	m.index = nil
-	m.addindex = nil
 }
 
 // SetWidth sets the "width" field.
@@ -3196,6 +3812,42 @@ func (m *PostImageMutation) ResetHash() {
 	m.hash = nil
 }
 
+// SetTitle sets the "title" field.
+func (m *PostImageMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *PostImageMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the PostImage entity.
+// If the PostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostImageMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *PostImageMutation) ResetTitle() {
+	m.title = nil
+}
+
 // SetURL sets the "url" field.
 func (m *PostImageMutation) SetURL(s string) {
 	m.url = &s
@@ -3325,9 +3977,6 @@ func (m *PostImageMutation) Fields() []string {
 	if m.uuid != nil {
 		fields = append(fields, postimage.FieldUUID)
 	}
-	if m.index != nil {
-		fields = append(fields, postimage.FieldIndex)
-	}
 	if m.width != nil {
 		fields = append(fields, postimage.FieldWidth)
 	}
@@ -3336,6 +3985,9 @@ func (m *PostImageMutation) Fields() []string {
 	}
 	if m.hash != nil {
 		fields = append(fields, postimage.FieldHash)
+	}
+	if m.title != nil {
+		fields = append(fields, postimage.FieldTitle)
 	}
 	if m.url != nil {
 		fields = append(fields, postimage.FieldURL)
@@ -3353,14 +4005,14 @@ func (m *PostImageMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case postimage.FieldUUID:
 		return m.UUID()
-	case postimage.FieldIndex:
-		return m.Index()
 	case postimage.FieldWidth:
 		return m.Width()
 	case postimage.FieldHeight:
 		return m.Height()
 	case postimage.FieldHash:
 		return m.Hash()
+	case postimage.FieldTitle:
+		return m.Title()
 	case postimage.FieldURL:
 		return m.URL()
 	case postimage.FieldCreatedAt:
@@ -3376,14 +4028,14 @@ func (m *PostImageMutation) OldField(ctx context.Context, name string) (ent.Valu
 	switch name {
 	case postimage.FieldUUID:
 		return m.OldUUID(ctx)
-	case postimage.FieldIndex:
-		return m.OldIndex(ctx)
 	case postimage.FieldWidth:
 		return m.OldWidth(ctx)
 	case postimage.FieldHeight:
 		return m.OldHeight(ctx)
 	case postimage.FieldHash:
 		return m.OldHash(ctx)
+	case postimage.FieldTitle:
+		return m.OldTitle(ctx)
 	case postimage.FieldURL:
 		return m.OldURL(ctx)
 	case postimage.FieldCreatedAt:
@@ -3403,13 +4055,6 @@ func (m *PostImageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUUID(v)
-		return nil
-	case postimage.FieldIndex:
-		v, ok := value.(uint64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetIndex(v)
 		return nil
 	case postimage.FieldWidth:
 		v, ok := value.(uint32)
@@ -3431,6 +4076,13 @@ func (m *PostImageMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetHash(v)
+		return nil
+	case postimage.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
 		return nil
 	case postimage.FieldURL:
 		v, ok := value.(string)
@@ -3454,9 +4106,6 @@ func (m *PostImageMutation) SetField(name string, value ent.Value) error {
 // this mutation.
 func (m *PostImageMutation) AddedFields() []string {
 	var fields []string
-	if m.addindex != nil {
-		fields = append(fields, postimage.FieldIndex)
-	}
 	if m.addwidth != nil {
 		fields = append(fields, postimage.FieldWidth)
 	}
@@ -3471,8 +4120,6 @@ func (m *PostImageMutation) AddedFields() []string {
 // was not set, or was not defined in the schema.
 func (m *PostImageMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
-	case postimage.FieldIndex:
-		return m.AddedIndex()
 	case postimage.FieldWidth:
 		return m.AddedWidth()
 	case postimage.FieldHeight:
@@ -3486,13 +4133,6 @@ func (m *PostImageMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *PostImageMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case postimage.FieldIndex:
-		v, ok := value.(uint64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddIndex(v)
-		return nil
 	case postimage.FieldWidth:
 		v, ok := value.(uint32)
 		if !ok {
@@ -3537,9 +4177,6 @@ func (m *PostImageMutation) ResetField(name string) error {
 	case postimage.FieldUUID:
 		m.ResetUUID()
 		return nil
-	case postimage.FieldIndex:
-		m.ResetIndex()
-		return nil
 	case postimage.FieldWidth:
 		m.ResetWidth()
 		return nil
@@ -3548,6 +4185,9 @@ func (m *PostImageMutation) ResetField(name string) error {
 		return nil
 	case postimage.FieldHash:
 		m.ResetHash()
+		return nil
+	case postimage.FieldTitle:
+		m.ResetTitle()
 		return nil
 	case postimage.FieldURL:
 		m.ResetURL()
@@ -4283,8 +4923,7 @@ type PostVideoMutation struct {
 	typ           string
 	id            *int
 	uuid          *string
-	index         *uint64
-	addindex      *uint64
+	title         *string
 	url           *string
 	created_at    *time.Time
 	clearedFields map[string]struct{}
@@ -4410,60 +5049,40 @@ func (m *PostVideoMutation) ResetUUID() {
 	m.uuid = nil
 }
 
-// SetIndex sets the "index" field.
-func (m *PostVideoMutation) SetIndex(u uint64) {
-	m.index = &u
-	m.addindex = nil
+// SetTitle sets the "title" field.
+func (m *PostVideoMutation) SetTitle(s string) {
+	m.title = &s
 }
 
-// Index returns the value of the "index" field in the mutation.
-func (m *PostVideoMutation) Index() (r uint64, exists bool) {
-	v := m.index
+// Title returns the value of the "title" field in the mutation.
+func (m *PostVideoMutation) Title() (r string, exists bool) {
+	v := m.title
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldIndex returns the old "index" field's value of the PostVideo entity.
+// OldTitle returns the old "title" field's value of the PostVideo entity.
 // If the PostVideo object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostVideoMutation) OldIndex(ctx context.Context) (v uint64, err error) {
+func (m *PostVideoMutation) OldTitle(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldIndex is only allowed on UpdateOne operations")
+		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldIndex requires an ID field in the mutation")
+		return v, fmt.Errorf("OldTitle requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldIndex: %w", err)
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
 	}
-	return oldValue.Index, nil
+	return oldValue.Title, nil
 }
 
-// AddIndex adds u to the "index" field.
-func (m *PostVideoMutation) AddIndex(u uint64) {
-	if m.addindex != nil {
-		*m.addindex += u
-	} else {
-		m.addindex = &u
-	}
-}
-
-// AddedIndex returns the value that was added to the "index" field in this mutation.
-func (m *PostVideoMutation) AddedIndex() (r uint64, exists bool) {
-	v := m.addindex
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// ResetIndex resets all changes to the "index" field.
-func (m *PostVideoMutation) ResetIndex() {
-	m.index = nil
-	m.addindex = nil
+// ResetTitle resets all changes to the "title" field.
+func (m *PostVideoMutation) ResetTitle() {
+	m.title = nil
 }
 
 // SetURL sets the "url" field.
@@ -4595,8 +5214,8 @@ func (m *PostVideoMutation) Fields() []string {
 	if m.uuid != nil {
 		fields = append(fields, postvideo.FieldUUID)
 	}
-	if m.index != nil {
-		fields = append(fields, postvideo.FieldIndex)
+	if m.title != nil {
+		fields = append(fields, postvideo.FieldTitle)
 	}
 	if m.url != nil {
 		fields = append(fields, postvideo.FieldURL)
@@ -4614,8 +5233,8 @@ func (m *PostVideoMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case postvideo.FieldUUID:
 		return m.UUID()
-	case postvideo.FieldIndex:
-		return m.Index()
+	case postvideo.FieldTitle:
+		return m.Title()
 	case postvideo.FieldURL:
 		return m.URL()
 	case postvideo.FieldCreatedAt:
@@ -4631,8 +5250,8 @@ func (m *PostVideoMutation) OldField(ctx context.Context, name string) (ent.Valu
 	switch name {
 	case postvideo.FieldUUID:
 		return m.OldUUID(ctx)
-	case postvideo.FieldIndex:
-		return m.OldIndex(ctx)
+	case postvideo.FieldTitle:
+		return m.OldTitle(ctx)
 	case postvideo.FieldURL:
 		return m.OldURL(ctx)
 	case postvideo.FieldCreatedAt:
@@ -4653,12 +5272,12 @@ func (m *PostVideoMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetUUID(v)
 		return nil
-	case postvideo.FieldIndex:
-		v, ok := value.(uint64)
+	case postvideo.FieldTitle:
+		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetIndex(v)
+		m.SetTitle(v)
 		return nil
 	case postvideo.FieldURL:
 		v, ok := value.(string)
@@ -4681,21 +5300,13 @@ func (m *PostVideoMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *PostVideoMutation) AddedFields() []string {
-	var fields []string
-	if m.addindex != nil {
-		fields = append(fields, postvideo.FieldIndex)
-	}
-	return fields
+	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *PostVideoMutation) AddedField(name string) (ent.Value, bool) {
-	switch name {
-	case postvideo.FieldIndex:
-		return m.AddedIndex()
-	}
 	return nil, false
 }
 
@@ -4704,13 +5315,6 @@ func (m *PostVideoMutation) AddedField(name string) (ent.Value, bool) {
 // type.
 func (m *PostVideoMutation) AddField(name string, value ent.Value) error {
 	switch name {
-	case postvideo.FieldIndex:
-		v, ok := value.(uint64)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.AddIndex(v)
-		return nil
 	}
 	return fmt.Errorf("unknown PostVideo numeric field %s", name)
 }
@@ -4741,8 +5345,8 @@ func (m *PostVideoMutation) ResetField(name string) error {
 	case postvideo.FieldUUID:
 		m.ResetUUID()
 		return nil
-	case postvideo.FieldIndex:
-		m.ResetIndex()
+	case postvideo.FieldTitle:
+		m.ResetTitle()
 		return nil
 	case postvideo.FieldURL:
 		m.ResetURL()

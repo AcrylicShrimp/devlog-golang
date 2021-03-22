@@ -6,6 +6,7 @@ import (
 	"context"
 	"devlog/ent/admin"
 	"devlog/ent/adminsession"
+	"devlog/ent/post"
 	"devlog/ent/predicate"
 	"fmt"
 	"time"
@@ -75,6 +76,21 @@ func (au *AdminUpdate) AddSessions(a ...*AdminSession) *AdminUpdate {
 	return au.AddSessionIDs(ids...)
 }
 
+// AddPostIDs adds the "posts" edge to the Post entity by IDs.
+func (au *AdminUpdate) AddPostIDs(ids ...int) *AdminUpdate {
+	au.mutation.AddPostIDs(ids...)
+	return au
+}
+
+// AddPosts adds the "posts" edges to the Post entity.
+func (au *AdminUpdate) AddPosts(p ...*Post) *AdminUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return au.AddPostIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (au *AdminUpdate) Mutation() *AdminMutation {
 	return au.mutation
@@ -99,6 +115,27 @@ func (au *AdminUpdate) RemoveSessions(a ...*AdminSession) *AdminUpdate {
 		ids[i] = a[i].ID
 	}
 	return au.RemoveSessionIDs(ids...)
+}
+
+// ClearPosts clears all "posts" edges to the Post entity.
+func (au *AdminUpdate) ClearPosts() *AdminUpdate {
+	au.mutation.ClearPosts()
+	return au
+}
+
+// RemovePostIDs removes the "posts" edge to Post entities by IDs.
+func (au *AdminUpdate) RemovePostIDs(ids ...int) *AdminUpdate {
+	au.mutation.RemovePostIDs(ids...)
+	return au
+}
+
+// RemovePosts removes "posts" edges to Post entities.
+func (au *AdminUpdate) RemovePosts(p ...*Post) *AdminUpdate {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return au.RemovePostIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -278,6 +315,60 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if au.mutation.PostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.PostsTable,
+			Columns: admin.PostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: post.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedPostsIDs(); len(nodes) > 0 && !au.mutation.PostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.PostsTable,
+			Columns: admin.PostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: post.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.PostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.PostsTable,
+			Columns: admin.PostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: post.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{admin.Label}
@@ -343,6 +434,21 @@ func (auo *AdminUpdateOne) AddSessions(a ...*AdminSession) *AdminUpdateOne {
 	return auo.AddSessionIDs(ids...)
 }
 
+// AddPostIDs adds the "posts" edge to the Post entity by IDs.
+func (auo *AdminUpdateOne) AddPostIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.AddPostIDs(ids...)
+	return auo
+}
+
+// AddPosts adds the "posts" edges to the Post entity.
+func (auo *AdminUpdateOne) AddPosts(p ...*Post) *AdminUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return auo.AddPostIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (auo *AdminUpdateOne) Mutation() *AdminMutation {
 	return auo.mutation
@@ -367,6 +473,27 @@ func (auo *AdminUpdateOne) RemoveSessions(a ...*AdminSession) *AdminUpdateOne {
 		ids[i] = a[i].ID
 	}
 	return auo.RemoveSessionIDs(ids...)
+}
+
+// ClearPosts clears all "posts" edges to the Post entity.
+func (auo *AdminUpdateOne) ClearPosts() *AdminUpdateOne {
+	auo.mutation.ClearPosts()
+	return auo
+}
+
+// RemovePostIDs removes the "posts" edge to Post entities by IDs.
+func (auo *AdminUpdateOne) RemovePostIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.RemovePostIDs(ids...)
+	return auo
+}
+
+// RemovePosts removes "posts" edges to Post entities.
+func (auo *AdminUpdateOne) RemovePosts(p ...*Post) *AdminUpdateOne {
+	ids := make([]int, len(p))
+	for i := range p {
+		ids[i] = p[i].ID
+	}
+	return auo.RemovePostIDs(ids...)
 }
 
 // Save executes the query and returns the updated Admin entity.
@@ -536,6 +663,60 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: adminsession.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.PostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.PostsTable,
+			Columns: admin.PostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: post.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedPostsIDs(); len(nodes) > 0 && !auo.mutation.PostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.PostsTable,
+			Columns: admin.PostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: post.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.PostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.PostsTable,
+			Columns: admin.PostsPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: post.FieldID,
 				},
 			},
 		}

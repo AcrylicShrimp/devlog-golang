@@ -18,7 +18,7 @@ func (PostThumbnail) Fields() []ent.Field {
 		field.Uint32("width"),
 		field.Uint32("height"),
 		field.String("hash").MaxLen(64),
-		field.String("url").MaxLen(256).Unique(),
+		field.String("url").MaxLen(512).Unique(),
 		field.Time("created_at").Default(time.Now),
 	}
 }

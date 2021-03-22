@@ -26,15 +26,13 @@ const (
 	FieldHTMLContent = "html_content"
 	// FieldPreviewContent holds the string denoting the preview_content field in the database.
 	FieldPreviewContent = "preview_content"
-	// FieldAccumulatedImageIndex holds the string denoting the accumulated_image_index field in the database.
-	FieldAccumulatedImageIndex = "accumulated_image_index"
-	// FieldAccumulatedVideoIndex holds the string denoting the accumulated_video_index field in the database.
-	FieldAccumulatedVideoIndex = "accumulated_video_index"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldModifiedAt holds the string denoting the modified_at field in the database.
 	FieldModifiedAt = "modified_at"
 
+	// EdgeAuthor holds the string denoting the author edge name in mutations.
+	EdgeAuthor = "author"
 	// EdgeCategory holds the string denoting the category edge name in mutations.
 	EdgeCategory = "category"
 	// EdgeThumbnail holds the string denoting the thumbnail edge name in mutations.
@@ -43,9 +41,16 @@ const (
 	EdgeImages = "images"
 	// EdgeVideos holds the string denoting the videos edge name in mutations.
 	EdgeVideos = "videos"
+	// EdgeAttachments holds the string denoting the attachments edge name in mutations.
+	EdgeAttachments = "attachments"
 
 	// Table holds the table name of the post in the database.
 	Table = "posts"
+	// AuthorTable is the table the holds the author relation/edge. The primary key declared below.
+	AuthorTable = "admin_posts"
+	// AuthorInverseTable is the table name for the Admin entity.
+	// It exists in this package in order to avoid circular dependency with the "admin" package.
+	AuthorInverseTable = "admins"
 	// CategoryTable is the table the holds the category relation/edge.
 	CategoryTable = "posts"
 	// CategoryInverseTable is the table name for the Category entity.
@@ -74,6 +79,13 @@ const (
 	VideosInverseTable = "post_videos"
 	// VideosColumn is the table column denoting the videos relation/edge.
 	VideosColumn = "post_videos"
+	// AttachmentsTable is the table the holds the attachments relation/edge.
+	AttachmentsTable = "post_attachments"
+	// AttachmentsInverseTable is the table name for the PostAttachment entity.
+	// It exists in this package in order to avoid circular dependency with the "postattachment" package.
+	AttachmentsInverseTable = "post_attachments"
+	// AttachmentsColumn is the table column denoting the attachments relation/edge.
+	AttachmentsColumn = "post_attachments"
 )
 
 // Columns holds all SQL columns for post fields.
@@ -86,8 +98,6 @@ var Columns = []string{
 	FieldContent,
 	FieldHTMLContent,
 	FieldPreviewContent,
-	FieldAccumulatedImageIndex,
-	FieldAccumulatedVideoIndex,
 	FieldCreatedAt,
 	FieldModifiedAt,
 }
@@ -96,6 +106,12 @@ var Columns = []string{
 var ForeignKeys = []string{
 	"category_posts",
 }
+
+var (
+	// AuthorPrimaryKey and AuthorColumn2 are the table columns denoting the
+	// primary key for the author relation (M2M).
+	AuthorPrimaryKey = []string{"admin_id", "post_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -121,10 +137,6 @@ var (
 	TitleValidator func(string) error
 	// PreviewContentValidator is a validator for the "preview_content" field. It is called by the builders before save.
 	PreviewContentValidator func(string) error
-	// DefaultAccumulatedImageIndex holds the default value on creation for the "accumulated_image_index" field.
-	DefaultAccumulatedImageIndex uint64
-	// DefaultAccumulatedVideoIndex holds the default value on creation for the "accumulated_video_index" field.
-	DefaultAccumulatedVideoIndex uint64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// UpdateDefaultModifiedAt holds the default value on update for the "modified_at" field.

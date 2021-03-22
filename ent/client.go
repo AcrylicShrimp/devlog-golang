@@ -13,6 +13,7 @@ import (
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
+	"devlog/ent/postattachment"
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
@@ -35,6 +36,8 @@ type Client struct {
 	Category *CategoryClient
 	// Post is the client for interacting with the Post builders.
 	Post *PostClient
+	// PostAttachment is the client for interacting with the PostAttachment builders.
+	PostAttachment *PostAttachmentClient
 	// PostImage is the client for interacting with the PostImage builders.
 	PostImage *PostImageClient
 	// PostThumbnail is the client for interacting with the PostThumbnail builders.
@@ -58,6 +61,7 @@ func (c *Client) init() {
 	c.AdminSession = NewAdminSessionClient(c.config)
 	c.Category = NewCategoryClient(c.config)
 	c.Post = NewPostClient(c.config)
+	c.PostAttachment = NewPostAttachmentClient(c.config)
 	c.PostImage = NewPostImageClient(c.config)
 	c.PostThumbnail = NewPostThumbnailClient(c.config)
 	c.PostVideo = NewPostVideoClient(c.config)
@@ -91,15 +95,16 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	cfg := config{driver: tx, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		ctx:           ctx,
-		config:        cfg,
-		Admin:         NewAdminClient(cfg),
-		AdminSession:  NewAdminSessionClient(cfg),
-		Category:      NewCategoryClient(cfg),
-		Post:          NewPostClient(cfg),
-		PostImage:     NewPostImageClient(cfg),
-		PostThumbnail: NewPostThumbnailClient(cfg),
-		PostVideo:     NewPostVideoClient(cfg),
+		ctx:            ctx,
+		config:         cfg,
+		Admin:          NewAdminClient(cfg),
+		AdminSession:   NewAdminSessionClient(cfg),
+		Category:       NewCategoryClient(cfg),
+		Post:           NewPostClient(cfg),
+		PostAttachment: NewPostAttachmentClient(cfg),
+		PostImage:      NewPostImageClient(cfg),
+		PostThumbnail:  NewPostThumbnailClient(cfg),
+		PostVideo:      NewPostVideoClient(cfg),
 	}, nil
 }
 
@@ -114,14 +119,15 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	}
 	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
 	return &Tx{
-		config:        cfg,
-		Admin:         NewAdminClient(cfg),
-		AdminSession:  NewAdminSessionClient(cfg),
-		Category:      NewCategoryClient(cfg),
-		Post:          NewPostClient(cfg),
-		PostImage:     NewPostImageClient(cfg),
-		PostThumbnail: NewPostThumbnailClient(cfg),
-		PostVideo:     NewPostVideoClient(cfg),
+		config:         cfg,
+		Admin:          NewAdminClient(cfg),
+		AdminSession:   NewAdminSessionClient(cfg),
+		Category:       NewCategoryClient(cfg),
+		Post:           NewPostClient(cfg),
+		PostAttachment: NewPostAttachmentClient(cfg),
+		PostImage:      NewPostImageClient(cfg),
+		PostThumbnail:  NewPostThumbnailClient(cfg),
+		PostVideo:      NewPostVideoClient(cfg),
 	}, nil
 }
 
@@ -154,6 +160,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.AdminSession.Use(hooks...)
 	c.Category.Use(hooks...)
 	c.Post.Use(hooks...)
+	c.PostAttachment.Use(hooks...)
 	c.PostImage.Use(hooks...)
 	c.PostThumbnail.Use(hooks...)
 	c.PostVideo.Use(hooks...)
@@ -251,6 +258,22 @@ func (c *AdminClient) QuerySessions(a *Admin) *AdminSessionQuery {
 			sqlgraph.From(admin.Table, admin.FieldID, id),
 			sqlgraph.To(adminsession.Table, adminsession.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, admin.SessionsTable, admin.SessionsColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPosts queries the posts edge of a Admin.
+func (c *AdminClient) QueryPosts(a *Admin) *PostQuery {
+	query := &PostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(admin.Table, admin.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, admin.PostsTable, admin.PostsPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -554,6 +577,22 @@ func (c *PostClient) GetX(ctx context.Context, id int) *Post {
 	return obj
 }
 
+// QueryAuthor queries the author edge of a Post.
+func (c *PostClient) QueryAuthor(po *Post) *AdminQuery {
+	query := &AdminQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(admin.Table, admin.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, post.AuthorTable, post.AuthorPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // QueryCategory queries the category edge of a Post.
 func (c *PostClient) QueryCategory(po *Post) *CategoryQuery {
 	query := &CategoryQuery{config: c.config}
@@ -618,9 +657,129 @@ func (c *PostClient) QueryVideos(po *Post) *PostVideoQuery {
 	return query
 }
 
+// QueryAttachments queries the attachments edge of a Post.
+func (c *PostClient) QueryAttachments(po *Post) *PostAttachmentQuery {
+	query := &PostAttachmentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := po.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(post.Table, post.FieldID, id),
+			sqlgraph.To(postattachment.Table, postattachment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, post.AttachmentsTable, post.AttachmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *PostClient) Hooks() []Hook {
 	return c.hooks.Post
+}
+
+// PostAttachmentClient is a client for the PostAttachment schema.
+type PostAttachmentClient struct {
+	config
+}
+
+// NewPostAttachmentClient returns a client for the PostAttachment from the given config.
+func NewPostAttachmentClient(c config) *PostAttachmentClient {
+	return &PostAttachmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `postattachment.Hooks(f(g(h())))`.
+func (c *PostAttachmentClient) Use(hooks ...Hook) {
+	c.hooks.PostAttachment = append(c.hooks.PostAttachment, hooks...)
+}
+
+// Create returns a create builder for PostAttachment.
+func (c *PostAttachmentClient) Create() *PostAttachmentCreate {
+	mutation := newPostAttachmentMutation(c.config, OpCreate)
+	return &PostAttachmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of PostAttachment entities.
+func (c *PostAttachmentClient) CreateBulk(builders ...*PostAttachmentCreate) *PostAttachmentCreateBulk {
+	return &PostAttachmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for PostAttachment.
+func (c *PostAttachmentClient) Update() *PostAttachmentUpdate {
+	mutation := newPostAttachmentMutation(c.config, OpUpdate)
+	return &PostAttachmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *PostAttachmentClient) UpdateOne(pa *PostAttachment) *PostAttachmentUpdateOne {
+	mutation := newPostAttachmentMutation(c.config, OpUpdateOne, withPostAttachment(pa))
+	return &PostAttachmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *PostAttachmentClient) UpdateOneID(id int) *PostAttachmentUpdateOne {
+	mutation := newPostAttachmentMutation(c.config, OpUpdateOne, withPostAttachmentID(id))
+	return &PostAttachmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for PostAttachment.
+func (c *PostAttachmentClient) Delete() *PostAttachmentDelete {
+	mutation := newPostAttachmentMutation(c.config, OpDelete)
+	return &PostAttachmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *PostAttachmentClient) DeleteOne(pa *PostAttachment) *PostAttachmentDeleteOne {
+	return c.DeleteOneID(pa.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *PostAttachmentClient) DeleteOneID(id int) *PostAttachmentDeleteOne {
+	builder := c.Delete().Where(postattachment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &PostAttachmentDeleteOne{builder}
+}
+
+// Query returns a query builder for PostAttachment.
+func (c *PostAttachmentClient) Query() *PostAttachmentQuery {
+	return &PostAttachmentQuery{config: c.config}
+}
+
+// Get returns a PostAttachment entity by its id.
+func (c *PostAttachmentClient) Get(ctx context.Context, id int) (*PostAttachment, error) {
+	return c.Query().Where(postattachment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *PostAttachmentClient) GetX(ctx context.Context, id int) *PostAttachment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryPost queries the post edge of a PostAttachment.
+func (c *PostAttachmentClient) QueryPost(pa *PostAttachment) *PostQuery {
+	query := &PostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := pa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(postattachment.Table, postattachment.FieldID, id),
+			sqlgraph.To(post.Table, post.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, postattachment.PostTable, postattachment.PostColumn),
+		)
+		fromV = sqlgraph.Neighbors(pa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *PostAttachmentClient) Hooks() []Hook {
+	return c.hooks.PostAttachment
 }
 
 // PostImageClient is a client for the PostImage schema.
