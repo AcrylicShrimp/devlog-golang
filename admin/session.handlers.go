@@ -3,8 +3,8 @@ package admin
 import (
 	"devlog/common"
 	"devlog/ent"
-	"devlog/ent/admin"
-	"devlog/ent/adminsession"
+	dbAdmin "devlog/ent/admin"
+	dbAdminSession "devlog/ent/adminsession"
 	"devlog/util"
 	"encoding/hex"
 	"github.com/labstack/echo"
@@ -25,16 +25,16 @@ func NewSessionHandler(c echo.Context) error {
 
 	authInfo := new(AuthInfo)
 	if err := c.Bind(authInfo); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 	if err := c.Validate(authInfo); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	client := c.(*common.Context).Client()
 	ctx := c.(*common.Context).Ctx()
 
-	user, err := client.Admin.Query().Where(admin.UsernameEQ(authInfo.Username)).Select(admin.FieldID, admin.FieldPassword).First(ctx)
+	admin, err := client.Admin.Query().Where(dbAdmin.UsernameEQ(authInfo.Username)).Select(dbAdmin.FieldID, dbAdmin.FieldPassword).First(ctx)
 	if err != nil {
 		if _, ok := err.(*ent.NotFoundError); ok {
 			return echo.NewHTTPError(http.StatusUnauthorized)
@@ -42,7 +42,7 @@ func NewSessionHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	password, err := hex.DecodeString(user.Password)
+	password, err := hex.DecodeString(admin.Password)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
@@ -55,7 +55,7 @@ func NewSessionHandler(c echo.Context) error {
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
-	if _, err := client.AdminSession.Create().SetUser(user).SetToken(token).Save(ctx); err != nil {
+	if _, err := client.AdminSession.Create().SetUser(admin).SetToken(token).Save(ctx); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
@@ -82,7 +82,7 @@ func DeleteSessionHandler(c echo.Context) error {
 	client := c.(*common.Context).Client()
 	ctx := c.(*common.Context).Ctx()
 
-	if _, err := client.AdminSession.Delete().Where(adminsession.TokenEQ(tokenInfo.Token)).Exec(ctx); err != nil {
+	if _, err := client.AdminSession.Delete().Where(dbAdminSession.TokenEQ(tokenInfo.Token)).Exec(ctx); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 

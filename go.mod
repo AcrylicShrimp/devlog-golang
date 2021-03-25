@@ -12,5 +12,6 @@ require (
 	github.com/labstack/echo v3.3.10+incompatible
 	github.com/labstack/gommon v0.3.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
+	github.com/yuin/goldmark v1.3.3
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
 )
