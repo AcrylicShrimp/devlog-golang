@@ -23,14 +23,14 @@ func (Post) Fields() []ent.Field {
 		field.Text("html_content"),
 		field.String("preview_content").MaxLen(255),
 		field.Time("created_at").Default(time.Now),
-		field.Time("modified_at").UpdateDefault(time.Now),
+		field.Time("modified_at").Default(time.Now).UpdateDefault(time.Now),
 	}
 }
 
 // Edges of the Post.
 func (Post) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("author", Admin.Type).Ref("posts"),
+		edge.From("author", Admin.Type).Ref("posts").Unique().Required(),
 		edge.From("category", Category.Type).Ref("posts").Unique(),
 		edge.To("thumbnail", PostThumbnail.Type).Unique(),
 		edge.To("images", PostImage.Type),

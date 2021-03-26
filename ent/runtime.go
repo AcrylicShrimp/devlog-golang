@@ -67,6 +67,8 @@ func init() {
 	category.DefaultCreatedAt = categoryDescCreatedAt.Default.(func() time.Time)
 	// categoryDescModifiedAt is the schema descriptor for modified_at field.
 	categoryDescModifiedAt := categoryFields[3].Descriptor()
+	// category.DefaultModifiedAt holds the default value on creation for the modified_at field.
+	category.DefaultModifiedAt = categoryDescModifiedAt.Default.(func() time.Time)
 	// category.UpdateDefaultModifiedAt holds the default value on update for the modified_at field.
 	category.UpdateDefaultModifiedAt = categoryDescModifiedAt.UpdateDefault.(func() time.Time)
 	postFields := schema.Post{}.Fields()
@@ -93,6 +95,8 @@ func init() {
 	post.DefaultCreatedAt = postDescCreatedAt.Default.(func() time.Time)
 	// postDescModifiedAt is the schema descriptor for modified_at field.
 	postDescModifiedAt := postFields[8].Descriptor()
+	// post.DefaultModifiedAt holds the default value on creation for the modified_at field.
+	post.DefaultModifiedAt = postDescModifiedAt.Default.(func() time.Time)
 	// post.UpdateDefaultModifiedAt holds the default value on update for the modified_at field.
 	post.UpdateDefaultModifiedAt = postDescModifiedAt.UpdateDefault.(func() time.Time)
 	postattachmentFields := schema.PostAttachment{}.Fields()

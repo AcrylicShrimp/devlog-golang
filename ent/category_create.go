@@ -61,6 +61,14 @@ func (cc *CategoryCreate) SetModifiedAt(t time.Time) *CategoryCreate {
 	return cc
 }
 
+// SetNillableModifiedAt sets the "modified_at" field if the given value is not nil.
+func (cc *CategoryCreate) SetNillableModifiedAt(t *time.Time) *CategoryCreate {
+	if t != nil {
+		cc.SetModifiedAt(*t)
+	}
+	return cc
+}
+
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
 func (cc *CategoryCreate) AddPostIDs(ids ...int) *CategoryCreate {
 	cc.mutation.AddPostIDs(ids...)
@@ -131,6 +139,10 @@ func (cc *CategoryCreate) defaults() {
 	if _, ok := cc.mutation.CreatedAt(); !ok {
 		v := category.DefaultCreatedAt()
 		cc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := cc.mutation.ModifiedAt(); !ok {
+		v := category.DefaultModifiedAt()
+		cc.mutation.SetModifiedAt(v)
 	}
 }
 

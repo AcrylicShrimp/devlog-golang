@@ -139,6 +139,8 @@ var (
 	PreviewContentValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
+	// DefaultModifiedAt holds the default value on creation for the "modified_at" field.
+	DefaultModifiedAt func() time.Time
 	// UpdateDefaultModifiedAt holds the default value on update for the "modified_at" field.
 	UpdateDefaultModifiedAt func() time.Time
 )

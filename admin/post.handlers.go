@@ -76,7 +76,7 @@ func NewPostHandler(c echo.Context) error {
 	if err := markdownHTML.Convert([]byte(postInfo.Content), &htmlContentBuf); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
-	htmlContent := htmlContentBuf.String()
+	//htmlContent := htmlContentBuf.String()
 
 	var plainContentBuf bytes.Buffer
 	if err := markdownPlain.Convert([]byte(postInfo.Content), &plainContentBuf); err != nil {
@@ -93,14 +93,6 @@ func NewPostHandler(c echo.Context) error {
 	//	}
 	//	return echo.NewHTTPError(http.StatusInternalServerError)
 	//}
-
-	println(htmlContent)
-	println()
-	println("===================================================")
-	println("===================================================")
-	println("===================================================")
-	println()
-	println(plainContent)
 
 	type Post struct {
 		Slug string `json:"slug"`

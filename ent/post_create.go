@@ -88,6 +88,14 @@ func (pc *PostCreate) SetModifiedAt(t time.Time) *PostCreate {
 	return pc
 }
 
+// SetNillableModifiedAt sets the "modified_at" field if the given value is not nil.
+func (pc *PostCreate) SetNillableModifiedAt(t *time.Time) *PostCreate {
+	if t != nil {
+		pc.SetModifiedAt(*t)
+	}
+	return pc
+}
+
 // AddAuthorIDs adds the "author" edge to the Admin entity by IDs.
 func (pc *PostCreate) AddAuthorIDs(ids ...int) *PostCreate {
 	pc.mutation.AddAuthorIDs(ids...)
@@ -241,6 +249,10 @@ func (pc *PostCreate) defaults() {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		v := post.DefaultCreatedAt()
 		pc.mutation.SetCreatedAt(v)
+	}
+	if _, ok := pc.mutation.ModifiedAt(); !ok {
+		v := post.DefaultModifiedAt()
+		pc.mutation.SetModifiedAt(v)
 	}
 }
 

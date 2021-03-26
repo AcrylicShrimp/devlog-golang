@@ -16,6 +16,7 @@ func main() {
 	}
 
 	e := echo.New()
+	e.HideBanner = true
 	e.Validator = NewValidator()
 
 	client, err := InitDB()
