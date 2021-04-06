@@ -12,6 +12,7 @@ import (
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
 	"devlog/ent/predicate"
+	"errors"
 	"fmt"
 	"time"
 
@@ -95,19 +96,15 @@ func (pu *PostUpdate) SetModifiedAt(t time.Time) *PostUpdate {
 	return pu
 }
 
-// AddAuthorIDs adds the "author" edge to the Admin entity by IDs.
-func (pu *PostUpdate) AddAuthorIDs(ids ...int) *PostUpdate {
-	pu.mutation.AddAuthorIDs(ids...)
+// SetAuthorID sets the "author" edge to the Admin entity by ID.
+func (pu *PostUpdate) SetAuthorID(id int) *PostUpdate {
+	pu.mutation.SetAuthorID(id)
 	return pu
 }
 
-// AddAuthor adds the "author" edges to the Admin entity.
-func (pu *PostUpdate) AddAuthor(a ...*Admin) *PostUpdate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return pu.AddAuthorIDs(ids...)
+// SetAuthor sets the "author" edge to the Admin entity.
+func (pu *PostUpdate) SetAuthor(a *Admin) *PostUpdate {
+	return pu.SetAuthorID(a.ID)
 }
 
 // SetCategoryID sets the "category" edge to the Category entity by ID.
@@ -198,25 +195,10 @@ func (pu *PostUpdate) Mutation() *PostMutation {
 	return pu.mutation
 }
 
-// ClearAuthor clears all "author" edges to the Admin entity.
+// ClearAuthor clears the "author" edge to the Admin entity.
 func (pu *PostUpdate) ClearAuthor() *PostUpdate {
 	pu.mutation.ClearAuthor()
 	return pu
-}
-
-// RemoveAuthorIDs removes the "author" edge to Admin entities by IDs.
-func (pu *PostUpdate) RemoveAuthorIDs(ids ...int) *PostUpdate {
-	pu.mutation.RemoveAuthorIDs(ids...)
-	return pu
-}
-
-// RemoveAuthor removes "author" edges to Admin entities.
-func (pu *PostUpdate) RemoveAuthor(a ...*Admin) *PostUpdate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return pu.RemoveAuthorIDs(ids...)
 }
 
 // ClearCategory clears the "category" edge to the Category entity.
@@ -387,6 +369,9 @@ func (pu *PostUpdate) check() error {
 			return &ValidationError{Name: "preview_content", err: fmt.Errorf("ent: validator failed for field \"preview_content\": %w", err)}
 		}
 	}
+	if _, ok := pu.mutation.AuthorID(); pu.mutation.AuthorCleared() && !ok {
+		return errors.New("ent: clearing a required unique edge \"author\"")
+	}
 	return nil
 }
 
@@ -473,10 +458,10 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if pu.mutation.AuthorCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   post.AuthorTable,
-			Columns: post.AuthorPrimaryKey,
+			Columns: []string{post.AuthorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -484,34 +469,15 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 					Column: admin.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := pu.mutation.RemovedAuthorIDs(); len(nodes) > 0 && !pu.mutation.AuthorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   post.AuthorTable,
-			Columns: post.AuthorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: admin.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := pu.mutation.AuthorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   post.AuthorTable,
-			Columns: post.AuthorPrimaryKey,
+			Columns: []string{post.AuthorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -837,19 +803,15 @@ func (puo *PostUpdateOne) SetModifiedAt(t time.Time) *PostUpdateOne {
 	return puo
 }
 
-// AddAuthorIDs adds the "author" edge to the Admin entity by IDs.
-func (puo *PostUpdateOne) AddAuthorIDs(ids ...int) *PostUpdateOne {
-	puo.mutation.AddAuthorIDs(ids...)
+// SetAuthorID sets the "author" edge to the Admin entity by ID.
+func (puo *PostUpdateOne) SetAuthorID(id int) *PostUpdateOne {
+	puo.mutation.SetAuthorID(id)
 	return puo
 }
 
-// AddAuthor adds the "author" edges to the Admin entity.
-func (puo *PostUpdateOne) AddAuthor(a ...*Admin) *PostUpdateOne {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return puo.AddAuthorIDs(ids...)
+// SetAuthor sets the "author" edge to the Admin entity.
+func (puo *PostUpdateOne) SetAuthor(a *Admin) *PostUpdateOne {
+	return puo.SetAuthorID(a.ID)
 }
 
 // SetCategoryID sets the "category" edge to the Category entity by ID.
@@ -940,25 +902,10 @@ func (puo *PostUpdateOne) Mutation() *PostMutation {
 	return puo.mutation
 }
 
-// ClearAuthor clears all "author" edges to the Admin entity.
+// ClearAuthor clears the "author" edge to the Admin entity.
 func (puo *PostUpdateOne) ClearAuthor() *PostUpdateOne {
 	puo.mutation.ClearAuthor()
 	return puo
-}
-
-// RemoveAuthorIDs removes the "author" edge to Admin entities by IDs.
-func (puo *PostUpdateOne) RemoveAuthorIDs(ids ...int) *PostUpdateOne {
-	puo.mutation.RemoveAuthorIDs(ids...)
-	return puo
-}
-
-// RemoveAuthor removes "author" edges to Admin entities.
-func (puo *PostUpdateOne) RemoveAuthor(a ...*Admin) *PostUpdateOne {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return puo.RemoveAuthorIDs(ids...)
 }
 
 // ClearCategory clears the "category" edge to the Category entity.
@@ -1129,6 +1076,9 @@ func (puo *PostUpdateOne) check() error {
 			return &ValidationError{Name: "preview_content", err: fmt.Errorf("ent: validator failed for field \"preview_content\": %w", err)}
 		}
 	}
+	if _, ok := puo.mutation.AuthorID(); puo.mutation.AuthorCleared() && !ok {
+		return errors.New("ent: clearing a required unique edge \"author\"")
+	}
 	return nil
 }
 
@@ -1213,10 +1163,10 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 	}
 	if puo.mutation.AuthorCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   post.AuthorTable,
-			Columns: post.AuthorPrimaryKey,
+			Columns: []string{post.AuthorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -1224,34 +1174,15 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 					Column: admin.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := puo.mutation.RemovedAuthorIDs(); len(nodes) > 0 && !puo.mutation.AuthorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   post.AuthorTable,
-			Columns: post.AuthorPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: admin.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := puo.mutation.AuthorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   post.AuthorTable,
-			Columns: post.AuthorPrimaryKey,
+			Columns: []string{post.AuthorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
