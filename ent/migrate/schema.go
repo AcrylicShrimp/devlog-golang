@@ -73,6 +73,7 @@ var (
 		{Name: "preview_content", Type: field.TypeString, Size: 255},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "modified_at", Type: field.TypeTime},
+		{Name: "admin_posts", Type: field.TypeInt, Nullable: true},
 		{Name: "category_posts", Type: field.TypeInt, Nullable: true},
 	}
 	// PostsTable holds the schema information for the "posts" table.
@@ -82,8 +83,15 @@ var (
 		PrimaryKey: []*schema.Column{PostsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:  "posts_categories_posts",
+				Symbol:  "posts_admins_posts",
 				Columns: []*schema.Column{PostsColumns[10]},
+
+				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:  "posts_categories_posts",
+				Columns: []*schema.Column{PostsColumns[11]},
 
 				RefColumns: []*schema.Column{CategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
@@ -192,33 +200,6 @@ var (
 			},
 		},
 	}
-	// AdminPostsColumns holds the columns for the "admin_posts" table.
-	AdminPostsColumns = []*schema.Column{
-		{Name: "admin_id", Type: field.TypeInt},
-		{Name: "post_id", Type: field.TypeInt},
-	}
-	// AdminPostsTable holds the schema information for the "admin_posts" table.
-	AdminPostsTable = &schema.Table{
-		Name:       "admin_posts",
-		Columns:    AdminPostsColumns,
-		PrimaryKey: []*schema.Column{AdminPostsColumns[0], AdminPostsColumns[1]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:  "admin_posts_admin_id",
-				Columns: []*schema.Column{AdminPostsColumns[0]},
-
-				RefColumns: []*schema.Column{AdminsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:  "admin_posts_post_id",
-				Columns: []*schema.Column{AdminPostsColumns[1]},
-
-				RefColumns: []*schema.Column{PostsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminsTable,
@@ -229,17 +210,15 @@ var (
 		PostImagesTable,
 		PostThumbnailsTable,
 		PostVideosTable,
-		AdminPostsTable,
 	}
 )
 
 func init() {
 	AdminSessionsTable.ForeignKeys[0].RefTable = AdminsTable
-	PostsTable.ForeignKeys[0].RefTable = CategoriesTable
+	PostsTable.ForeignKeys[0].RefTable = AdminsTable
+	PostsTable.ForeignKeys[1].RefTable = CategoriesTable
 	PostAttachmentsTable.ForeignKeys[0].RefTable = PostsTable
 	PostImagesTable.ForeignKeys[0].RefTable = PostsTable
 	PostThumbnailsTable.ForeignKeys[0].RefTable = PostsTable
 	PostVideosTable.ForeignKeys[0].RefTable = PostsTable
-	AdminPostsTable.ForeignKeys[0].RefTable = AdminsTable
-	AdminPostsTable.ForeignKeys[1].RefTable = PostsTable
 }

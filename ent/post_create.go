@@ -96,19 +96,15 @@ func (pc *PostCreate) SetNillableModifiedAt(t *time.Time) *PostCreate {
 	return pc
 }
 
-// AddAuthorIDs adds the "author" edge to the Admin entity by IDs.
-func (pc *PostCreate) AddAuthorIDs(ids ...int) *PostCreate {
-	pc.mutation.AddAuthorIDs(ids...)
+// SetAuthorID sets the "author" edge to the Admin entity by ID.
+func (pc *PostCreate) SetAuthorID(id int) *PostCreate {
+	pc.mutation.SetAuthorID(id)
 	return pc
 }
 
-// AddAuthor adds the "author" edges to the Admin entity.
-func (pc *PostCreate) AddAuthor(a ...*Admin) *PostCreate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return pc.AddAuthorIDs(ids...)
+// SetAuthor sets the "author" edge to the Admin entity.
+func (pc *PostCreate) SetAuthor(a *Admin) *PostCreate {
+	return pc.SetAuthorID(a.ID)
 }
 
 // SetCategoryID sets the "category" edge to the Category entity by ID.
@@ -310,6 +306,9 @@ func (pc *PostCreate) check() error {
 	if _, ok := pc.mutation.ModifiedAt(); !ok {
 		return &ValidationError{Name: "modified_at", err: errors.New("ent: missing required field \"modified_at\"")}
 	}
+	if _, ok := pc.mutation.AuthorID(); !ok {
+		return &ValidationError{Name: "author", err: errors.New("ent: missing required edge \"author\"")}
+	}
 	return nil
 }
 
@@ -411,10 +410,10 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 	}
 	if nodes := pc.mutation.AuthorIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   post.AuthorTable,
-			Columns: post.AuthorPrimaryKey,
+			Columns: []string{post.AuthorColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

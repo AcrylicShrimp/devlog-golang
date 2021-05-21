@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"devlog/ent/admin"
 	"devlog/ent/category"
 	"devlog/ent/post"
 	"devlog/ent/postthumbnail"
@@ -39,13 +40,14 @@ type Post struct {
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the PostQuery when eager-loading is set.
 	Edges          PostEdges `json:"edges"`
+	admin_posts    *int
 	category_posts *int
 }
 
 // PostEdges holds the relations/edges for other nodes in the graph.
 type PostEdges struct {
 	// Author holds the value of the author edge.
-	Author []*Admin
+	Author *Admin
 	// Category holds the value of the category edge.
 	Category *Category
 	// Thumbnail holds the value of the thumbnail edge.
@@ -62,9 +64,14 @@ type PostEdges struct {
 }
 
 // AuthorOrErr returns the Author value or an error if the edge
-// was not loaded in eager-loading.
-func (e PostEdges) AuthorOrErr() ([]*Admin, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e PostEdges) AuthorOrErr() (*Admin, error) {
 	if e.loadedTypes[0] {
+		if e.Author == nil {
+			// The edge author was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: admin.Label}
+		}
 		return e.Author, nil
 	}
 	return nil, &NotLoadedError{edge: "author"}
@@ -136,7 +143,9 @@ func (*Post) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = &sql.NullString{}
 		case post.FieldCreatedAt, post.FieldModifiedAt:
 			values[i] = &sql.NullTime{}
-		case post.ForeignKeys[0]: // category_posts
+		case post.ForeignKeys[0]: // admin_posts
+			values[i] = &sql.NullInt64{}
+		case post.ForeignKeys[1]: // category_posts
 			values[i] = &sql.NullInt64{}
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Post", columns[i])
@@ -214,6 +223,13 @@ func (po *Post) assignValues(columns []string, values []interface{}) error {
 				po.ModifiedAt = value.Time
 			}
 		case post.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field admin_posts", value)
+			} else if value.Valid {
+				po.admin_posts = new(int)
+				*po.admin_posts = int(value.Int64)
+			}
+		case post.ForeignKeys[1]:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for edge-field category_posts", value)
 			} else if value.Valid {

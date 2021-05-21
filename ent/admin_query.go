@@ -94,7 +94,7 @@ func (aq *AdminQuery) QueryPosts() *PostQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(admin.Table, admin.FieldID, selector),
 			sqlgraph.To(post.Table, post.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, admin.PostsTable, admin.PostsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, admin.PostsTable, admin.PostsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -434,65 +434,30 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 
 	if query := aq.withPosts; query != nil {
 		fks := make([]driver.Value, 0, len(nodes))
-		ids := make(map[int]*Admin, len(nodes))
-		for _, node := range nodes {
-			ids[node.ID] = node
-			fks = append(fks, node.ID)
-			node.Edges.Posts = []*Post{}
+		nodeids := make(map[int]*Admin)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.Posts = []*Post{}
 		}
-		var (
-			edgeids []int
-			edges   = make(map[int][]*Admin)
-		)
-		_spec := &sqlgraph.EdgeQuerySpec{
-			Edge: &sqlgraph.EdgeSpec{
-				Inverse: false,
-				Table:   admin.PostsTable,
-				Columns: admin.PostsPrimaryKey,
-			},
-			Predicate: func(s *sql.Selector) {
-				s.Where(sql.InValues(admin.PostsPrimaryKey[0], fks...))
-			},
-
-			ScanValues: func() [2]interface{} {
-				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
-			},
-			Assign: func(out, in interface{}) error {
-				eout, ok := out.(*sql.NullInt64)
-				if !ok || eout == nil {
-					return fmt.Errorf("unexpected id value for edge-out")
-				}
-				ein, ok := in.(*sql.NullInt64)
-				if !ok || ein == nil {
-					return fmt.Errorf("unexpected id value for edge-in")
-				}
-				outValue := int(eout.Int64)
-				inValue := int(ein.Int64)
-				node, ok := ids[outValue]
-				if !ok {
-					return fmt.Errorf("unexpected node id in edges: %v", outValue)
-				}
-				edgeids = append(edgeids, inValue)
-				edges[inValue] = append(edges[inValue], node)
-				return nil
-			},
-		}
-		if err := sqlgraph.QueryEdges(ctx, aq.driver, _spec); err != nil {
-			return nil, fmt.Errorf(`query edges "posts": %v`, err)
-		}
-		query.Where(post.IDIn(edgeids...))
+		query.withFKs = true
+		query.Where(predicate.Post(func(s *sql.Selector) {
+			s.Where(sql.InValues(admin.PostsColumn, fks...))
+		}))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := edges[n.ID]
+			fk := n.admin_posts
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "admin_posts" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected "posts" node returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "admin_posts" returned %v for node %v`, *fk, n.ID)
 			}
-			for i := range nodes {
-				nodes[i].Edges.Posts = append(nodes[i].Edges.Posts, n)
-			}
+			node.Edges.Posts = append(node.Edges.Posts, n)
 		}
 	}
 

@@ -273,7 +273,7 @@ func (c *AdminClient) QueryPosts(a *Admin) *PostQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(admin.Table, admin.FieldID, id),
 			sqlgraph.To(post.Table, post.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, admin.PostsTable, admin.PostsPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, admin.PostsTable, admin.PostsColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -585,7 +585,7 @@ func (c *PostClient) QueryAuthor(po *Post) *AdminQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(post.Table, post.FieldID, id),
 			sqlgraph.To(admin.Table, admin.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, post.AuthorTable, post.AuthorPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.AuthorTable, post.AuthorColumn),
 		)
 		fromV = sqlgraph.Neighbors(po.driver.Dialect(), step)
 		return fromV, nil

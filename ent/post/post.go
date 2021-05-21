@@ -46,11 +46,13 @@ const (
 
 	// Table holds the table name of the post in the database.
 	Table = "posts"
-	// AuthorTable is the table the holds the author relation/edge. The primary key declared below.
-	AuthorTable = "admin_posts"
+	// AuthorTable is the table the holds the author relation/edge.
+	AuthorTable = "posts"
 	// AuthorInverseTable is the table name for the Admin entity.
 	// It exists in this package in order to avoid circular dependency with the "admin" package.
 	AuthorInverseTable = "admins"
+	// AuthorColumn is the table column denoting the author relation/edge.
+	AuthorColumn = "admin_posts"
 	// CategoryTable is the table the holds the category relation/edge.
 	CategoryTable = "posts"
 	// CategoryInverseTable is the table name for the Category entity.
@@ -104,14 +106,9 @@ var Columns = []string{
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the Post type.
 var ForeignKeys = []string{
+	"admin_posts",
 	"category_posts",
 }
-
-var (
-	// AuthorPrimaryKey and AuthorColumn2 are the table columns denoting the
-	// primary key for the author relation (M2M).
-	AuthorPrimaryKey = []string{"admin_id", "post_id"}
-)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {

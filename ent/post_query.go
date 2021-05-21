@@ -81,7 +81,7 @@ func (pq *PostQuery) QueryAuthor() *AdminQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(post.Table, post.FieldID, selector),
 			sqlgraph.To(admin.Table, admin.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, post.AuthorTable, post.AuthorPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, post.AuthorTable, post.AuthorColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(pq.driver.Dialect(), step)
 		return fromU, nil
@@ -533,7 +533,7 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 			pq.withAttachments != nil,
 		}
 	)
-	if pq.withCategory != nil {
+	if pq.withAuthor != nil || pq.withCategory != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -560,65 +560,26 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 	}
 
 	if query := pq.withAuthor; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		ids := make(map[int]*Post, len(nodes))
-		for _, node := range nodes {
-			ids[node.ID] = node
-			fks = append(fks, node.ID)
-			node.Edges.Author = []*Admin{}
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*Post)
+		for i := range nodes {
+			if fk := nodes[i].admin_posts; fk != nil {
+				ids = append(ids, *fk)
+				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			}
 		}
-		var (
-			edgeids []int
-			edges   = make(map[int][]*Post)
-		)
-		_spec := &sqlgraph.EdgeQuerySpec{
-			Edge: &sqlgraph.EdgeSpec{
-				Inverse: true,
-				Table:   post.AuthorTable,
-				Columns: post.AuthorPrimaryKey,
-			},
-			Predicate: func(s *sql.Selector) {
-				s.Where(sql.InValues(post.AuthorPrimaryKey[1], fks...))
-			},
-
-			ScanValues: func() [2]interface{} {
-				return [2]interface{}{&sql.NullInt64{}, &sql.NullInt64{}}
-			},
-			Assign: func(out, in interface{}) error {
-				eout, ok := out.(*sql.NullInt64)
-				if !ok || eout == nil {
-					return fmt.Errorf("unexpected id value for edge-out")
-				}
-				ein, ok := in.(*sql.NullInt64)
-				if !ok || ein == nil {
-					return fmt.Errorf("unexpected id value for edge-in")
-				}
-				outValue := int(eout.Int64)
-				inValue := int(ein.Int64)
-				node, ok := ids[outValue]
-				if !ok {
-					return fmt.Errorf("unexpected node id in edges: %v", outValue)
-				}
-				edgeids = append(edgeids, inValue)
-				edges[inValue] = append(edges[inValue], node)
-				return nil
-			},
-		}
-		if err := sqlgraph.QueryEdges(ctx, pq.driver, _spec); err != nil {
-			return nil, fmt.Errorf(`query edges "author": %v`, err)
-		}
-		query.Where(admin.IDIn(edgeids...))
+		query.Where(admin.IDIn(ids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := edges[n.ID]
+			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected "author" node returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "admin_posts" returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.Author = append(nodes[i].Edges.Author, n)
+				nodes[i].Edges.Author = n
 			}
 		}
 	}

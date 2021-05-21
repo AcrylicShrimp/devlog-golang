@@ -50,7 +50,7 @@ func ListCategories(c echo.Context) error {
 func NewCategoryHandler(c echo.Context) error {
 	type CategoryInfo struct {
 		Name        string  `json:"name" form:"name" query:"name" validate:"required,max=32"`
-		Description *string `json:"description" form:"description" query:"description" validate:"omitempty,max=255"`
+		Description *string `json:"description" form:"description" query:"description" validate:"omitempty,min=1,max=255"`
 	}
 
 	categoryInfo := new(CategoryInfo)
@@ -81,7 +81,7 @@ func NewCategoryHandler(c echo.Context) error {
 
 func DeleteCategoryHandler(c echo.Context) error {
 	type CategoryInfo struct {
-		Name string `param:"name" validate:"required`
+		Name string `param:"name" validate:"required"`
 	}
 	categoryInfo := new(CategoryInfo)
 	if err := c.Bind(categoryInfo); err != nil {

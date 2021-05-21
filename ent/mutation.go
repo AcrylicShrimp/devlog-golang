@@ -1705,8 +1705,7 @@ type PostMutation struct {
 	created_at         *time.Time
 	modified_at        *time.Time
 	clearedFields      map[string]struct{}
-	author             map[int]struct{}
-	removedauthor      map[int]struct{}
+	author             *int
 	clearedauthor      bool
 	category           *int
 	clearedcategory    bool
@@ -2129,14 +2128,9 @@ func (m *PostMutation) ResetModifiedAt() {
 	m.modified_at = nil
 }
 
-// AddAuthorIDs adds the "author" edge to the Admin entity by ids.
-func (m *PostMutation) AddAuthorIDs(ids ...int) {
-	if m.author == nil {
-		m.author = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.author[ids[i]] = struct{}{}
-	}
+// SetAuthorID sets the "author" edge to the Admin entity by id.
+func (m *PostMutation) SetAuthorID(id int) {
+	m.author = &id
 }
 
 // ClearAuthor clears the "author" edge to the Admin entity.
@@ -2149,28 +2143,20 @@ func (m *PostMutation) AuthorCleared() bool {
 	return m.clearedauthor
 }
 
-// RemoveAuthorIDs removes the "author" edge to the Admin entity by IDs.
-func (m *PostMutation) RemoveAuthorIDs(ids ...int) {
-	if m.removedauthor == nil {
-		m.removedauthor = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.removedauthor[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedAuthor returns the removed IDs of the "author" edge to the Admin entity.
-func (m *PostMutation) RemovedAuthorIDs() (ids []int) {
-	for id := range m.removedauthor {
-		ids = append(ids, id)
+// AuthorID returns the "author" edge ID in the mutation.
+func (m *PostMutation) AuthorID() (id int, exists bool) {
+	if m.author != nil {
+		return *m.author, true
 	}
 	return
 }
 
 // AuthorIDs returns the "author" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AuthorID instead. It exists only for internal usage by the builders.
 func (m *PostMutation) AuthorIDs() (ids []int) {
-	for id := range m.author {
-		ids = append(ids, id)
+	if id := m.author; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -2179,7 +2165,6 @@ func (m *PostMutation) AuthorIDs() (ids []int) {
 func (m *PostMutation) ResetAuthor() {
 	m.author = nil
 	m.clearedauthor = false
-	m.removedauthor = nil
 }
 
 // SetCategoryID sets the "category" edge to the Category entity by id.
@@ -2695,11 +2680,9 @@ func (m *PostMutation) AddedEdges() []string {
 func (m *PostMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case post.EdgeAuthor:
-		ids := make([]ent.Value, 0, len(m.author))
-		for id := range m.author {
-			ids = append(ids, id)
+		if id := m.author; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	case post.EdgeCategory:
 		if id := m.category; id != nil {
 			return []ent.Value{*id}
@@ -2733,9 +2716,6 @@ func (m *PostMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *PostMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 6)
-	if m.removedauthor != nil {
-		edges = append(edges, post.EdgeAuthor)
-	}
 	if m.removedimages != nil {
 		edges = append(edges, post.EdgeImages)
 	}
@@ -2752,12 +2732,6 @@ func (m *PostMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *PostMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case post.EdgeAuthor:
-		ids := make([]ent.Value, 0, len(m.removedauthor))
-		for id := range m.removedauthor {
-			ids = append(ids, id)
-		}
-		return ids
 	case post.EdgeImages:
 		ids := make([]ent.Value, 0, len(m.removedimages))
 		for id := range m.removedimages {
@@ -2828,6 +2802,9 @@ func (m *PostMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *PostMutation) ClearEdge(name string) error {
 	switch name {
+	case post.EdgeAuthor:
+		m.ClearAuthor()
+		return nil
 	case post.EdgeCategory:
 		m.ClearCategory()
 		return nil
