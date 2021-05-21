@@ -7,7 +7,6 @@ import (
 	dbPost "devlog/ent/post"
 	"github.com/labstack/echo"
 	"net/http"
-	"time"
 )
 
 func AttachCategory(group *echo.Group) {
@@ -25,26 +24,7 @@ func ListCategories(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type Category struct {
-		Name        string    `json:"name"`
-		Description *string   `json:"description"`
-		CreatedAt   time.Time `json:"created_at"`
-		ModifiedAt  time.Time `json:"modified_at"`
-	}
-
-	var categoryJSON []Category
-	for _, category := range categories {
-		var description *string
-		if category.Description == "" {
-			description = nil
-		} else {
-			description = &category.Description
-		}
-
-		categoryJSON = append(categoryJSON, Category{category.Name, description, category.CreatedAt, category.ModifiedAt})
-	}
-
-	return c.JSON(http.StatusOK, categoryJSON)
+	return c.JSON(http.StatusOK, categories)
 }
 
 func NewCategoryHandler(c echo.Context) error {
