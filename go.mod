@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	entgo.io/ent v0.7.0
+	github.com/aws/aws-sdk-go v1.38.13 // indirect
 	github.com/facebook/ent v0.5.4
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-sql-driver/mysql v1.5.1-0.20200311113236-681ffa848bae
