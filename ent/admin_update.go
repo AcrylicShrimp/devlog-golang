@@ -8,12 +8,13 @@ import (
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
 	"devlog/ent/predicate"
+	"devlog/ent/unsavedpost"
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // AdminUpdate is the builder for updating Admin entities.
@@ -91,6 +92,21 @@ func (au *AdminUpdate) AddPosts(p ...*Post) *AdminUpdate {
 	return au.AddPostIDs(ids...)
 }
 
+// AddUnsavedPostIDs adds the "unsaved_posts" edge to the UnsavedPost entity by IDs.
+func (au *AdminUpdate) AddUnsavedPostIDs(ids ...int) *AdminUpdate {
+	au.mutation.AddUnsavedPostIDs(ids...)
+	return au
+}
+
+// AddUnsavedPosts adds the "unsaved_posts" edges to the UnsavedPost entity.
+func (au *AdminUpdate) AddUnsavedPosts(u ...*UnsavedPost) *AdminUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return au.AddUnsavedPostIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (au *AdminUpdate) Mutation() *AdminMutation {
 	return au.mutation
@@ -136,6 +152,27 @@ func (au *AdminUpdate) RemovePosts(p ...*Post) *AdminUpdate {
 		ids[i] = p[i].ID
 	}
 	return au.RemovePostIDs(ids...)
+}
+
+// ClearUnsavedPosts clears all "unsaved_posts" edges to the UnsavedPost entity.
+func (au *AdminUpdate) ClearUnsavedPosts() *AdminUpdate {
+	au.mutation.ClearUnsavedPosts()
+	return au
+}
+
+// RemoveUnsavedPostIDs removes the "unsaved_posts" edge to UnsavedPost entities by IDs.
+func (au *AdminUpdate) RemoveUnsavedPostIDs(ids ...int) *AdminUpdate {
+	au.mutation.RemoveUnsavedPostIDs(ids...)
+	return au
+}
+
+// RemoveUnsavedPosts removes "unsaved_posts" edges to UnsavedPost entities.
+func (au *AdminUpdate) RemoveUnsavedPosts(u ...*UnsavedPost) *AdminUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return au.RemoveUnsavedPostIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -369,6 +406,60 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if au.mutation.UnsavedPostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.UnsavedPostsTable,
+			Columns: []string{admin.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedUnsavedPostsIDs(); len(nodes) > 0 && !au.mutation.UnsavedPostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.UnsavedPostsTable,
+			Columns: []string{admin.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.UnsavedPostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.UnsavedPostsTable,
+			Columns: []string{admin.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{admin.Label}
@@ -383,6 +474,7 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // AdminUpdateOne is the builder for updating a single Admin entity.
 type AdminUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *AdminMutation
 }
@@ -449,6 +541,21 @@ func (auo *AdminUpdateOne) AddPosts(p ...*Post) *AdminUpdateOne {
 	return auo.AddPostIDs(ids...)
 }
 
+// AddUnsavedPostIDs adds the "unsaved_posts" edge to the UnsavedPost entity by IDs.
+func (auo *AdminUpdateOne) AddUnsavedPostIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.AddUnsavedPostIDs(ids...)
+	return auo
+}
+
+// AddUnsavedPosts adds the "unsaved_posts" edges to the UnsavedPost entity.
+func (auo *AdminUpdateOne) AddUnsavedPosts(u ...*UnsavedPost) *AdminUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return auo.AddUnsavedPostIDs(ids...)
+}
+
 // Mutation returns the AdminMutation object of the builder.
 func (auo *AdminUpdateOne) Mutation() *AdminMutation {
 	return auo.mutation
@@ -494,6 +601,34 @@ func (auo *AdminUpdateOne) RemovePosts(p ...*Post) *AdminUpdateOne {
 		ids[i] = p[i].ID
 	}
 	return auo.RemovePostIDs(ids...)
+}
+
+// ClearUnsavedPosts clears all "unsaved_posts" edges to the UnsavedPost entity.
+func (auo *AdminUpdateOne) ClearUnsavedPosts() *AdminUpdateOne {
+	auo.mutation.ClearUnsavedPosts()
+	return auo
+}
+
+// RemoveUnsavedPostIDs removes the "unsaved_posts" edge to UnsavedPost entities by IDs.
+func (auo *AdminUpdateOne) RemoveUnsavedPostIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.RemoveUnsavedPostIDs(ids...)
+	return auo
+}
+
+// RemoveUnsavedPosts removes "unsaved_posts" edges to UnsavedPost entities.
+func (auo *AdminUpdateOne) RemoveUnsavedPosts(u ...*UnsavedPost) *AdminUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return auo.RemoveUnsavedPostIDs(ids...)
+}
+
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (auo *AdminUpdateOne) Select(field string, fields ...string) *AdminUpdateOne {
+	auo.fields = append([]string{field}, fields...)
+	return auo
 }
 
 // Save executes the query and returns the updated Admin entity.
@@ -589,6 +724,25 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Admin.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := auo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, admin.FieldID)
+		for _, f := range fields {
+			if !admin.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != admin.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
+	if ps := auo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
+	}
 	if value, ok := auo.mutation.Email(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -717,6 +871,60 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: post.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.UnsavedPostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.UnsavedPostsTable,
+			Columns: []string{admin.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedUnsavedPostsIDs(); len(nodes) > 0 && !auo.mutation.UnsavedPostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.UnsavedPostsTable,
+			Columns: []string{admin.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.UnsavedPostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.UnsavedPostsTable,
+			Columns: []string{admin.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
 				},
 			},
 		}

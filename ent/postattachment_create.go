@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostAttachmentCreate is the builder for creating a PostAttachment entity.
@@ -139,6 +139,11 @@ func (pac *PostAttachmentCreate) check() error {
 	if _, ok := pac.mutation.UUID(); !ok {
 		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
 	}
+	if v, ok := pac.mutation.UUID(); ok {
+		if err := postattachment.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if _, ok := pac.mutation.Size(); !ok {
 		return &ValidationError{Name: "size", err: errors.New("ent: missing required field \"size\"")}
 	}
@@ -264,6 +269,7 @@ func (pac *PostAttachmentCreate) createSpec() (*PostAttachment, *sqlgraph.Create
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.post_attachments = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

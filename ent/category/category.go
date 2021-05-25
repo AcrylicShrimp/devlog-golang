@@ -19,10 +19,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldModifiedAt holds the string denoting the modified_at field in the database.
 	FieldModifiedAt = "modified_at"
-
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
-
 	// Table holds the table name of the category in the database.
 	Table = "categories"
 	// PostsTable is the table the holds the posts relation/edge.

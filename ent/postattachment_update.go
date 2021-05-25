@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostAttachmentUpdate is the builder for updating PostAttachment entities.
@@ -161,6 +161,11 @@ func (pau *PostAttachmentUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pau *PostAttachmentUpdate) check() error {
+	if v, ok := pau.mutation.UUID(); ok {
+		if err := postattachment.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if v, ok := pau.mutation.Name(); ok {
 		if err := postattachment.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
@@ -298,6 +303,7 @@ func (pau *PostAttachmentUpdate) sqlSave(ctx context.Context) (n int, err error)
 // PostAttachmentUpdateOne is the builder for updating a single PostAttachment entity.
 type PostAttachmentUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *PostAttachmentMutation
 }
@@ -375,6 +381,13 @@ func (pauo *PostAttachmentUpdateOne) ClearPost() *PostAttachmentUpdateOne {
 	return pauo
 }
 
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (pauo *PostAttachmentUpdateOne) Select(field string, fields ...string) *PostAttachmentUpdateOne {
+	pauo.fields = append([]string{field}, fields...)
+	return pauo
+}
+
 // Save executes the query and returns the updated PostAttachment entity.
 func (pauo *PostAttachmentUpdateOne) Save(ctx context.Context) (*PostAttachment, error) {
 	var (
@@ -434,6 +447,11 @@ func (pauo *PostAttachmentUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pauo *PostAttachmentUpdateOne) check() error {
+	if v, ok := pauo.mutation.UUID(); ok {
+		if err := postattachment.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if v, ok := pauo.mutation.Name(); ok {
 		if err := postattachment.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
@@ -471,6 +489,25 @@ func (pauo *PostAttachmentUpdateOne) sqlSave(ctx context.Context) (_node *PostAt
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing PostAttachment.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := pauo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, postattachment.FieldID)
+		for _, f := range fields {
+			if !postattachment.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != postattachment.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
+	if ps := pauo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
+	}
 	if value, ok := pauo.mutation.UUID(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,

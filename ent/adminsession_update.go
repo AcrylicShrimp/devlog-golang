@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // AdminSessionUpdate is the builder for updating AdminSession entities.
@@ -243,6 +243,7 @@ func (asu *AdminSessionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // AdminSessionUpdateOne is the builder for updating a single AdminSession entity.
 type AdminSessionUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *AdminSessionMutation
 }
@@ -300,6 +301,13 @@ func (asuo *AdminSessionUpdateOne) Mutation() *AdminSessionMutation {
 // ClearUser clears the "user" edge to the Admin entity.
 func (asuo *AdminSessionUpdateOne) ClearUser() *AdminSessionUpdateOne {
 	asuo.mutation.ClearUser()
+	return asuo
+}
+
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (asuo *AdminSessionUpdateOne) Select(field string, fields ...string) *AdminSessionUpdateOne {
+	asuo.fields = append([]string{field}, fields...)
 	return asuo
 }
 
@@ -389,6 +397,25 @@ func (asuo *AdminSessionUpdateOne) sqlSave(ctx context.Context) (_node *AdminSes
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing AdminSession.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := asuo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, adminsession.FieldID)
+		for _, f := range fields {
+			if !adminsession.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != adminsession.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
+	if ps := asuo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
+	}
 	if value, ok := asuo.mutation.Token(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,

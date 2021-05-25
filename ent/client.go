@@ -17,10 +17,15 @@ import (
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
+	"devlog/ent/unsavedpost"
+	"devlog/ent/unsavedpostattachment"
+	"devlog/ent/unsavedpostimage"
+	"devlog/ent/unsavedpostthumbnail"
+	"devlog/ent/unsavedpostvideo"
 
-	"github.com/facebook/ent/dialect"
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -44,6 +49,16 @@ type Client struct {
 	PostThumbnail *PostThumbnailClient
 	// PostVideo is the client for interacting with the PostVideo builders.
 	PostVideo *PostVideoClient
+	// UnsavedPost is the client for interacting with the UnsavedPost builders.
+	UnsavedPost *UnsavedPostClient
+	// UnsavedPostAttachment is the client for interacting with the UnsavedPostAttachment builders.
+	UnsavedPostAttachment *UnsavedPostAttachmentClient
+	// UnsavedPostImage is the client for interacting with the UnsavedPostImage builders.
+	UnsavedPostImage *UnsavedPostImageClient
+	// UnsavedPostThumbnail is the client for interacting with the UnsavedPostThumbnail builders.
+	UnsavedPostThumbnail *UnsavedPostThumbnailClient
+	// UnsavedPostVideo is the client for interacting with the UnsavedPostVideo builders.
+	UnsavedPostVideo *UnsavedPostVideoClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -65,6 +80,11 @@ func (c *Client) init() {
 	c.PostImage = NewPostImageClient(c.config)
 	c.PostThumbnail = NewPostThumbnailClient(c.config)
 	c.PostVideo = NewPostVideoClient(c.config)
+	c.UnsavedPost = NewUnsavedPostClient(c.config)
+	c.UnsavedPostAttachment = NewUnsavedPostAttachmentClient(c.config)
+	c.UnsavedPostImage = NewUnsavedPostImageClient(c.config)
+	c.UnsavedPostThumbnail = NewUnsavedPostThumbnailClient(c.config)
+	c.UnsavedPostVideo = NewUnsavedPostVideoClient(c.config)
 }
 
 // Open opens a database/sql.DB specified by the driver name and
@@ -91,20 +111,26 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	}
 	tx, err := newTx(ctx, c.driver)
 	if err != nil {
-		return nil, fmt.Errorf("ent: starting a transaction: %v", err)
+		return nil, fmt.Errorf("ent: starting a transaction: %w", err)
 	}
-	cfg := config{driver: tx, log: c.log, debug: c.debug, hooks: c.hooks}
+	cfg := c.config
+	cfg.driver = tx
 	return &Tx{
-		ctx:            ctx,
-		config:         cfg,
-		Admin:          NewAdminClient(cfg),
-		AdminSession:   NewAdminSessionClient(cfg),
-		Category:       NewCategoryClient(cfg),
-		Post:           NewPostClient(cfg),
-		PostAttachment: NewPostAttachmentClient(cfg),
-		PostImage:      NewPostImageClient(cfg),
-		PostThumbnail:  NewPostThumbnailClient(cfg),
-		PostVideo:      NewPostVideoClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		Admin:                 NewAdminClient(cfg),
+		AdminSession:          NewAdminSessionClient(cfg),
+		Category:              NewCategoryClient(cfg),
+		Post:                  NewPostClient(cfg),
+		PostAttachment:        NewPostAttachmentClient(cfg),
+		PostImage:             NewPostImageClient(cfg),
+		PostThumbnail:         NewPostThumbnailClient(cfg),
+		PostVideo:             NewPostVideoClient(cfg),
+		UnsavedPost:           NewUnsavedPostClient(cfg),
+		UnsavedPostAttachment: NewUnsavedPostAttachmentClient(cfg),
+		UnsavedPostImage:      NewUnsavedPostImageClient(cfg),
+		UnsavedPostThumbnail:  NewUnsavedPostThumbnailClient(cfg),
+		UnsavedPostVideo:      NewUnsavedPostVideoClient(cfg),
 	}, nil
 }
 
@@ -113,21 +139,29 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	if _, ok := c.driver.(*txDriver); ok {
 		return nil, fmt.Errorf("ent: cannot start a transaction within a transaction")
 	}
-	tx, err := c.driver.(*sql.Driver).BeginTx(ctx, opts)
+	tx, err := c.driver.(interface {
+		BeginTx(context.Context, *sql.TxOptions) (dialect.Tx, error)
+	}).BeginTx(ctx, opts)
 	if err != nil {
-		return nil, fmt.Errorf("ent: starting a transaction: %v", err)
+		return nil, fmt.Errorf("ent: starting a transaction: %w", err)
 	}
-	cfg := config{driver: &txDriver{tx: tx, drv: c.driver}, log: c.log, debug: c.debug, hooks: c.hooks}
+	cfg := c.config
+	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		config:         cfg,
-		Admin:          NewAdminClient(cfg),
-		AdminSession:   NewAdminSessionClient(cfg),
-		Category:       NewCategoryClient(cfg),
-		Post:           NewPostClient(cfg),
-		PostAttachment: NewPostAttachmentClient(cfg),
-		PostImage:      NewPostImageClient(cfg),
-		PostThumbnail:  NewPostThumbnailClient(cfg),
-		PostVideo:      NewPostVideoClient(cfg),
+		config:                cfg,
+		Admin:                 NewAdminClient(cfg),
+		AdminSession:          NewAdminSessionClient(cfg),
+		Category:              NewCategoryClient(cfg),
+		Post:                  NewPostClient(cfg),
+		PostAttachment:        NewPostAttachmentClient(cfg),
+		PostImage:             NewPostImageClient(cfg),
+		PostThumbnail:         NewPostThumbnailClient(cfg),
+		PostVideo:             NewPostVideoClient(cfg),
+		UnsavedPost:           NewUnsavedPostClient(cfg),
+		UnsavedPostAttachment: NewUnsavedPostAttachmentClient(cfg),
+		UnsavedPostImage:      NewUnsavedPostImageClient(cfg),
+		UnsavedPostThumbnail:  NewUnsavedPostThumbnailClient(cfg),
+		UnsavedPostVideo:      NewUnsavedPostVideoClient(cfg),
 	}, nil
 }
 
@@ -142,7 +176,8 @@ func (c *Client) Debug() *Client {
 	if c.debug {
 		return c
 	}
-	cfg := config{driver: dialect.Debug(c.driver, c.log), log: c.log, debug: true, hooks: c.hooks}
+	cfg := c.config
+	cfg.driver = dialect.Debug(c.driver, c.log)
 	client := &Client{config: cfg}
 	client.init()
 	return client
@@ -164,6 +199,11 @@ func (c *Client) Use(hooks ...Hook) {
 	c.PostImage.Use(hooks...)
 	c.PostThumbnail.Use(hooks...)
 	c.PostVideo.Use(hooks...)
+	c.UnsavedPost.Use(hooks...)
+	c.UnsavedPostAttachment.Use(hooks...)
+	c.UnsavedPostImage.Use(hooks...)
+	c.UnsavedPostThumbnail.Use(hooks...)
+	c.UnsavedPostVideo.Use(hooks...)
 }
 
 // AdminClient is a client for the Admin schema.
@@ -232,7 +272,9 @@ func (c *AdminClient) DeleteOneID(id int) *AdminDeleteOne {
 
 // Query returns a query builder for Admin.
 func (c *AdminClient) Query() *AdminQuery {
-	return &AdminQuery{config: c.config}
+	return &AdminQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a Admin entity by its id.
@@ -274,6 +316,22 @@ func (c *AdminClient) QueryPosts(a *Admin) *PostQuery {
 			sqlgraph.From(admin.Table, admin.FieldID, id),
 			sqlgraph.To(post.Table, post.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, admin.PostsTable, admin.PostsColumn),
+		)
+		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUnsavedPosts queries the unsaved_posts edge of a Admin.
+func (c *AdminClient) QueryUnsavedPosts(a *Admin) *UnsavedPostQuery {
+	query := &UnsavedPostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := a.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(admin.Table, admin.FieldID, id),
+			sqlgraph.To(unsavedpost.Table, unsavedpost.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, admin.UnsavedPostsTable, admin.UnsavedPostsColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -352,7 +410,9 @@ func (c *AdminSessionClient) DeleteOneID(id int) *AdminSessionDeleteOne {
 
 // Query returns a query builder for AdminSession.
 func (c *AdminSessionClient) Query() *AdminSessionQuery {
-	return &AdminSessionQuery{config: c.config}
+	return &AdminSessionQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a AdminSession entity by its id.
@@ -456,7 +516,9 @@ func (c *CategoryClient) DeleteOneID(id int) *CategoryDeleteOne {
 
 // Query returns a query builder for Category.
 func (c *CategoryClient) Query() *CategoryQuery {
-	return &CategoryQuery{config: c.config}
+	return &CategoryQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a Category entity by its id.
@@ -560,7 +622,9 @@ func (c *PostClient) DeleteOneID(id int) *PostDeleteOne {
 
 // Query returns a query builder for Post.
 func (c *PostClient) Query() *PostQuery {
-	return &PostQuery{config: c.config}
+	return &PostQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a Post entity by its id.
@@ -744,7 +808,9 @@ func (c *PostAttachmentClient) DeleteOneID(id int) *PostAttachmentDeleteOne {
 
 // Query returns a query builder for PostAttachment.
 func (c *PostAttachmentClient) Query() *PostAttachmentQuery {
-	return &PostAttachmentQuery{config: c.config}
+	return &PostAttachmentQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a PostAttachment entity by its id.
@@ -848,7 +914,9 @@ func (c *PostImageClient) DeleteOneID(id int) *PostImageDeleteOne {
 
 // Query returns a query builder for PostImage.
 func (c *PostImageClient) Query() *PostImageQuery {
-	return &PostImageQuery{config: c.config}
+	return &PostImageQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a PostImage entity by its id.
@@ -952,7 +1020,9 @@ func (c *PostThumbnailClient) DeleteOneID(id int) *PostThumbnailDeleteOne {
 
 // Query returns a query builder for PostThumbnail.
 func (c *PostThumbnailClient) Query() *PostThumbnailQuery {
-	return &PostThumbnailQuery{config: c.config}
+	return &PostThumbnailQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a PostThumbnail entity by its id.
@@ -1056,7 +1126,9 @@ func (c *PostVideoClient) DeleteOneID(id int) *PostVideoDeleteOne {
 
 // Query returns a query builder for PostVideo.
 func (c *PostVideoClient) Query() *PostVideoQuery {
-	return &PostVideoQuery{config: c.config}
+	return &PostVideoQuery{
+		config: c.config,
+	}
 }
 
 // Get returns a PostVideo entity by its id.
@@ -1092,4 +1164,598 @@ func (c *PostVideoClient) QueryPost(pv *PostVideo) *PostQuery {
 // Hooks returns the client hooks.
 func (c *PostVideoClient) Hooks() []Hook {
 	return c.hooks.PostVideo
+}
+
+// UnsavedPostClient is a client for the UnsavedPost schema.
+type UnsavedPostClient struct {
+	config
+}
+
+// NewUnsavedPostClient returns a client for the UnsavedPost from the given config.
+func NewUnsavedPostClient(c config) *UnsavedPostClient {
+	return &UnsavedPostClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `unsavedpost.Hooks(f(g(h())))`.
+func (c *UnsavedPostClient) Use(hooks ...Hook) {
+	c.hooks.UnsavedPost = append(c.hooks.UnsavedPost, hooks...)
+}
+
+// Create returns a create builder for UnsavedPost.
+func (c *UnsavedPostClient) Create() *UnsavedPostCreate {
+	mutation := newUnsavedPostMutation(c.config, OpCreate)
+	return &UnsavedPostCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UnsavedPost entities.
+func (c *UnsavedPostClient) CreateBulk(builders ...*UnsavedPostCreate) *UnsavedPostCreateBulk {
+	return &UnsavedPostCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UnsavedPost.
+func (c *UnsavedPostClient) Update() *UnsavedPostUpdate {
+	mutation := newUnsavedPostMutation(c.config, OpUpdate)
+	return &UnsavedPostUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UnsavedPostClient) UpdateOne(up *UnsavedPost) *UnsavedPostUpdateOne {
+	mutation := newUnsavedPostMutation(c.config, OpUpdateOne, withUnsavedPost(up))
+	return &UnsavedPostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UnsavedPostClient) UpdateOneID(id int) *UnsavedPostUpdateOne {
+	mutation := newUnsavedPostMutation(c.config, OpUpdateOne, withUnsavedPostID(id))
+	return &UnsavedPostUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UnsavedPost.
+func (c *UnsavedPostClient) Delete() *UnsavedPostDelete {
+	mutation := newUnsavedPostMutation(c.config, OpDelete)
+	return &UnsavedPostDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *UnsavedPostClient) DeleteOne(up *UnsavedPost) *UnsavedPostDeleteOne {
+	return c.DeleteOneID(up.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *UnsavedPostClient) DeleteOneID(id int) *UnsavedPostDeleteOne {
+	builder := c.Delete().Where(unsavedpost.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UnsavedPostDeleteOne{builder}
+}
+
+// Query returns a query builder for UnsavedPost.
+func (c *UnsavedPostClient) Query() *UnsavedPostQuery {
+	return &UnsavedPostQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a UnsavedPost entity by its id.
+func (c *UnsavedPostClient) Get(ctx context.Context, id int) (*UnsavedPost, error) {
+	return c.Query().Where(unsavedpost.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UnsavedPostClient) GetX(ctx context.Context, id int) *UnsavedPost {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryAuthor queries the author edge of a UnsavedPost.
+func (c *UnsavedPostClient) QueryAuthor(up *UnsavedPost) *AdminQuery {
+	query := &AdminQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := up.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, id),
+			sqlgraph.To(admin.Table, admin.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, unsavedpost.AuthorTable, unsavedpost.AuthorColumn),
+		)
+		fromV = sqlgraph.Neighbors(up.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryThumbnail queries the thumbnail edge of a UnsavedPost.
+func (c *UnsavedPostClient) QueryThumbnail(up *UnsavedPost) *UnsavedPostThumbnailQuery {
+	query := &UnsavedPostThumbnailQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := up.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, id),
+			sqlgraph.To(unsavedpostthumbnail.Table, unsavedpostthumbnail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, unsavedpost.ThumbnailTable, unsavedpost.ThumbnailColumn),
+		)
+		fromV = sqlgraph.Neighbors(up.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryImages queries the images edge of a UnsavedPost.
+func (c *UnsavedPostClient) QueryImages(up *UnsavedPost) *UnsavedPostImageQuery {
+	query := &UnsavedPostImageQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := up.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, id),
+			sqlgraph.To(unsavedpostimage.Table, unsavedpostimage.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, unsavedpost.ImagesTable, unsavedpost.ImagesColumn),
+		)
+		fromV = sqlgraph.Neighbors(up.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryVideos queries the videos edge of a UnsavedPost.
+func (c *UnsavedPostClient) QueryVideos(up *UnsavedPost) *UnsavedPostVideoQuery {
+	query := &UnsavedPostVideoQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := up.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, id),
+			sqlgraph.To(unsavedpostvideo.Table, unsavedpostvideo.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, unsavedpost.VideosTable, unsavedpost.VideosColumn),
+		)
+		fromV = sqlgraph.Neighbors(up.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryAttachments queries the attachments edge of a UnsavedPost.
+func (c *UnsavedPostClient) QueryAttachments(up *UnsavedPost) *UnsavedPostAttachmentQuery {
+	query := &UnsavedPostAttachmentQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := up.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, id),
+			sqlgraph.To(unsavedpostattachment.Table, unsavedpostattachment.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, unsavedpost.AttachmentsTable, unsavedpost.AttachmentsColumn),
+		)
+		fromV = sqlgraph.Neighbors(up.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UnsavedPostClient) Hooks() []Hook {
+	return c.hooks.UnsavedPost
+}
+
+// UnsavedPostAttachmentClient is a client for the UnsavedPostAttachment schema.
+type UnsavedPostAttachmentClient struct {
+	config
+}
+
+// NewUnsavedPostAttachmentClient returns a client for the UnsavedPostAttachment from the given config.
+func NewUnsavedPostAttachmentClient(c config) *UnsavedPostAttachmentClient {
+	return &UnsavedPostAttachmentClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `unsavedpostattachment.Hooks(f(g(h())))`.
+func (c *UnsavedPostAttachmentClient) Use(hooks ...Hook) {
+	c.hooks.UnsavedPostAttachment = append(c.hooks.UnsavedPostAttachment, hooks...)
+}
+
+// Create returns a create builder for UnsavedPostAttachment.
+func (c *UnsavedPostAttachmentClient) Create() *UnsavedPostAttachmentCreate {
+	mutation := newUnsavedPostAttachmentMutation(c.config, OpCreate)
+	return &UnsavedPostAttachmentCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UnsavedPostAttachment entities.
+func (c *UnsavedPostAttachmentClient) CreateBulk(builders ...*UnsavedPostAttachmentCreate) *UnsavedPostAttachmentCreateBulk {
+	return &UnsavedPostAttachmentCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UnsavedPostAttachment.
+func (c *UnsavedPostAttachmentClient) Update() *UnsavedPostAttachmentUpdate {
+	mutation := newUnsavedPostAttachmentMutation(c.config, OpUpdate)
+	return &UnsavedPostAttachmentUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UnsavedPostAttachmentClient) UpdateOne(upa *UnsavedPostAttachment) *UnsavedPostAttachmentUpdateOne {
+	mutation := newUnsavedPostAttachmentMutation(c.config, OpUpdateOne, withUnsavedPostAttachment(upa))
+	return &UnsavedPostAttachmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UnsavedPostAttachmentClient) UpdateOneID(id int) *UnsavedPostAttachmentUpdateOne {
+	mutation := newUnsavedPostAttachmentMutation(c.config, OpUpdateOne, withUnsavedPostAttachmentID(id))
+	return &UnsavedPostAttachmentUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UnsavedPostAttachment.
+func (c *UnsavedPostAttachmentClient) Delete() *UnsavedPostAttachmentDelete {
+	mutation := newUnsavedPostAttachmentMutation(c.config, OpDelete)
+	return &UnsavedPostAttachmentDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *UnsavedPostAttachmentClient) DeleteOne(upa *UnsavedPostAttachment) *UnsavedPostAttachmentDeleteOne {
+	return c.DeleteOneID(upa.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *UnsavedPostAttachmentClient) DeleteOneID(id int) *UnsavedPostAttachmentDeleteOne {
+	builder := c.Delete().Where(unsavedpostattachment.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UnsavedPostAttachmentDeleteOne{builder}
+}
+
+// Query returns a query builder for UnsavedPostAttachment.
+func (c *UnsavedPostAttachmentClient) Query() *UnsavedPostAttachmentQuery {
+	return &UnsavedPostAttachmentQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a UnsavedPostAttachment entity by its id.
+func (c *UnsavedPostAttachmentClient) Get(ctx context.Context, id int) (*UnsavedPostAttachment, error) {
+	return c.Query().Where(unsavedpostattachment.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UnsavedPostAttachmentClient) GetX(ctx context.Context, id int) *UnsavedPostAttachment {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUnsavedPost queries the unsaved_post edge of a UnsavedPostAttachment.
+func (c *UnsavedPostAttachmentClient) QueryUnsavedPost(upa *UnsavedPostAttachment) *UnsavedPostQuery {
+	query := &UnsavedPostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := upa.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpostattachment.Table, unsavedpostattachment.FieldID, id),
+			sqlgraph.To(unsavedpost.Table, unsavedpost.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, unsavedpostattachment.UnsavedPostTable, unsavedpostattachment.UnsavedPostColumn),
+		)
+		fromV = sqlgraph.Neighbors(upa.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UnsavedPostAttachmentClient) Hooks() []Hook {
+	return c.hooks.UnsavedPostAttachment
+}
+
+// UnsavedPostImageClient is a client for the UnsavedPostImage schema.
+type UnsavedPostImageClient struct {
+	config
+}
+
+// NewUnsavedPostImageClient returns a client for the UnsavedPostImage from the given config.
+func NewUnsavedPostImageClient(c config) *UnsavedPostImageClient {
+	return &UnsavedPostImageClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `unsavedpostimage.Hooks(f(g(h())))`.
+func (c *UnsavedPostImageClient) Use(hooks ...Hook) {
+	c.hooks.UnsavedPostImage = append(c.hooks.UnsavedPostImage, hooks...)
+}
+
+// Create returns a create builder for UnsavedPostImage.
+func (c *UnsavedPostImageClient) Create() *UnsavedPostImageCreate {
+	mutation := newUnsavedPostImageMutation(c.config, OpCreate)
+	return &UnsavedPostImageCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UnsavedPostImage entities.
+func (c *UnsavedPostImageClient) CreateBulk(builders ...*UnsavedPostImageCreate) *UnsavedPostImageCreateBulk {
+	return &UnsavedPostImageCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UnsavedPostImage.
+func (c *UnsavedPostImageClient) Update() *UnsavedPostImageUpdate {
+	mutation := newUnsavedPostImageMutation(c.config, OpUpdate)
+	return &UnsavedPostImageUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UnsavedPostImageClient) UpdateOne(upi *UnsavedPostImage) *UnsavedPostImageUpdateOne {
+	mutation := newUnsavedPostImageMutation(c.config, OpUpdateOne, withUnsavedPostImage(upi))
+	return &UnsavedPostImageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UnsavedPostImageClient) UpdateOneID(id int) *UnsavedPostImageUpdateOne {
+	mutation := newUnsavedPostImageMutation(c.config, OpUpdateOne, withUnsavedPostImageID(id))
+	return &UnsavedPostImageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UnsavedPostImage.
+func (c *UnsavedPostImageClient) Delete() *UnsavedPostImageDelete {
+	mutation := newUnsavedPostImageMutation(c.config, OpDelete)
+	return &UnsavedPostImageDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *UnsavedPostImageClient) DeleteOne(upi *UnsavedPostImage) *UnsavedPostImageDeleteOne {
+	return c.DeleteOneID(upi.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *UnsavedPostImageClient) DeleteOneID(id int) *UnsavedPostImageDeleteOne {
+	builder := c.Delete().Where(unsavedpostimage.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UnsavedPostImageDeleteOne{builder}
+}
+
+// Query returns a query builder for UnsavedPostImage.
+func (c *UnsavedPostImageClient) Query() *UnsavedPostImageQuery {
+	return &UnsavedPostImageQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a UnsavedPostImage entity by its id.
+func (c *UnsavedPostImageClient) Get(ctx context.Context, id int) (*UnsavedPostImage, error) {
+	return c.Query().Where(unsavedpostimage.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UnsavedPostImageClient) GetX(ctx context.Context, id int) *UnsavedPostImage {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUnsavedPost queries the unsaved_post edge of a UnsavedPostImage.
+func (c *UnsavedPostImageClient) QueryUnsavedPost(upi *UnsavedPostImage) *UnsavedPostQuery {
+	query := &UnsavedPostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := upi.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpostimage.Table, unsavedpostimage.FieldID, id),
+			sqlgraph.To(unsavedpost.Table, unsavedpost.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, unsavedpostimage.UnsavedPostTable, unsavedpostimage.UnsavedPostColumn),
+		)
+		fromV = sqlgraph.Neighbors(upi.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UnsavedPostImageClient) Hooks() []Hook {
+	return c.hooks.UnsavedPostImage
+}
+
+// UnsavedPostThumbnailClient is a client for the UnsavedPostThumbnail schema.
+type UnsavedPostThumbnailClient struct {
+	config
+}
+
+// NewUnsavedPostThumbnailClient returns a client for the UnsavedPostThumbnail from the given config.
+func NewUnsavedPostThumbnailClient(c config) *UnsavedPostThumbnailClient {
+	return &UnsavedPostThumbnailClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `unsavedpostthumbnail.Hooks(f(g(h())))`.
+func (c *UnsavedPostThumbnailClient) Use(hooks ...Hook) {
+	c.hooks.UnsavedPostThumbnail = append(c.hooks.UnsavedPostThumbnail, hooks...)
+}
+
+// Create returns a create builder for UnsavedPostThumbnail.
+func (c *UnsavedPostThumbnailClient) Create() *UnsavedPostThumbnailCreate {
+	mutation := newUnsavedPostThumbnailMutation(c.config, OpCreate)
+	return &UnsavedPostThumbnailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UnsavedPostThumbnail entities.
+func (c *UnsavedPostThumbnailClient) CreateBulk(builders ...*UnsavedPostThumbnailCreate) *UnsavedPostThumbnailCreateBulk {
+	return &UnsavedPostThumbnailCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UnsavedPostThumbnail.
+func (c *UnsavedPostThumbnailClient) Update() *UnsavedPostThumbnailUpdate {
+	mutation := newUnsavedPostThumbnailMutation(c.config, OpUpdate)
+	return &UnsavedPostThumbnailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UnsavedPostThumbnailClient) UpdateOne(upt *UnsavedPostThumbnail) *UnsavedPostThumbnailUpdateOne {
+	mutation := newUnsavedPostThumbnailMutation(c.config, OpUpdateOne, withUnsavedPostThumbnail(upt))
+	return &UnsavedPostThumbnailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UnsavedPostThumbnailClient) UpdateOneID(id int) *UnsavedPostThumbnailUpdateOne {
+	mutation := newUnsavedPostThumbnailMutation(c.config, OpUpdateOne, withUnsavedPostThumbnailID(id))
+	return &UnsavedPostThumbnailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UnsavedPostThumbnail.
+func (c *UnsavedPostThumbnailClient) Delete() *UnsavedPostThumbnailDelete {
+	mutation := newUnsavedPostThumbnailMutation(c.config, OpDelete)
+	return &UnsavedPostThumbnailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *UnsavedPostThumbnailClient) DeleteOne(upt *UnsavedPostThumbnail) *UnsavedPostThumbnailDeleteOne {
+	return c.DeleteOneID(upt.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *UnsavedPostThumbnailClient) DeleteOneID(id int) *UnsavedPostThumbnailDeleteOne {
+	builder := c.Delete().Where(unsavedpostthumbnail.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UnsavedPostThumbnailDeleteOne{builder}
+}
+
+// Query returns a query builder for UnsavedPostThumbnail.
+func (c *UnsavedPostThumbnailClient) Query() *UnsavedPostThumbnailQuery {
+	return &UnsavedPostThumbnailQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a UnsavedPostThumbnail entity by its id.
+func (c *UnsavedPostThumbnailClient) Get(ctx context.Context, id int) (*UnsavedPostThumbnail, error) {
+	return c.Query().Where(unsavedpostthumbnail.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UnsavedPostThumbnailClient) GetX(ctx context.Context, id int) *UnsavedPostThumbnail {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUnsavedPost queries the unsaved_post edge of a UnsavedPostThumbnail.
+func (c *UnsavedPostThumbnailClient) QueryUnsavedPost(upt *UnsavedPostThumbnail) *UnsavedPostQuery {
+	query := &UnsavedPostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := upt.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpostthumbnail.Table, unsavedpostthumbnail.FieldID, id),
+			sqlgraph.To(unsavedpost.Table, unsavedpost.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, unsavedpostthumbnail.UnsavedPostTable, unsavedpostthumbnail.UnsavedPostColumn),
+		)
+		fromV = sqlgraph.Neighbors(upt.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UnsavedPostThumbnailClient) Hooks() []Hook {
+	return c.hooks.UnsavedPostThumbnail
+}
+
+// UnsavedPostVideoClient is a client for the UnsavedPostVideo schema.
+type UnsavedPostVideoClient struct {
+	config
+}
+
+// NewUnsavedPostVideoClient returns a client for the UnsavedPostVideo from the given config.
+func NewUnsavedPostVideoClient(c config) *UnsavedPostVideoClient {
+	return &UnsavedPostVideoClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `unsavedpostvideo.Hooks(f(g(h())))`.
+func (c *UnsavedPostVideoClient) Use(hooks ...Hook) {
+	c.hooks.UnsavedPostVideo = append(c.hooks.UnsavedPostVideo, hooks...)
+}
+
+// Create returns a create builder for UnsavedPostVideo.
+func (c *UnsavedPostVideoClient) Create() *UnsavedPostVideoCreate {
+	mutation := newUnsavedPostVideoMutation(c.config, OpCreate)
+	return &UnsavedPostVideoCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UnsavedPostVideo entities.
+func (c *UnsavedPostVideoClient) CreateBulk(builders ...*UnsavedPostVideoCreate) *UnsavedPostVideoCreateBulk {
+	return &UnsavedPostVideoCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UnsavedPostVideo.
+func (c *UnsavedPostVideoClient) Update() *UnsavedPostVideoUpdate {
+	mutation := newUnsavedPostVideoMutation(c.config, OpUpdate)
+	return &UnsavedPostVideoUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UnsavedPostVideoClient) UpdateOne(upv *UnsavedPostVideo) *UnsavedPostVideoUpdateOne {
+	mutation := newUnsavedPostVideoMutation(c.config, OpUpdateOne, withUnsavedPostVideo(upv))
+	return &UnsavedPostVideoUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UnsavedPostVideoClient) UpdateOneID(id int) *UnsavedPostVideoUpdateOne {
+	mutation := newUnsavedPostVideoMutation(c.config, OpUpdateOne, withUnsavedPostVideoID(id))
+	return &UnsavedPostVideoUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UnsavedPostVideo.
+func (c *UnsavedPostVideoClient) Delete() *UnsavedPostVideoDelete {
+	mutation := newUnsavedPostVideoMutation(c.config, OpDelete)
+	return &UnsavedPostVideoDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *UnsavedPostVideoClient) DeleteOne(upv *UnsavedPostVideo) *UnsavedPostVideoDeleteOne {
+	return c.DeleteOneID(upv.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *UnsavedPostVideoClient) DeleteOneID(id int) *UnsavedPostVideoDeleteOne {
+	builder := c.Delete().Where(unsavedpostvideo.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UnsavedPostVideoDeleteOne{builder}
+}
+
+// Query returns a query builder for UnsavedPostVideo.
+func (c *UnsavedPostVideoClient) Query() *UnsavedPostVideoQuery {
+	return &UnsavedPostVideoQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a UnsavedPostVideo entity by its id.
+func (c *UnsavedPostVideoClient) Get(ctx context.Context, id int) (*UnsavedPostVideo, error) {
+	return c.Query().Where(unsavedpostvideo.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UnsavedPostVideoClient) GetX(ctx context.Context, id int) *UnsavedPostVideo {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUnsavedPost queries the unsaved_post edge of a UnsavedPostVideo.
+func (c *UnsavedPostVideoClient) QueryUnsavedPost(upv *UnsavedPostVideo) *UnsavedPostQuery {
+	query := &UnsavedPostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := upv.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpostvideo.Table, unsavedpostvideo.FieldID, id),
+			sqlgraph.To(unsavedpost.Table, unsavedpost.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, unsavedpostvideo.UnsavedPostTable, unsavedpostvideo.UnsavedPostColumn),
+		)
+		fromV = sqlgraph.Neighbors(upv.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UnsavedPostVideoClient) Hooks() []Hook {
+	return c.hooks.UnsavedPostVideo
 }

@@ -19,10 +19,8 @@ const (
 	FieldURL = "url"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-
 	// EdgePost holds the string denoting the post edge name in mutations.
 	EdgePost = "post"
-
 	// Table holds the table name of the postvideo in the database.
 	Table = "post_videos"
 	// PostTable is the table the holds the post relation/edge.
@@ -43,7 +41,8 @@ var Columns = []string{
 	FieldCreatedAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the PostVideo type.
+// ForeignKeys holds the SQL foreign-keys that are owned by the "post_videos"
+// table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"post_videos",
 }
@@ -64,6 +63,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// UUIDValidator is a validator for the "uuid" field. It is called by the builders before save.
+	UUIDValidator func(string) error
 	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	TitleValidator func(string) error
 	// URLValidator is a validator for the "url" field. It is called by the builders before save.

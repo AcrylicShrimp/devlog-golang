@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // PostImage is the model entity for the PostImage schema.
@@ -40,7 +40,7 @@ type PostImage struct {
 // PostImageEdges holds the relations/edges for other nodes in the graph.
 type PostImageEdges struct {
 	// Post holds the value of the post edge.
-	Post *Post
+	Post *Post `json:"post,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -66,13 +66,13 @@ func (*PostImage) scanValues(columns []string) ([]interface{}, error) {
 	for i := range columns {
 		switch columns[i] {
 		case postimage.FieldID, postimage.FieldWidth, postimage.FieldHeight:
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		case postimage.FieldUUID, postimage.FieldHash, postimage.FieldTitle, postimage.FieldURL:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullString)
 		case postimage.FieldCreatedAt:
-			values[i] = &sql.NullTime{}
+			values[i] = new(sql.NullTime)
 		case postimage.ForeignKeys[0]: // post_images
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type PostImage", columns[i])
 		}

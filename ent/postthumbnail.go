@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // PostThumbnail is the model entity for the PostThumbnail schema.
@@ -36,7 +36,7 @@ type PostThumbnail struct {
 // PostThumbnailEdges holds the relations/edges for other nodes in the graph.
 type PostThumbnailEdges struct {
 	// Post holds the value of the post edge.
-	Post *Post
+	Post *Post `json:"post,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -62,13 +62,13 @@ func (*PostThumbnail) scanValues(columns []string) ([]interface{}, error) {
 	for i := range columns {
 		switch columns[i] {
 		case postthumbnail.FieldID, postthumbnail.FieldWidth, postthumbnail.FieldHeight:
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		case postthumbnail.FieldHash, postthumbnail.FieldURL:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullString)
 		case postthumbnail.FieldCreatedAt:
-			values[i] = &sql.NullTime{}
+			values[i] = new(sql.NullTime)
 		case postthumbnail.ForeignKeys[0]: // post_thumbnail
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type PostThumbnail", columns[i])
 		}

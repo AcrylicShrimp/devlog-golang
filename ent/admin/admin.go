@@ -19,12 +19,12 @@ const (
 	FieldPassword = "password"
 	// FieldJoinedAt holds the string denoting the joined_at field in the database.
 	FieldJoinedAt = "joined_at"
-
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
-
+	// EdgeUnsavedPosts holds the string denoting the unsaved_posts edge name in mutations.
+	EdgeUnsavedPosts = "unsaved_posts"
 	// Table holds the table name of the admin in the database.
 	Table = "admins"
 	// SessionsTable is the table the holds the sessions relation/edge.
@@ -41,6 +41,13 @@ const (
 	PostsInverseTable = "posts"
 	// PostsColumn is the table column denoting the posts relation/edge.
 	PostsColumn = "admin_posts"
+	// UnsavedPostsTable is the table the holds the unsaved_posts relation/edge.
+	UnsavedPostsTable = "unsaved_posts"
+	// UnsavedPostsInverseTable is the table name for the UnsavedPost entity.
+	// It exists in this package in order to avoid circular dependency with the "unsavedpost" package.
+	UnsavedPostsInverseTable = "unsaved_posts"
+	// UnsavedPostsColumn is the table column denoting the unsaved_posts relation/edge.
+	UnsavedPostsColumn = "admin_unsaved_posts"
 )
 
 // Columns holds all SQL columns for admin fields.

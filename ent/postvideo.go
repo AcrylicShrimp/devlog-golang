@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // PostVideo is the model entity for the PostVideo schema.
@@ -34,7 +34,7 @@ type PostVideo struct {
 // PostVideoEdges holds the relations/edges for other nodes in the graph.
 type PostVideoEdges struct {
 	// Post holds the value of the post edge.
-	Post *Post
+	Post *Post `json:"post,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -60,13 +60,13 @@ func (*PostVideo) scanValues(columns []string) ([]interface{}, error) {
 	for i := range columns {
 		switch columns[i] {
 		case postvideo.FieldID:
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		case postvideo.FieldUUID, postvideo.FieldTitle, postvideo.FieldURL:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullString)
 		case postvideo.FieldCreatedAt:
-			values[i] = &sql.NullTime{}
+			values[i] = new(sql.NullTime)
 		case postvideo.ForeignKeys[0]: // post_videos
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type PostVideo", columns[i])
 		}

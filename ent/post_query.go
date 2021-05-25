@@ -17,9 +17,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostQuery is the builder for querying Post entities.
@@ -27,6 +27,7 @@ type PostQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Post
@@ -61,6 +62,13 @@ func (pq *PostQuery) Offset(offset int) *PostQuery {
 	return pq
 }
 
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (pq *PostQuery) Unique(unique bool) *PostQuery {
+	pq.unique = &unique
+	return pq
+}
+
 // Order adds an order step to the query.
 func (pq *PostQuery) Order(o ...OrderFunc) *PostQuery {
 	pq.order = append(pq.order, o...)
@@ -74,7 +82,7 @@ func (pq *PostQuery) QueryAuthor() *AdminQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := pq.sqlQuery()
+		selector := pq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -96,7 +104,7 @@ func (pq *PostQuery) QueryCategory() *CategoryQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := pq.sqlQuery()
+		selector := pq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -118,7 +126,7 @@ func (pq *PostQuery) QueryThumbnail() *PostThumbnailQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := pq.sqlQuery()
+		selector := pq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -140,7 +148,7 @@ func (pq *PostQuery) QueryImages() *PostImageQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := pq.sqlQuery()
+		selector := pq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -162,7 +170,7 @@ func (pq *PostQuery) QueryVideos() *PostVideoQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := pq.sqlQuery()
+		selector := pq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -184,7 +192,7 @@ func (pq *PostQuery) QueryAttachments() *PostAttachmentQuery {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := pq.sqlQuery()
+		selector := pq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -464,12 +472,12 @@ func (pq *PostQuery) WithAttachments(opts ...func(*PostAttachmentQuery)) *PostQu
 // Example:
 //
 //	var v []struct {
-//		UUID string `json:"uuid,omitempty"`
+//		Slug string `json:"slug,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Post.Query().
-//		GroupBy(post.FieldUUID).
+//		GroupBy(post.FieldSlug).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -480,7 +488,7 @@ func (pq *PostQuery) GroupBy(field string, fields ...string) *PostGroupBy {
 		if err := pq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return pq.sqlQuery(), nil
+		return pq.sqlQuery(ctx), nil
 	}
 	return group
 }
@@ -491,11 +499,11 @@ func (pq *PostQuery) GroupBy(field string, fields ...string) *PostGroupBy {
 // Example:
 //
 //	var v []struct {
-//		UUID string `json:"uuid,omitempty"`
+//		Slug string `json:"slug,omitempty"`
 //	}
 //
 //	client.Post.Query().
-//		Select(post.FieldUUID).
+//		Select(post.FieldSlug).
 //		Scan(ctx, &v)
 //
 func (pq *PostQuery) Select(field string, fields ...string) *PostSelect {
@@ -563,10 +571,14 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*Post)
 		for i := range nodes {
-			if fk := nodes[i].admin_posts; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			if nodes[i].admin_posts == nil {
+				continue
 			}
+			fk := *nodes[i].admin_posts
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
 		query.Where(admin.IDIn(ids...))
 		neighbors, err := query.All(ctx)
@@ -588,10 +600,14 @@ func (pq *PostQuery) sqlAll(ctx context.Context) ([]*Post, error) {
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*Post)
 		for i := range nodes {
-			if fk := nodes[i].category_posts; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			if nodes[i].category_posts == nil {
+				continue
 			}
+			fk := *nodes[i].category_posts
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
 		query.Where(category.IDIn(ids...))
 		neighbors, err := query.All(ctx)
@@ -735,7 +751,7 @@ func (pq *PostQuery) sqlCount(ctx context.Context) (int, error) {
 func (pq *PostQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := pq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -752,6 +768,9 @@ func (pq *PostQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   pq.sql,
 		Unique: true,
+	}
+	if unique := pq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := pq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -778,14 +797,14 @@ func (pq *PostQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := pq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, post.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
 	return _spec
 }
 
-func (pq *PostQuery) sqlQuery() *sql.Selector {
+func (pq *PostQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(pq.driver.Dialect())
 	t1 := builder.Table(post.Table)
 	selector := builder.Select(t1.Columns(post.Columns...)...).From(t1)
@@ -797,7 +816,7 @@ func (pq *PostQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range pq.order {
-		p(selector, post.ValidColumn)
+		p(selector)
 	}
 	if offset := pq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -1063,7 +1082,7 @@ func (pgb *PostGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(pgb.fields)+len(pgb.fns))
 	columns = append(columns, pgb.fields...)
 	for _, fn := range pgb.fns {
-		columns = append(columns, fn(selector, post.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(pgb.fields...)
 }
@@ -1080,7 +1099,7 @@ func (ps *PostSelect) Scan(ctx context.Context, v interface{}) error {
 	if err := ps.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ps.sql = ps.PostQuery.sqlQuery()
+	ps.sql = ps.PostQuery.sqlQuery(ctx)
 	return ps.sqlScan(ctx, v)
 }
 

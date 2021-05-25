@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // AdminSessionQuery is the builder for querying AdminSession entities.
@@ -21,6 +21,7 @@ type AdminSessionQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.AdminSession
@@ -50,6 +51,13 @@ func (asq *AdminSessionQuery) Offset(offset int) *AdminSessionQuery {
 	return asq
 }
 
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (asq *AdminSessionQuery) Unique(unique bool) *AdminSessionQuery {
+	asq.unique = &unique
+	return asq
+}
+
 // Order adds an order step to the query.
 func (asq *AdminSessionQuery) Order(o ...OrderFunc) *AdminSessionQuery {
 	asq.order = append(asq.order, o...)
@@ -63,7 +71,7 @@ func (asq *AdminSessionQuery) QueryUser() *AdminQuery {
 		if err := asq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := asq.sqlQuery()
+		selector := asq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -299,7 +307,7 @@ func (asq *AdminSessionQuery) GroupBy(field string, fields ...string) *AdminSess
 		if err := asq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return asq.sqlQuery(), nil
+		return asq.sqlQuery(ctx), nil
 	}
 	return group
 }
@@ -377,10 +385,14 @@ func (asq *AdminSessionQuery) sqlAll(ctx context.Context) ([]*AdminSession, erro
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*AdminSession)
 		for i := range nodes {
-			if fk := nodes[i].admin_sessions; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			if nodes[i].admin_sessions == nil {
+				continue
 			}
+			fk := *nodes[i].admin_sessions
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
 		query.Where(admin.IDIn(ids...))
 		neighbors, err := query.All(ctx)
@@ -409,7 +421,7 @@ func (asq *AdminSessionQuery) sqlCount(ctx context.Context) (int, error) {
 func (asq *AdminSessionQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := asq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -426,6 +438,9 @@ func (asq *AdminSessionQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   asq.sql,
 		Unique: true,
+	}
+	if unique := asq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := asq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -452,14 +467,14 @@ func (asq *AdminSessionQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := asq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, adminsession.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
 	return _spec
 }
 
-func (asq *AdminSessionQuery) sqlQuery() *sql.Selector {
+func (asq *AdminSessionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(asq.driver.Dialect())
 	t1 := builder.Table(adminsession.Table)
 	selector := builder.Select(t1.Columns(adminsession.Columns...)...).From(t1)
@@ -471,7 +486,7 @@ func (asq *AdminSessionQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range asq.order {
-		p(selector, adminsession.ValidColumn)
+		p(selector)
 	}
 	if offset := asq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -737,7 +752,7 @@ func (asgb *AdminSessionGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(asgb.fields)+len(asgb.fns))
 	columns = append(columns, asgb.fields...)
 	for _, fn := range asgb.fns {
-		columns = append(columns, fn(selector, adminsession.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(asgb.fields...)
 }
@@ -754,7 +769,7 @@ func (ass *AdminSessionSelect) Scan(ctx context.Context, v interface{}) error {
 	if err := ass.prepareQuery(ctx); err != nil {
 		return err
 	}
-	ass.sql = ass.AdminSessionQuery.sqlQuery()
+	ass.sql = ass.AdminSessionQuery.sqlQuery(ctx)
 	return ass.sqlScan(ctx, v)
 }
 

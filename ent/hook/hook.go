@@ -112,6 +112,71 @@ func (f PostVideoFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return f(ctx, mv)
 }
 
+// The UnsavedPostFunc type is an adapter to allow the use of ordinary
+// function as UnsavedPost mutator.
+type UnsavedPostFunc func(context.Context, *ent.UnsavedPostMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UnsavedPostFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.UnsavedPostMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UnsavedPostMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The UnsavedPostAttachmentFunc type is an adapter to allow the use of ordinary
+// function as UnsavedPostAttachment mutator.
+type UnsavedPostAttachmentFunc func(context.Context, *ent.UnsavedPostAttachmentMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UnsavedPostAttachmentFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.UnsavedPostAttachmentMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UnsavedPostAttachmentMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The UnsavedPostImageFunc type is an adapter to allow the use of ordinary
+// function as UnsavedPostImage mutator.
+type UnsavedPostImageFunc func(context.Context, *ent.UnsavedPostImageMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UnsavedPostImageFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.UnsavedPostImageMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UnsavedPostImageMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The UnsavedPostThumbnailFunc type is an adapter to allow the use of ordinary
+// function as UnsavedPostThumbnail mutator.
+type UnsavedPostThumbnailFunc func(context.Context, *ent.UnsavedPostThumbnailMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UnsavedPostThumbnailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.UnsavedPostThumbnailMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UnsavedPostThumbnailMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The UnsavedPostVideoFunc type is an adapter to allow the use of ordinary
+// function as UnsavedPostVideo mutator.
+type UnsavedPostVideoFunc func(context.Context, *ent.UnsavedPostVideoMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UnsavedPostVideoFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.UnsavedPostVideoMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UnsavedPostVideoMutation", m)
+	}
+	return f(ctx, mv)
+}
+
 // Condition is a hook condition function.
 type Condition func(context.Context, ent.Mutation) bool
 

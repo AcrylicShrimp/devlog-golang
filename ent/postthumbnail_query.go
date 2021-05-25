@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostThumbnailQuery is the builder for querying PostThumbnail entities.
@@ -21,6 +21,7 @@ type PostThumbnailQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.PostThumbnail
@@ -50,6 +51,13 @@ func (ptq *PostThumbnailQuery) Offset(offset int) *PostThumbnailQuery {
 	return ptq
 }
 
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (ptq *PostThumbnailQuery) Unique(unique bool) *PostThumbnailQuery {
+	ptq.unique = &unique
+	return ptq
+}
+
 // Order adds an order step to the query.
 func (ptq *PostThumbnailQuery) Order(o ...OrderFunc) *PostThumbnailQuery {
 	ptq.order = append(ptq.order, o...)
@@ -63,7 +71,7 @@ func (ptq *PostThumbnailQuery) QueryPost() *PostQuery {
 		if err := ptq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := ptq.sqlQuery()
+		selector := ptq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -299,7 +307,7 @@ func (ptq *PostThumbnailQuery) GroupBy(field string, fields ...string) *PostThum
 		if err := ptq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return ptq.sqlQuery(), nil
+		return ptq.sqlQuery(ctx), nil
 	}
 	return group
 }
@@ -377,10 +385,14 @@ func (ptq *PostThumbnailQuery) sqlAll(ctx context.Context) ([]*PostThumbnail, er
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*PostThumbnail)
 		for i := range nodes {
-			if fk := nodes[i].post_thumbnail; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			if nodes[i].post_thumbnail == nil {
+				continue
 			}
+			fk := *nodes[i].post_thumbnail
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
 		query.Where(post.IDIn(ids...))
 		neighbors, err := query.All(ctx)
@@ -409,7 +421,7 @@ func (ptq *PostThumbnailQuery) sqlCount(ctx context.Context) (int, error) {
 func (ptq *PostThumbnailQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := ptq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -426,6 +438,9 @@ func (ptq *PostThumbnailQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   ptq.sql,
 		Unique: true,
+	}
+	if unique := ptq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := ptq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -452,14 +467,14 @@ func (ptq *PostThumbnailQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := ptq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, postthumbnail.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
 	return _spec
 }
 
-func (ptq *PostThumbnailQuery) sqlQuery() *sql.Selector {
+func (ptq *PostThumbnailQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(ptq.driver.Dialect())
 	t1 := builder.Table(postthumbnail.Table)
 	selector := builder.Select(t1.Columns(postthumbnail.Columns...)...).From(t1)
@@ -471,7 +486,7 @@ func (ptq *PostThumbnailQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range ptq.order {
-		p(selector, postthumbnail.ValidColumn)
+		p(selector)
 	}
 	if offset := ptq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -737,7 +752,7 @@ func (ptgb *PostThumbnailGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(ptgb.fields)+len(ptgb.fns))
 	columns = append(columns, ptgb.fields...)
 	for _, fn := range ptgb.fns {
-		columns = append(columns, fn(selector, postthumbnail.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(ptgb.fields...)
 }
@@ -754,7 +769,7 @@ func (pts *PostThumbnailSelect) Scan(ctx context.Context, v interface{}) error {
 	if err := pts.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pts.sql = pts.PostThumbnailQuery.sqlQuery()
+	pts.sql = pts.PostThumbnailQuery.sqlQuery(ctx)
 	return pts.sqlScan(ctx, v)
 }
 

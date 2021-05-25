@@ -6,7 +6,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/facebook/ent/dialect"
+	"entgo.io/ent/dialect"
 )
 
 // Tx is a transactional client that is created by calling Client.Tx().
@@ -28,6 +28,16 @@ type Tx struct {
 	PostThumbnail *PostThumbnailClient
 	// PostVideo is the client for interacting with the PostVideo builders.
 	PostVideo *PostVideoClient
+	// UnsavedPost is the client for interacting with the UnsavedPost builders.
+	UnsavedPost *UnsavedPostClient
+	// UnsavedPostAttachment is the client for interacting with the UnsavedPostAttachment builders.
+	UnsavedPostAttachment *UnsavedPostAttachmentClient
+	// UnsavedPostImage is the client for interacting with the UnsavedPostImage builders.
+	UnsavedPostImage *UnsavedPostImageClient
+	// UnsavedPostThumbnail is the client for interacting with the UnsavedPostThumbnail builders.
+	UnsavedPostThumbnail *UnsavedPostThumbnailClient
+	// UnsavedPostVideo is the client for interacting with the UnsavedPostVideo builders.
+	UnsavedPostVideo *UnsavedPostVideoClient
 
 	// lazily loaded.
 	client     *Client
@@ -171,6 +181,11 @@ func (tx *Tx) init() {
 	tx.PostImage = NewPostImageClient(tx.config)
 	tx.PostThumbnail = NewPostThumbnailClient(tx.config)
 	tx.PostVideo = NewPostVideoClient(tx.config)
+	tx.UnsavedPost = NewUnsavedPostClient(tx.config)
+	tx.UnsavedPostAttachment = NewUnsavedPostAttachmentClient(tx.config)
+	tx.UnsavedPostImage = NewUnsavedPostImageClient(tx.config)
+	tx.UnsavedPostThumbnail = NewUnsavedPostThumbnailClient(tx.config)
+	tx.UnsavedPostVideo = NewUnsavedPostVideoClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

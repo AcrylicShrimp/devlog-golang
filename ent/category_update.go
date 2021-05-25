@@ -10,9 +10,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // CategoryUpdate is the builder for updating Category entities.
@@ -316,6 +316,7 @@ func (cu *CategoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // CategoryUpdateOne is the builder for updating a single Category entity.
 type CategoryUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *CategoryMutation
 }
@@ -405,6 +406,13 @@ func (cuo *CategoryUpdateOne) RemovePosts(p ...*Post) *CategoryUpdateOne {
 		ids[i] = p[i].ID
 	}
 	return cuo.RemovePostIDs(ids...)
+}
+
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (cuo *CategoryUpdateOne) Select(field string, fields ...string) *CategoryUpdateOne {
+	cuo.fields = append([]string{field}, fields...)
+	return cuo
 }
 
 // Save executes the query and returns the updated Category entity.
@@ -504,6 +512,25 @@ func (cuo *CategoryUpdateOne) sqlSave(ctx context.Context) (_node *Category, err
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Category.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := cuo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, category.FieldID)
+		for _, f := range fields {
+			if !category.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != category.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
+	if ps := cuo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
+	}
 	if value, ok := cuo.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,

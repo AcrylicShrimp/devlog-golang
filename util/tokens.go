@@ -16,3 +16,15 @@ func GenerateToken256() (token string, err error) {
 
 	return
 }
+
+func GenerateToken64() (token string, err error) {
+	bytes := make([]byte, 32)
+
+	if _, err = rand.Read(bytes); err != nil {
+		return
+	}
+
+	token = hex.EncodeToString(bytes)
+
+	return
+}

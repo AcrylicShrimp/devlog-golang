@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // AdminSession is the model entity for the AdminSession schema.
@@ -32,7 +32,7 @@ type AdminSession struct {
 // AdminSessionEdges holds the relations/edges for other nodes in the graph.
 type AdminSessionEdges struct {
 	// User holds the value of the user edge.
-	User *Admin
+	User *Admin `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -58,13 +58,13 @@ func (*AdminSession) scanValues(columns []string) ([]interface{}, error) {
 	for i := range columns {
 		switch columns[i] {
 		case adminsession.FieldID:
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		case adminsession.FieldToken:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullString)
 		case adminsession.FieldUsedAt, adminsession.FieldCreatedAt:
-			values[i] = &sql.NullTime{}
+			values[i] = new(sql.NullTime)
 		case adminsession.ForeignKeys[0]: // admin_sessions
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type AdminSession", columns[i])
 		}

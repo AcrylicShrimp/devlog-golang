@@ -12,9 +12,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // CategoryQuery is the builder for querying Category entities.
@@ -22,6 +22,7 @@ type CategoryQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Category
@@ -50,6 +51,13 @@ func (cq *CategoryQuery) Offset(offset int) *CategoryQuery {
 	return cq
 }
 
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (cq *CategoryQuery) Unique(unique bool) *CategoryQuery {
+	cq.unique = &unique
+	return cq
+}
+
 // Order adds an order step to the query.
 func (cq *CategoryQuery) Order(o ...OrderFunc) *CategoryQuery {
 	cq.order = append(cq.order, o...)
@@ -63,7 +71,7 @@ func (cq *CategoryQuery) QueryPosts() *PostQuery {
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := cq.sqlQuery()
+		selector := cq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -299,7 +307,7 @@ func (cq *CategoryQuery) GroupBy(field string, fields ...string) *CategoryGroupB
 		if err := cq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return cq.sqlQuery(), nil
+		return cq.sqlQuery(ctx), nil
 	}
 	return group
 }
@@ -406,7 +414,7 @@ func (cq *CategoryQuery) sqlCount(ctx context.Context) (int, error) {
 func (cq *CategoryQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := cq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -423,6 +431,9 @@ func (cq *CategoryQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   cq.sql,
 		Unique: true,
+	}
+	if unique := cq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := cq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -449,14 +460,14 @@ func (cq *CategoryQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := cq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, category.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
 	return _spec
 }
 
-func (cq *CategoryQuery) sqlQuery() *sql.Selector {
+func (cq *CategoryQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(cq.driver.Dialect())
 	t1 := builder.Table(category.Table)
 	selector := builder.Select(t1.Columns(category.Columns...)...).From(t1)
@@ -468,7 +479,7 @@ func (cq *CategoryQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range cq.order {
-		p(selector, category.ValidColumn)
+		p(selector)
 	}
 	if offset := cq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -734,7 +745,7 @@ func (cgb *CategoryGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(cgb.fields)+len(cgb.fns))
 	columns = append(columns, cgb.fields...)
 	for _, fn := range cgb.fns {
-		columns = append(columns, fn(selector, category.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(cgb.fields...)
 }
@@ -751,7 +762,7 @@ func (cs *CategorySelect) Scan(ctx context.Context, v interface{}) error {
 	if err := cs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	cs.sql = cs.CategoryQuery.sqlQuery()
+	cs.sql = cs.CategoryQuery.sqlQuery(ctx)
 	return cs.sqlScan(ctx, v)
 }
 

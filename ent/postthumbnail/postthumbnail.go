@@ -21,10 +21,8 @@ const (
 	FieldURL = "url"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-
 	// EdgePost holds the string denoting the post edge name in mutations.
 	EdgePost = "post"
-
 	// Table holds the table name of the postthumbnail in the database.
 	Table = "post_thumbnails"
 	// PostTable is the table the holds the post relation/edge.
@@ -46,7 +44,8 @@ var Columns = []string{
 	FieldCreatedAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the PostThumbnail type.
+// ForeignKeys holds the SQL foreign-keys that are owned by the "post_thumbnails"
+// table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"post_thumbnail",
 }

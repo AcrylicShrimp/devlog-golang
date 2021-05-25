@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // Admin is the model entity for the Admin schema.
@@ -32,12 +32,14 @@ type Admin struct {
 // AdminEdges holds the relations/edges for other nodes in the graph.
 type AdminEdges struct {
 	// Sessions holds the value of the sessions edge.
-	Sessions []*AdminSession
+	Sessions []*AdminSession `json:"sessions,omitempty"`
 	// Posts holds the value of the posts edge.
-	Posts []*Post
+	Posts []*Post `json:"posts,omitempty"`
+	// UnsavedPosts holds the value of the unsaved_posts edge.
+	UnsavedPosts []*UnsavedPost `json:"unsaved_posts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -58,17 +60,26 @@ func (e AdminEdges) PostsOrErr() ([]*Post, error) {
 	return nil, &NotLoadedError{edge: "posts"}
 }
 
+// UnsavedPostsOrErr returns the UnsavedPosts value or an error if the edge
+// was not loaded in eager-loading.
+func (e AdminEdges) UnsavedPostsOrErr() ([]*UnsavedPost, error) {
+	if e.loadedTypes[2] {
+		return e.UnsavedPosts, nil
+	}
+	return nil, &NotLoadedError{edge: "unsaved_posts"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*Admin) scanValues(columns []string) ([]interface{}, error) {
 	values := make([]interface{}, len(columns))
 	for i := range columns {
 		switch columns[i] {
 		case admin.FieldID:
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		case admin.FieldEmail, admin.FieldUsername, admin.FieldPassword:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullString)
 		case admin.FieldJoinedAt:
-			values[i] = &sql.NullTime{}
+			values[i] = new(sql.NullTime)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Admin", columns[i])
 		}
@@ -127,6 +138,11 @@ func (a *Admin) QuerySessions() *AdminSessionQuery {
 // QueryPosts queries the "posts" edge of the Admin entity.
 func (a *Admin) QueryPosts() *PostQuery {
 	return (&AdminClient{config: a.config}).QueryPosts(a)
+}
+
+// QueryUnsavedPosts queries the "unsaved_posts" edge of the Admin entity.
+func (a *Admin) QueryUnsavedPosts() *UnsavedPostQuery {
+	return (&AdminClient{config: a.config}).QueryUnsavedPosts(a)
 }
 
 // Update returns a builder for updating this Admin.

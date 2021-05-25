@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // Category is the model entity for the Category schema.
@@ -32,7 +32,7 @@ type Category struct {
 // CategoryEdges holds the relations/edges for other nodes in the graph.
 type CategoryEdges struct {
 	// Posts holds the value of the posts edge.
-	Posts []*Post
+	Posts []*Post `json:"posts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -53,11 +53,11 @@ func (*Category) scanValues(columns []string) ([]interface{}, error) {
 	for i := range columns {
 		switch columns[i] {
 		case category.FieldID:
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		case category.FieldName, category.FieldDescription:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullString)
 		case category.FieldCreatedAt, category.FieldModifiedAt:
-			values[i] = &sql.NullTime{}
+			values[i] = new(sql.NullTime)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Category", columns[i])
 		}

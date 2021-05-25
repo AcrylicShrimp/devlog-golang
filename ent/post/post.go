@@ -12,8 +12,6 @@ const (
 	Label = "post"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldUUID holds the string denoting the uuid field in the database.
-	FieldUUID = "uuid"
 	// FieldSlug holds the string denoting the slug field in the database.
 	FieldSlug = "slug"
 	// FieldAccessLevel holds the string denoting the access_level field in the database.
@@ -30,7 +28,6 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldModifiedAt holds the string denoting the modified_at field in the database.
 	FieldModifiedAt = "modified_at"
-
 	// EdgeAuthor holds the string denoting the author edge name in mutations.
 	EdgeAuthor = "author"
 	// EdgeCategory holds the string denoting the category edge name in mutations.
@@ -43,7 +40,6 @@ const (
 	EdgeVideos = "videos"
 	// EdgeAttachments holds the string denoting the attachments edge name in mutations.
 	EdgeAttachments = "attachments"
-
 	// Table holds the table name of the post in the database.
 	Table = "posts"
 	// AuthorTable is the table the holds the author relation/edge.
@@ -93,7 +89,6 @@ const (
 // Columns holds all SQL columns for post fields.
 var Columns = []string{
 	FieldID,
-	FieldUUID,
 	FieldSlug,
 	FieldAccessLevel,
 	FieldTitle,
@@ -104,7 +99,8 @@ var Columns = []string{
 	FieldModifiedAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the Post type.
+// ForeignKeys holds the SQL foreign-keys that are owned by the "posts"
+// table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"admin_posts",
 	"category_posts",
@@ -126,8 +122,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// UUIDValidator is a validator for the "uuid" field. It is called by the builders before save.
-	UUIDValidator func(string) error
 	// SlugValidator is a validator for the "slug" field. It is called by the builders before save.
 	SlugValidator func(string) error
 	// TitleValidator is a validator for the "title" field. It is called by the builders before save.

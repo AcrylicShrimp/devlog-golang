@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostImageQuery is the builder for querying PostImage entities.
@@ -21,6 +21,7 @@ type PostImageQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.PostImage
@@ -50,6 +51,13 @@ func (piq *PostImageQuery) Offset(offset int) *PostImageQuery {
 	return piq
 }
 
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (piq *PostImageQuery) Unique(unique bool) *PostImageQuery {
+	piq.unique = &unique
+	return piq
+}
+
 // Order adds an order step to the query.
 func (piq *PostImageQuery) Order(o ...OrderFunc) *PostImageQuery {
 	piq.order = append(piq.order, o...)
@@ -63,7 +71,7 @@ func (piq *PostImageQuery) QueryPost() *PostQuery {
 		if err := piq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := piq.sqlQuery()
+		selector := piq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -299,7 +307,7 @@ func (piq *PostImageQuery) GroupBy(field string, fields ...string) *PostImageGro
 		if err := piq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return piq.sqlQuery(), nil
+		return piq.sqlQuery(ctx), nil
 	}
 	return group
 }
@@ -377,10 +385,14 @@ func (piq *PostImageQuery) sqlAll(ctx context.Context) ([]*PostImage, error) {
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*PostImage)
 		for i := range nodes {
-			if fk := nodes[i].post_images; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			if nodes[i].post_images == nil {
+				continue
 			}
+			fk := *nodes[i].post_images
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
 		query.Where(post.IDIn(ids...))
 		neighbors, err := query.All(ctx)
@@ -409,7 +421,7 @@ func (piq *PostImageQuery) sqlCount(ctx context.Context) (int, error) {
 func (piq *PostImageQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := piq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -426,6 +438,9 @@ func (piq *PostImageQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   piq.sql,
 		Unique: true,
+	}
+	if unique := piq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := piq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -452,14 +467,14 @@ func (piq *PostImageQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := piq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, postimage.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
 	return _spec
 }
 
-func (piq *PostImageQuery) sqlQuery() *sql.Selector {
+func (piq *PostImageQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(piq.driver.Dialect())
 	t1 := builder.Table(postimage.Table)
 	selector := builder.Select(t1.Columns(postimage.Columns...)...).From(t1)
@@ -471,7 +486,7 @@ func (piq *PostImageQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range piq.order {
-		p(selector, postimage.ValidColumn)
+		p(selector)
 	}
 	if offset := piq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -737,7 +752,7 @@ func (pigb *PostImageGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(pigb.fields)+len(pigb.fns))
 	columns = append(columns, pigb.fields...)
 	for _, fn := range pigb.fns {
-		columns = append(columns, fn(selector, postimage.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(pigb.fields...)
 }
@@ -754,7 +769,7 @@ func (pis *PostImageSelect) Scan(ctx context.Context, v interface{}) error {
 	if err := pis.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pis.sql = pis.PostImageQuery.sqlQuery()
+	pis.sql = pis.PostImageQuery.sqlQuery(ctx)
 	return pis.sqlScan(ctx, v)
 }
 

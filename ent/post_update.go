@@ -16,9 +16,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostUpdate is the builder for updating Post entities.
@@ -31,12 +31,6 @@ type PostUpdate struct {
 // Where adds a new predicate for the PostUpdate builder.
 func (pu *PostUpdate) Where(ps ...predicate.Post) *PostUpdate {
 	pu.mutation.predicates = append(pu.mutation.predicates, ps...)
-	return pu
-}
-
-// SetUUID sets the "uuid" field.
-func (pu *PostUpdate) SetUUID(s string) *PostUpdate {
-	pu.mutation.SetUUID(s)
 	return pu
 }
 
@@ -344,11 +338,6 @@ func (pu *PostUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (pu *PostUpdate) check() error {
-	if v, ok := pu.mutation.UUID(); ok {
-		if err := post.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
-		}
-	}
 	if v, ok := pu.mutation.Slug(); ok {
 		if err := post.SlugValidator(v); err != nil {
 			return &ValidationError{Name: "slug", err: fmt.Errorf("ent: validator failed for field \"slug\": %w", err)}
@@ -392,13 +381,6 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := pu.mutation.UUID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: post.FieldUUID,
-		})
 	}
 	if value, ok := pu.mutation.Slug(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
@@ -737,14 +719,9 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // PostUpdateOne is the builder for updating a single Post entity.
 type PostUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *PostMutation
-}
-
-// SetUUID sets the "uuid" field.
-func (puo *PostUpdateOne) SetUUID(s string) *PostUpdateOne {
-	puo.mutation.SetUUID(s)
-	return puo
 }
 
 // SetSlug sets the "slug" field.
@@ -983,6 +960,13 @@ func (puo *PostUpdateOne) RemoveAttachments(p ...*PostAttachment) *PostUpdateOne
 	return puo.RemoveAttachmentIDs(ids...)
 }
 
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (puo *PostUpdateOne) Select(field string, fields ...string) *PostUpdateOne {
+	puo.fields = append([]string{field}, fields...)
+	return puo
+}
+
 // Save executes the query and returns the updated Post entity.
 func (puo *PostUpdateOne) Save(ctx context.Context) (*Post, error) {
 	var (
@@ -1051,11 +1035,6 @@ func (puo *PostUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (puo *PostUpdateOne) check() error {
-	if v, ok := puo.mutation.UUID(); ok {
-		if err := post.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
-		}
-	}
 	if v, ok := puo.mutation.Slug(); ok {
 		if err := post.SlugValidator(v); err != nil {
 			return &ValidationError{Name: "slug", err: fmt.Errorf("ent: validator failed for field \"slug\": %w", err)}
@@ -1098,12 +1077,24 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing Post.ID for update")}
 	}
 	_spec.Node.ID.Value = id
-	if value, ok := puo.mutation.UUID(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: post.FieldUUID,
-		})
+	if fields := puo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, post.FieldID)
+		for _, f := range fields {
+			if !post.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != post.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
+	if ps := puo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
 	}
 	if value, ok := puo.mutation.Slug(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{

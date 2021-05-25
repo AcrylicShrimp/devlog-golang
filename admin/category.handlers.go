@@ -10,9 +10,9 @@ import (
 )
 
 func AttachCategory(group *echo.Group) {
-	group.GET("", ListCategories)
-	group.POST("", NewCategoryHandler)
-	group.DELETE("/:name", DeleteCategoryHandler)
+	group.GET("", ListCategories, WithSession, RequireSession)
+	group.POST("", NewCategoryHandler, WithSession, RequireSession)
+	group.DELETE("/:name", DeleteCategoryHandler, WithSession, RequireSession)
 }
 
 func ListCategories(c echo.Context) error {
@@ -63,6 +63,7 @@ func DeleteCategoryHandler(c echo.Context) error {
 	type CategoryInfo struct {
 		Name string `param:"name" validate:"required"`
 	}
+
 	categoryInfo := new(CategoryInfo)
 	if err := c.Bind(categoryInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)

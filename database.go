@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"devlog/ent"
+	"devlog/env"
 	_ "github.com/go-sql-driver/mysql"
-	"os"
 )
 
 func InitDB() (*ent.Client, error) {
-	client, err := ent.Open(os.Getenv("DB_DRIVER"), os.Getenv("DB_DSN"))
+	client, err := ent.Open(env.DatabaseDriver, env.DatabaseDSN)
 	if err != nil {
 		return nil, err
 	}

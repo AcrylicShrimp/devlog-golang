@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostThumbnailUpdate is the builder for updating PostThumbnail entities.
@@ -294,6 +294,7 @@ func (ptu *PostThumbnailUpdate) sqlSave(ctx context.Context) (n int, err error) 
 // PostThumbnailUpdateOne is the builder for updating a single PostThumbnail entity.
 type PostThumbnailUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *PostThumbnailMutation
 }
@@ -369,6 +370,13 @@ func (ptuo *PostThumbnailUpdateOne) Mutation() *PostThumbnailMutation {
 // ClearPost clears the "post" edge to the Post entity.
 func (ptuo *PostThumbnailUpdateOne) ClearPost() *PostThumbnailUpdateOne {
 	ptuo.mutation.ClearPost()
+	return ptuo
+}
+
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (ptuo *PostThumbnailUpdateOne) Select(field string, fields ...string) *PostThumbnailUpdateOne {
+	ptuo.fields = append([]string{field}, fields...)
 	return ptuo
 }
 
@@ -463,6 +471,25 @@ func (ptuo *PostThumbnailUpdateOne) sqlSave(ctx context.Context) (_node *PostThu
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing PostThumbnail.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := ptuo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, postthumbnail.FieldID)
+		for _, f := range fields {
+			if !postthumbnail.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != postthumbnail.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
+	if ps := ptuo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
+	}
 	if value, ok := ptuo.mutation.Width(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,

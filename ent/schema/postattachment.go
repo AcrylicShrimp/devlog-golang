@@ -1,10 +1,10 @@
 package schema
 
 import (
-	"github.com/facebook/ent"
-	"github.com/facebook/ent/schema/edge"
-	"github.com/facebook/ent/schema/field"
-	"github.com/facebook/ent/schema/index"
+	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"time"
 )
 
@@ -16,7 +16,7 @@ type PostAttachment struct {
 // Fields of the PostAttachment.
 func (PostAttachment) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("uuid"),
+		field.String("uuid").MaxLen(64),
 		field.Uint64("size"),
 		field.String("name").MaxLen(255),
 		field.String("mime").MaxLen(64),

@@ -13,11 +13,16 @@ import (
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
 	"devlog/ent/predicate"
+	"devlog/ent/unsavedpost"
+	"devlog/ent/unsavedpostattachment"
+	"devlog/ent/unsavedpostimage"
+	"devlog/ent/unsavedpostthumbnail"
+	"devlog/ent/unsavedpostvideo"
 	"fmt"
 	"sync"
 	"time"
 
-	"github.com/facebook/ent"
+	"entgo.io/ent"
 )
 
 const (
@@ -29,36 +34,44 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeAdmin          = "Admin"
-	TypeAdminSession   = "AdminSession"
-	TypeCategory       = "Category"
-	TypePost           = "Post"
-	TypePostAttachment = "PostAttachment"
-	TypePostImage      = "PostImage"
-	TypePostThumbnail  = "PostThumbnail"
-	TypePostVideo      = "PostVideo"
+	TypeAdmin                 = "Admin"
+	TypeAdminSession          = "AdminSession"
+	TypeCategory              = "Category"
+	TypePost                  = "Post"
+	TypePostAttachment        = "PostAttachment"
+	TypePostImage             = "PostImage"
+	TypePostThumbnail         = "PostThumbnail"
+	TypePostVideo             = "PostVideo"
+	TypeUnsavedPost           = "UnsavedPost"
+	TypeUnsavedPostAttachment = "UnsavedPostAttachment"
+	TypeUnsavedPostImage      = "UnsavedPostImage"
+	TypeUnsavedPostThumbnail  = "UnsavedPostThumbnail"
+	TypeUnsavedPostVideo      = "UnsavedPostVideo"
 )
 
 // AdminMutation represents an operation that mutates the Admin nodes in the graph.
 type AdminMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int
-	email           *string
-	username        *string
-	password        *string
-	joined_at       *time.Time
-	clearedFields   map[string]struct{}
-	sessions        map[int]struct{}
-	removedsessions map[int]struct{}
-	clearedsessions bool
-	posts           map[int]struct{}
-	removedposts    map[int]struct{}
-	clearedposts    bool
-	done            bool
-	oldValue        func(context.Context) (*Admin, error)
-	predicates      []predicate.Admin
+	op                   Op
+	typ                  string
+	id                   *int
+	email                *string
+	username             *string
+	password             *string
+	joined_at            *time.Time
+	clearedFields        map[string]struct{}
+	sessions             map[int]struct{}
+	removedsessions      map[int]struct{}
+	clearedsessions      bool
+	posts                map[int]struct{}
+	removedposts         map[int]struct{}
+	clearedposts         bool
+	unsaved_posts        map[int]struct{}
+	removedunsaved_posts map[int]struct{}
+	clearedunsaved_posts bool
+	done                 bool
+	oldValue             func(context.Context) (*Admin, error)
+	predicates           []predicate.Admin
 }
 
 var _ ent.Mutation = (*AdminMutation)(nil)
@@ -299,7 +312,7 @@ func (m *AdminMutation) ClearSessions() {
 	m.clearedsessions = true
 }
 
-// SessionsCleared returns if the "sessions" edge to the AdminSession entity was cleared.
+// SessionsCleared reports if the "sessions" edge to the AdminSession entity was cleared.
 func (m *AdminMutation) SessionsCleared() bool {
 	return m.clearedsessions
 }
@@ -352,7 +365,7 @@ func (m *AdminMutation) ClearPosts() {
 	m.clearedposts = true
 }
 
-// PostsCleared returns if the "posts" edge to the Post entity was cleared.
+// PostsCleared reports if the "posts" edge to the Post entity was cleared.
 func (m *AdminMutation) PostsCleared() bool {
 	return m.clearedposts
 }
@@ -388,6 +401,59 @@ func (m *AdminMutation) ResetPosts() {
 	m.posts = nil
 	m.clearedposts = false
 	m.removedposts = nil
+}
+
+// AddUnsavedPostIDs adds the "unsaved_posts" edge to the UnsavedPost entity by ids.
+func (m *AdminMutation) AddUnsavedPostIDs(ids ...int) {
+	if m.unsaved_posts == nil {
+		m.unsaved_posts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.unsaved_posts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUnsavedPosts clears the "unsaved_posts" edge to the UnsavedPost entity.
+func (m *AdminMutation) ClearUnsavedPosts() {
+	m.clearedunsaved_posts = true
+}
+
+// UnsavedPostsCleared reports if the "unsaved_posts" edge to the UnsavedPost entity was cleared.
+func (m *AdminMutation) UnsavedPostsCleared() bool {
+	return m.clearedunsaved_posts
+}
+
+// RemoveUnsavedPostIDs removes the "unsaved_posts" edge to the UnsavedPost entity by IDs.
+func (m *AdminMutation) RemoveUnsavedPostIDs(ids ...int) {
+	if m.removedunsaved_posts == nil {
+		m.removedunsaved_posts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedunsaved_posts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUnsavedPosts returns the removed IDs of the "unsaved_posts" edge to the UnsavedPost entity.
+func (m *AdminMutation) RemovedUnsavedPostsIDs() (ids []int) {
+	for id := range m.removedunsaved_posts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UnsavedPostsIDs returns the "unsaved_posts" edge IDs in the mutation.
+func (m *AdminMutation) UnsavedPostsIDs() (ids []int) {
+	for id := range m.unsaved_posts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUnsavedPosts resets all changes to the "unsaved_posts" edge.
+func (m *AdminMutation) ResetUnsavedPosts() {
+	m.unsaved_posts = nil
+	m.clearedunsaved_posts = false
+	m.removedunsaved_posts = nil
 }
 
 // Op returns the operation name.
@@ -554,12 +620,15 @@ func (m *AdminMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AdminMutation) AddedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.sessions != nil {
 		edges = append(edges, admin.EdgeSessions)
 	}
 	if m.posts != nil {
 		edges = append(edges, admin.EdgePosts)
+	}
+	if m.unsaved_posts != nil {
+		edges = append(edges, admin.EdgeUnsavedPosts)
 	}
 	return edges
 }
@@ -580,18 +649,27 @@ func (m *AdminMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case admin.EdgeUnsavedPosts:
+		ids := make([]ent.Value, 0, len(m.unsaved_posts))
+		for id := range m.unsaved_posts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AdminMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.removedsessions != nil {
 		edges = append(edges, admin.EdgeSessions)
 	}
 	if m.removedposts != nil {
 		edges = append(edges, admin.EdgePosts)
+	}
+	if m.removedunsaved_posts != nil {
+		edges = append(edges, admin.EdgeUnsavedPosts)
 	}
 	return edges
 }
@@ -612,18 +690,27 @@ func (m *AdminMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case admin.EdgeUnsavedPosts:
+		ids := make([]ent.Value, 0, len(m.removedunsaved_posts))
+		for id := range m.removedunsaved_posts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AdminMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 2)
+	edges := make([]string, 0, 3)
 	if m.clearedsessions {
 		edges = append(edges, admin.EdgeSessions)
 	}
 	if m.clearedposts {
 		edges = append(edges, admin.EdgePosts)
+	}
+	if m.clearedunsaved_posts {
+		edges = append(edges, admin.EdgeUnsavedPosts)
 	}
 	return edges
 }
@@ -636,6 +723,8 @@ func (m *AdminMutation) EdgeCleared(name string) bool {
 		return m.clearedsessions
 	case admin.EdgePosts:
 		return m.clearedposts
+	case admin.EdgeUnsavedPosts:
+		return m.clearedunsaved_posts
 	}
 	return false
 }
@@ -657,6 +746,9 @@ func (m *AdminMutation) ResetEdge(name string) error {
 		return nil
 	case admin.EdgePosts:
 		m.ResetPosts()
+		return nil
+	case admin.EdgeUnsavedPosts:
+		m.ResetUnsavedPosts()
 		return nil
 	}
 	return fmt.Errorf("unknown Admin edge %s", name)
@@ -876,7 +968,7 @@ func (m *AdminSessionMutation) ClearUser() {
 	m.cleareduser = true
 }
 
-// UserCleared returns if the "user" edge to the Admin entity was cleared.
+// UserCleared reports if the "user" edge to the Admin entity was cleared.
 func (m *AdminSessionMutation) UserCleared() bool {
 	return m.cleareduser
 }
@@ -1396,7 +1488,7 @@ func (m *CategoryMutation) ClearPosts() {
 	m.clearedposts = true
 }
 
-// PostsCleared returns if the "posts" edge to the Post entity was cleared.
+// PostsCleared reports if the "posts" edge to the Post entity was cleared.
 func (m *CategoryMutation) PostsCleared() bool {
 	return m.clearedposts
 }
@@ -1695,7 +1787,6 @@ type PostMutation struct {
 	op                 Op
 	typ                string
 	id                 *int
-	uuid               *string
 	slug               *string
 	access_level       *post.AccessLevel
 	title              *string
@@ -1802,42 +1893,6 @@ func (m *PostMutation) ID() (id int, exists bool) {
 		return
 	}
 	return *m.id, true
-}
-
-// SetUUID sets the "uuid" field.
-func (m *PostMutation) SetUUID(s string) {
-	m.uuid = &s
-}
-
-// UUID returns the value of the "uuid" field in the mutation.
-func (m *PostMutation) UUID() (r string, exists bool) {
-	v := m.uuid
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUUID returns the old "uuid" field's value of the Post entity.
-// If the Post object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *PostMutation) OldUUID(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldUUID is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldUUID requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUUID: %w", err)
-	}
-	return oldValue.UUID, nil
-}
-
-// ResetUUID resets all changes to the "uuid" field.
-func (m *PostMutation) ResetUUID() {
-	m.uuid = nil
 }
 
 // SetSlug sets the "slug" field.
@@ -2138,7 +2193,7 @@ func (m *PostMutation) ClearAuthor() {
 	m.clearedauthor = true
 }
 
-// AuthorCleared returns if the "author" edge to the Admin entity was cleared.
+// AuthorCleared reports if the "author" edge to the Admin entity was cleared.
 func (m *PostMutation) AuthorCleared() bool {
 	return m.clearedauthor
 }
@@ -2177,7 +2232,7 @@ func (m *PostMutation) ClearCategory() {
 	m.clearedcategory = true
 }
 
-// CategoryCleared returns if the "category" edge to the Category entity was cleared.
+// CategoryCleared reports if the "category" edge to the Category entity was cleared.
 func (m *PostMutation) CategoryCleared() bool {
 	return m.clearedcategory
 }
@@ -2216,7 +2271,7 @@ func (m *PostMutation) ClearThumbnail() {
 	m.clearedthumbnail = true
 }
 
-// ThumbnailCleared returns if the "thumbnail" edge to the PostThumbnail entity was cleared.
+// ThumbnailCleared reports if the "thumbnail" edge to the PostThumbnail entity was cleared.
 func (m *PostMutation) ThumbnailCleared() bool {
 	return m.clearedthumbnail
 }
@@ -2260,7 +2315,7 @@ func (m *PostMutation) ClearImages() {
 	m.clearedimages = true
 }
 
-// ImagesCleared returns if the "images" edge to the PostImage entity was cleared.
+// ImagesCleared reports if the "images" edge to the PostImage entity was cleared.
 func (m *PostMutation) ImagesCleared() bool {
 	return m.clearedimages
 }
@@ -2313,7 +2368,7 @@ func (m *PostMutation) ClearVideos() {
 	m.clearedvideos = true
 }
 
-// VideosCleared returns if the "videos" edge to the PostVideo entity was cleared.
+// VideosCleared reports if the "videos" edge to the PostVideo entity was cleared.
 func (m *PostMutation) VideosCleared() bool {
 	return m.clearedvideos
 }
@@ -2366,7 +2421,7 @@ func (m *PostMutation) ClearAttachments() {
 	m.clearedattachments = true
 }
 
-// AttachmentsCleared returns if the "attachments" edge to the PostAttachment entity was cleared.
+// AttachmentsCleared reports if the "attachments" edge to the PostAttachment entity was cleared.
 func (m *PostMutation) AttachmentsCleared() bool {
 	return m.clearedattachments
 }
@@ -2418,10 +2473,7 @@ func (m *PostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PostMutation) Fields() []string {
-	fields := make([]string, 0, 9)
-	if m.uuid != nil {
-		fields = append(fields, post.FieldUUID)
-	}
+	fields := make([]string, 0, 8)
 	if m.slug != nil {
 		fields = append(fields, post.FieldSlug)
 	}
@@ -2454,8 +2506,6 @@ func (m *PostMutation) Fields() []string {
 // schema.
 func (m *PostMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case post.FieldUUID:
-		return m.UUID()
 	case post.FieldSlug:
 		return m.Slug()
 	case post.FieldAccessLevel:
@@ -2481,8 +2531,6 @@ func (m *PostMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case post.FieldUUID:
-		return m.OldUUID(ctx)
 	case post.FieldSlug:
 		return m.OldSlug(ctx)
 	case post.FieldAccessLevel:
@@ -2508,13 +2556,6 @@ func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *PostMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case post.FieldUUID:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUUID(v)
-		return nil
 	case post.FieldSlug:
 		v, ok := value.(string)
 		if !ok {
@@ -2620,9 +2661,6 @@ func (m *PostMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *PostMutation) ResetField(name string) error {
 	switch name {
-	case post.FieldUUID:
-		m.ResetUUID()
-		return nil
 	case post.FieldSlug:
 		m.ResetSlug()
 		return nil
@@ -3187,7 +3225,7 @@ func (m *PostAttachmentMutation) ClearPost() {
 	m.clearedpost = true
 }
 
-// PostCleared returns if the "post" edge to the Post entity was cleared.
+// PostCleared reports if the "post" edge to the Post entity was cleared.
 func (m *PostAttachmentMutation) PostCleared() bool {
 	return m.clearedpost
 }
@@ -3907,7 +3945,7 @@ func (m *PostImageMutation) ClearPost() {
 	m.clearedpost = true
 }
 
-// PostCleared returns if the "post" edge to the Post entity was cleared.
+// PostCleared reports if the "post" edge to the Post entity was cleared.
 func (m *PostImageMutation) PostCleared() bool {
 	return m.clearedpost
 }
@@ -4582,7 +4620,7 @@ func (m *PostThumbnailMutation) ClearPost() {
 	m.clearedpost = true
 }
 
-// PostCleared returns if the "post" edge to the Post entity was cleared.
+// PostCleared reports if the "post" edge to the Post entity was cleared.
 func (m *PostThumbnailMutation) PostCleared() bool {
 	return m.clearedpost
 }
@@ -5144,7 +5182,7 @@ func (m *PostVideoMutation) ClearPost() {
 	m.clearedpost = true
 }
 
-// PostCleared returns if the "post" edge to the Post entity was cleared.
+// PostCleared reports if the "post" edge to the Post entity was cleared.
 func (m *PostVideoMutation) PostCleared() bool {
 	return m.clearedpost
 }
@@ -5409,4 +5447,3711 @@ func (m *PostVideoMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown PostVideo edge %s", name)
+}
+
+// UnsavedPostMutation represents an operation that mutates the UnsavedPost nodes in the graph.
+type UnsavedPostMutation struct {
+	config
+	op                 Op
+	typ                string
+	id                 *int
+	uuid               *string
+	slug               *string
+	access_level       *unsavedpost.AccessLevel
+	title              *string
+	content            *string
+	html_content       *string
+	created_at         *time.Time
+	modified_at        *time.Time
+	clearedFields      map[string]struct{}
+	author             *int
+	clearedauthor      bool
+	thumbnail          *int
+	clearedthumbnail   bool
+	images             map[int]struct{}
+	removedimages      map[int]struct{}
+	clearedimages      bool
+	videos             map[int]struct{}
+	removedvideos      map[int]struct{}
+	clearedvideos      bool
+	attachments        map[int]struct{}
+	removedattachments map[int]struct{}
+	clearedattachments bool
+	done               bool
+	oldValue           func(context.Context) (*UnsavedPost, error)
+	predicates         []predicate.UnsavedPost
+}
+
+var _ ent.Mutation = (*UnsavedPostMutation)(nil)
+
+// unsavedpostOption allows management of the mutation configuration using functional options.
+type unsavedpostOption func(*UnsavedPostMutation)
+
+// newUnsavedPostMutation creates new mutation for the UnsavedPost entity.
+func newUnsavedPostMutation(c config, op Op, opts ...unsavedpostOption) *UnsavedPostMutation {
+	m := &UnsavedPostMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUnsavedPost,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUnsavedPostID sets the ID field of the mutation.
+func withUnsavedPostID(id int) unsavedpostOption {
+	return func(m *UnsavedPostMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UnsavedPost
+		)
+		m.oldValue = func(ctx context.Context) (*UnsavedPost, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UnsavedPost.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUnsavedPost sets the old UnsavedPost of the mutation.
+func withUnsavedPost(node *UnsavedPost) unsavedpostOption {
+	return func(m *UnsavedPostMutation) {
+		m.oldValue = func(context.Context) (*UnsavedPost, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UnsavedPostMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UnsavedPostMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID
+// is only available if it was provided to the builder.
+func (m *UnsavedPostMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetUUID sets the "uuid" field.
+func (m *UnsavedPostMutation) SetUUID(s string) {
+	m.uuid = &s
+}
+
+// UUID returns the value of the "uuid" field in the mutation.
+func (m *UnsavedPostMutation) UUID() (r string, exists bool) {
+	v := m.uuid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUUID returns the old "uuid" field's value of the UnsavedPost entity.
+// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostMutation) OldUUID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUUID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUUID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUUID: %w", err)
+	}
+	return oldValue.UUID, nil
+}
+
+// ResetUUID resets all changes to the "uuid" field.
+func (m *UnsavedPostMutation) ResetUUID() {
+	m.uuid = nil
+}
+
+// SetSlug sets the "slug" field.
+func (m *UnsavedPostMutation) SetSlug(s string) {
+	m.slug = &s
+}
+
+// Slug returns the value of the "slug" field in the mutation.
+func (m *UnsavedPostMutation) Slug() (r string, exists bool) {
+	v := m.slug
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSlug returns the old "slug" field's value of the UnsavedPost entity.
+// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostMutation) OldSlug(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldSlug is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldSlug requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSlug: %w", err)
+	}
+	return oldValue.Slug, nil
+}
+
+// ClearSlug clears the value of the "slug" field.
+func (m *UnsavedPostMutation) ClearSlug() {
+	m.slug = nil
+	m.clearedFields[unsavedpost.FieldSlug] = struct{}{}
+}
+
+// SlugCleared returns if the "slug" field was cleared in this mutation.
+func (m *UnsavedPostMutation) SlugCleared() bool {
+	_, ok := m.clearedFields[unsavedpost.FieldSlug]
+	return ok
+}
+
+// ResetSlug resets all changes to the "slug" field.
+func (m *UnsavedPostMutation) ResetSlug() {
+	m.slug = nil
+	delete(m.clearedFields, unsavedpost.FieldSlug)
+}
+
+// SetAccessLevel sets the "access_level" field.
+func (m *UnsavedPostMutation) SetAccessLevel(ul unsavedpost.AccessLevel) {
+	m.access_level = &ul
+}
+
+// AccessLevel returns the value of the "access_level" field in the mutation.
+func (m *UnsavedPostMutation) AccessLevel() (r unsavedpost.AccessLevel, exists bool) {
+	v := m.access_level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessLevel returns the old "access_level" field's value of the UnsavedPost entity.
+// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostMutation) OldAccessLevel(ctx context.Context) (v unsavedpost.AccessLevel, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldAccessLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldAccessLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessLevel: %w", err)
+	}
+	return oldValue.AccessLevel, nil
+}
+
+// ClearAccessLevel clears the value of the "access_level" field.
+func (m *UnsavedPostMutation) ClearAccessLevel() {
+	m.access_level = nil
+	m.clearedFields[unsavedpost.FieldAccessLevel] = struct{}{}
+}
+
+// AccessLevelCleared returns if the "access_level" field was cleared in this mutation.
+func (m *UnsavedPostMutation) AccessLevelCleared() bool {
+	_, ok := m.clearedFields[unsavedpost.FieldAccessLevel]
+	return ok
+}
+
+// ResetAccessLevel resets all changes to the "access_level" field.
+func (m *UnsavedPostMutation) ResetAccessLevel() {
+	m.access_level = nil
+	delete(m.clearedFields, unsavedpost.FieldAccessLevel)
+}
+
+// SetTitle sets the "title" field.
+func (m *UnsavedPostMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *UnsavedPostMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the UnsavedPost entity.
+// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ClearTitle clears the value of the "title" field.
+func (m *UnsavedPostMutation) ClearTitle() {
+	m.title = nil
+	m.clearedFields[unsavedpost.FieldTitle] = struct{}{}
+}
+
+// TitleCleared returns if the "title" field was cleared in this mutation.
+func (m *UnsavedPostMutation) TitleCleared() bool {
+	_, ok := m.clearedFields[unsavedpost.FieldTitle]
+	return ok
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *UnsavedPostMutation) ResetTitle() {
+	m.title = nil
+	delete(m.clearedFields, unsavedpost.FieldTitle)
+}
+
+// SetContent sets the "content" field.
+func (m *UnsavedPostMutation) SetContent(s string) {
+	m.content = &s
+}
+
+// Content returns the value of the "content" field in the mutation.
+func (m *UnsavedPostMutation) Content() (r string, exists bool) {
+	v := m.content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldContent returns the old "content" field's value of the UnsavedPost entity.
+// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostMutation) OldContent(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldContent: %w", err)
+	}
+	return oldValue.Content, nil
+}
+
+// ClearContent clears the value of the "content" field.
+func (m *UnsavedPostMutation) ClearContent() {
+	m.content = nil
+	m.clearedFields[unsavedpost.FieldContent] = struct{}{}
+}
+
+// ContentCleared returns if the "content" field was cleared in this mutation.
+func (m *UnsavedPostMutation) ContentCleared() bool {
+	_, ok := m.clearedFields[unsavedpost.FieldContent]
+	return ok
+}
+
+// ResetContent resets all changes to the "content" field.
+func (m *UnsavedPostMutation) ResetContent() {
+	m.content = nil
+	delete(m.clearedFields, unsavedpost.FieldContent)
+}
+
+// SetHTMLContent sets the "html_content" field.
+func (m *UnsavedPostMutation) SetHTMLContent(s string) {
+	m.html_content = &s
+}
+
+// HTMLContent returns the value of the "html_content" field in the mutation.
+func (m *UnsavedPostMutation) HTMLContent() (r string, exists bool) {
+	v := m.html_content
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHTMLContent returns the old "html_content" field's value of the UnsavedPost entity.
+// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostMutation) OldHTMLContent(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldHTMLContent is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldHTMLContent requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHTMLContent: %w", err)
+	}
+	return oldValue.HTMLContent, nil
+}
+
+// ClearHTMLContent clears the value of the "html_content" field.
+func (m *UnsavedPostMutation) ClearHTMLContent() {
+	m.html_content = nil
+	m.clearedFields[unsavedpost.FieldHTMLContent] = struct{}{}
+}
+
+// HTMLContentCleared returns if the "html_content" field was cleared in this mutation.
+func (m *UnsavedPostMutation) HTMLContentCleared() bool {
+	_, ok := m.clearedFields[unsavedpost.FieldHTMLContent]
+	return ok
+}
+
+// ResetHTMLContent resets all changes to the "html_content" field.
+func (m *UnsavedPostMutation) ResetHTMLContent() {
+	m.html_content = nil
+	delete(m.clearedFields, unsavedpost.FieldHTMLContent)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UnsavedPostMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UnsavedPostMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UnsavedPost entity.
+// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UnsavedPostMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetModifiedAt sets the "modified_at" field.
+func (m *UnsavedPostMutation) SetModifiedAt(t time.Time) {
+	m.modified_at = &t
+}
+
+// ModifiedAt returns the value of the "modified_at" field in the mutation.
+func (m *UnsavedPostMutation) ModifiedAt() (r time.Time, exists bool) {
+	v := m.modified_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldModifiedAt returns the old "modified_at" field's value of the UnsavedPost entity.
+// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostMutation) OldModifiedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldModifiedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldModifiedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldModifiedAt: %w", err)
+	}
+	return oldValue.ModifiedAt, nil
+}
+
+// ResetModifiedAt resets all changes to the "modified_at" field.
+func (m *UnsavedPostMutation) ResetModifiedAt() {
+	m.modified_at = nil
+}
+
+// SetAuthorID sets the "author" edge to the Admin entity by id.
+func (m *UnsavedPostMutation) SetAuthorID(id int) {
+	m.author = &id
+}
+
+// ClearAuthor clears the "author" edge to the Admin entity.
+func (m *UnsavedPostMutation) ClearAuthor() {
+	m.clearedauthor = true
+}
+
+// AuthorCleared reports if the "author" edge to the Admin entity was cleared.
+func (m *UnsavedPostMutation) AuthorCleared() bool {
+	return m.clearedauthor
+}
+
+// AuthorID returns the "author" edge ID in the mutation.
+func (m *UnsavedPostMutation) AuthorID() (id int, exists bool) {
+	if m.author != nil {
+		return *m.author, true
+	}
+	return
+}
+
+// AuthorIDs returns the "author" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// AuthorID instead. It exists only for internal usage by the builders.
+func (m *UnsavedPostMutation) AuthorIDs() (ids []int) {
+	if id := m.author; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetAuthor resets all changes to the "author" edge.
+func (m *UnsavedPostMutation) ResetAuthor() {
+	m.author = nil
+	m.clearedauthor = false
+}
+
+// SetThumbnailID sets the "thumbnail" edge to the UnsavedPostThumbnail entity by id.
+func (m *UnsavedPostMutation) SetThumbnailID(id int) {
+	m.thumbnail = &id
+}
+
+// ClearThumbnail clears the "thumbnail" edge to the UnsavedPostThumbnail entity.
+func (m *UnsavedPostMutation) ClearThumbnail() {
+	m.clearedthumbnail = true
+}
+
+// ThumbnailCleared reports if the "thumbnail" edge to the UnsavedPostThumbnail entity was cleared.
+func (m *UnsavedPostMutation) ThumbnailCleared() bool {
+	return m.clearedthumbnail
+}
+
+// ThumbnailID returns the "thumbnail" edge ID in the mutation.
+func (m *UnsavedPostMutation) ThumbnailID() (id int, exists bool) {
+	if m.thumbnail != nil {
+		return *m.thumbnail, true
+	}
+	return
+}
+
+// ThumbnailIDs returns the "thumbnail" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ThumbnailID instead. It exists only for internal usage by the builders.
+func (m *UnsavedPostMutation) ThumbnailIDs() (ids []int) {
+	if id := m.thumbnail; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetThumbnail resets all changes to the "thumbnail" edge.
+func (m *UnsavedPostMutation) ResetThumbnail() {
+	m.thumbnail = nil
+	m.clearedthumbnail = false
+}
+
+// AddImageIDs adds the "images" edge to the UnsavedPostImage entity by ids.
+func (m *UnsavedPostMutation) AddImageIDs(ids ...int) {
+	if m.images == nil {
+		m.images = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.images[ids[i]] = struct{}{}
+	}
+}
+
+// ClearImages clears the "images" edge to the UnsavedPostImage entity.
+func (m *UnsavedPostMutation) ClearImages() {
+	m.clearedimages = true
+}
+
+// ImagesCleared reports if the "images" edge to the UnsavedPostImage entity was cleared.
+func (m *UnsavedPostMutation) ImagesCleared() bool {
+	return m.clearedimages
+}
+
+// RemoveImageIDs removes the "images" edge to the UnsavedPostImage entity by IDs.
+func (m *UnsavedPostMutation) RemoveImageIDs(ids ...int) {
+	if m.removedimages == nil {
+		m.removedimages = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedimages[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedImages returns the removed IDs of the "images" edge to the UnsavedPostImage entity.
+func (m *UnsavedPostMutation) RemovedImagesIDs() (ids []int) {
+	for id := range m.removedimages {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ImagesIDs returns the "images" edge IDs in the mutation.
+func (m *UnsavedPostMutation) ImagesIDs() (ids []int) {
+	for id := range m.images {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetImages resets all changes to the "images" edge.
+func (m *UnsavedPostMutation) ResetImages() {
+	m.images = nil
+	m.clearedimages = false
+	m.removedimages = nil
+}
+
+// AddVideoIDs adds the "videos" edge to the UnsavedPostVideo entity by ids.
+func (m *UnsavedPostMutation) AddVideoIDs(ids ...int) {
+	if m.videos == nil {
+		m.videos = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.videos[ids[i]] = struct{}{}
+	}
+}
+
+// ClearVideos clears the "videos" edge to the UnsavedPostVideo entity.
+func (m *UnsavedPostMutation) ClearVideos() {
+	m.clearedvideos = true
+}
+
+// VideosCleared reports if the "videos" edge to the UnsavedPostVideo entity was cleared.
+func (m *UnsavedPostMutation) VideosCleared() bool {
+	return m.clearedvideos
+}
+
+// RemoveVideoIDs removes the "videos" edge to the UnsavedPostVideo entity by IDs.
+func (m *UnsavedPostMutation) RemoveVideoIDs(ids ...int) {
+	if m.removedvideos == nil {
+		m.removedvideos = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedvideos[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedVideos returns the removed IDs of the "videos" edge to the UnsavedPostVideo entity.
+func (m *UnsavedPostMutation) RemovedVideosIDs() (ids []int) {
+	for id := range m.removedvideos {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// VideosIDs returns the "videos" edge IDs in the mutation.
+func (m *UnsavedPostMutation) VideosIDs() (ids []int) {
+	for id := range m.videos {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetVideos resets all changes to the "videos" edge.
+func (m *UnsavedPostMutation) ResetVideos() {
+	m.videos = nil
+	m.clearedvideos = false
+	m.removedvideos = nil
+}
+
+// AddAttachmentIDs adds the "attachments" edge to the UnsavedPostAttachment entity by ids.
+func (m *UnsavedPostMutation) AddAttachmentIDs(ids ...int) {
+	if m.attachments == nil {
+		m.attachments = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.attachments[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAttachments clears the "attachments" edge to the UnsavedPostAttachment entity.
+func (m *UnsavedPostMutation) ClearAttachments() {
+	m.clearedattachments = true
+}
+
+// AttachmentsCleared reports if the "attachments" edge to the UnsavedPostAttachment entity was cleared.
+func (m *UnsavedPostMutation) AttachmentsCleared() bool {
+	return m.clearedattachments
+}
+
+// RemoveAttachmentIDs removes the "attachments" edge to the UnsavedPostAttachment entity by IDs.
+func (m *UnsavedPostMutation) RemoveAttachmentIDs(ids ...int) {
+	if m.removedattachments == nil {
+		m.removedattachments = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedattachments[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAttachments returns the removed IDs of the "attachments" edge to the UnsavedPostAttachment entity.
+func (m *UnsavedPostMutation) RemovedAttachmentsIDs() (ids []int) {
+	for id := range m.removedattachments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AttachmentsIDs returns the "attachments" edge IDs in the mutation.
+func (m *UnsavedPostMutation) AttachmentsIDs() (ids []int) {
+	for id := range m.attachments {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAttachments resets all changes to the "attachments" edge.
+func (m *UnsavedPostMutation) ResetAttachments() {
+	m.attachments = nil
+	m.clearedattachments = false
+	m.removedattachments = nil
+}
+
+// Op returns the operation name.
+func (m *UnsavedPostMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (UnsavedPost).
+func (m *UnsavedPostMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UnsavedPostMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.uuid != nil {
+		fields = append(fields, unsavedpost.FieldUUID)
+	}
+	if m.slug != nil {
+		fields = append(fields, unsavedpost.FieldSlug)
+	}
+	if m.access_level != nil {
+		fields = append(fields, unsavedpost.FieldAccessLevel)
+	}
+	if m.title != nil {
+		fields = append(fields, unsavedpost.FieldTitle)
+	}
+	if m.content != nil {
+		fields = append(fields, unsavedpost.FieldContent)
+	}
+	if m.html_content != nil {
+		fields = append(fields, unsavedpost.FieldHTMLContent)
+	}
+	if m.created_at != nil {
+		fields = append(fields, unsavedpost.FieldCreatedAt)
+	}
+	if m.modified_at != nil {
+		fields = append(fields, unsavedpost.FieldModifiedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UnsavedPostMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case unsavedpost.FieldUUID:
+		return m.UUID()
+	case unsavedpost.FieldSlug:
+		return m.Slug()
+	case unsavedpost.FieldAccessLevel:
+		return m.AccessLevel()
+	case unsavedpost.FieldTitle:
+		return m.Title()
+	case unsavedpost.FieldContent:
+		return m.Content()
+	case unsavedpost.FieldHTMLContent:
+		return m.HTMLContent()
+	case unsavedpost.FieldCreatedAt:
+		return m.CreatedAt()
+	case unsavedpost.FieldModifiedAt:
+		return m.ModifiedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UnsavedPostMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case unsavedpost.FieldUUID:
+		return m.OldUUID(ctx)
+	case unsavedpost.FieldSlug:
+		return m.OldSlug(ctx)
+	case unsavedpost.FieldAccessLevel:
+		return m.OldAccessLevel(ctx)
+	case unsavedpost.FieldTitle:
+		return m.OldTitle(ctx)
+	case unsavedpost.FieldContent:
+		return m.OldContent(ctx)
+	case unsavedpost.FieldHTMLContent:
+		return m.OldHTMLContent(ctx)
+	case unsavedpost.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case unsavedpost.FieldModifiedAt:
+		return m.OldModifiedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown UnsavedPost field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case unsavedpost.FieldUUID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUUID(v)
+		return nil
+	case unsavedpost.FieldSlug:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSlug(v)
+		return nil
+	case unsavedpost.FieldAccessLevel:
+		v, ok := value.(unsavedpost.AccessLevel)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessLevel(v)
+		return nil
+	case unsavedpost.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case unsavedpost.FieldContent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetContent(v)
+		return nil
+	case unsavedpost.FieldHTMLContent:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHTMLContent(v)
+		return nil
+	case unsavedpost.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case unsavedpost.FieldModifiedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetModifiedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPost field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UnsavedPostMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UnsavedPostMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown UnsavedPost numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UnsavedPostMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(unsavedpost.FieldSlug) {
+		fields = append(fields, unsavedpost.FieldSlug)
+	}
+	if m.FieldCleared(unsavedpost.FieldAccessLevel) {
+		fields = append(fields, unsavedpost.FieldAccessLevel)
+	}
+	if m.FieldCleared(unsavedpost.FieldTitle) {
+		fields = append(fields, unsavedpost.FieldTitle)
+	}
+	if m.FieldCleared(unsavedpost.FieldContent) {
+		fields = append(fields, unsavedpost.FieldContent)
+	}
+	if m.FieldCleared(unsavedpost.FieldHTMLContent) {
+		fields = append(fields, unsavedpost.FieldHTMLContent)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UnsavedPostMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UnsavedPostMutation) ClearField(name string) error {
+	switch name {
+	case unsavedpost.FieldSlug:
+		m.ClearSlug()
+		return nil
+	case unsavedpost.FieldAccessLevel:
+		m.ClearAccessLevel()
+		return nil
+	case unsavedpost.FieldTitle:
+		m.ClearTitle()
+		return nil
+	case unsavedpost.FieldContent:
+		m.ClearContent()
+		return nil
+	case unsavedpost.FieldHTMLContent:
+		m.ClearHTMLContent()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPost nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UnsavedPostMutation) ResetField(name string) error {
+	switch name {
+	case unsavedpost.FieldUUID:
+		m.ResetUUID()
+		return nil
+	case unsavedpost.FieldSlug:
+		m.ResetSlug()
+		return nil
+	case unsavedpost.FieldAccessLevel:
+		m.ResetAccessLevel()
+		return nil
+	case unsavedpost.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case unsavedpost.FieldContent:
+		m.ResetContent()
+		return nil
+	case unsavedpost.FieldHTMLContent:
+		m.ResetHTMLContent()
+		return nil
+	case unsavedpost.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case unsavedpost.FieldModifiedAt:
+		m.ResetModifiedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPost field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UnsavedPostMutation) AddedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.author != nil {
+		edges = append(edges, unsavedpost.EdgeAuthor)
+	}
+	if m.thumbnail != nil {
+		edges = append(edges, unsavedpost.EdgeThumbnail)
+	}
+	if m.images != nil {
+		edges = append(edges, unsavedpost.EdgeImages)
+	}
+	if m.videos != nil {
+		edges = append(edges, unsavedpost.EdgeVideos)
+	}
+	if m.attachments != nil {
+		edges = append(edges, unsavedpost.EdgeAttachments)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UnsavedPostMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case unsavedpost.EdgeAuthor:
+		if id := m.author; id != nil {
+			return []ent.Value{*id}
+		}
+	case unsavedpost.EdgeThumbnail:
+		if id := m.thumbnail; id != nil {
+			return []ent.Value{*id}
+		}
+	case unsavedpost.EdgeImages:
+		ids := make([]ent.Value, 0, len(m.images))
+		for id := range m.images {
+			ids = append(ids, id)
+		}
+		return ids
+	case unsavedpost.EdgeVideos:
+		ids := make([]ent.Value, 0, len(m.videos))
+		for id := range m.videos {
+			ids = append(ids, id)
+		}
+		return ids
+	case unsavedpost.EdgeAttachments:
+		ids := make([]ent.Value, 0, len(m.attachments))
+		for id := range m.attachments {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UnsavedPostMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.removedimages != nil {
+		edges = append(edges, unsavedpost.EdgeImages)
+	}
+	if m.removedvideos != nil {
+		edges = append(edges, unsavedpost.EdgeVideos)
+	}
+	if m.removedattachments != nil {
+		edges = append(edges, unsavedpost.EdgeAttachments)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UnsavedPostMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case unsavedpost.EdgeImages:
+		ids := make([]ent.Value, 0, len(m.removedimages))
+		for id := range m.removedimages {
+			ids = append(ids, id)
+		}
+		return ids
+	case unsavedpost.EdgeVideos:
+		ids := make([]ent.Value, 0, len(m.removedvideos))
+		for id := range m.removedvideos {
+			ids = append(ids, id)
+		}
+		return ids
+	case unsavedpost.EdgeAttachments:
+		ids := make([]ent.Value, 0, len(m.removedattachments))
+		for id := range m.removedattachments {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UnsavedPostMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 5)
+	if m.clearedauthor {
+		edges = append(edges, unsavedpost.EdgeAuthor)
+	}
+	if m.clearedthumbnail {
+		edges = append(edges, unsavedpost.EdgeThumbnail)
+	}
+	if m.clearedimages {
+		edges = append(edges, unsavedpost.EdgeImages)
+	}
+	if m.clearedvideos {
+		edges = append(edges, unsavedpost.EdgeVideos)
+	}
+	if m.clearedattachments {
+		edges = append(edges, unsavedpost.EdgeAttachments)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UnsavedPostMutation) EdgeCleared(name string) bool {
+	switch name {
+	case unsavedpost.EdgeAuthor:
+		return m.clearedauthor
+	case unsavedpost.EdgeThumbnail:
+		return m.clearedthumbnail
+	case unsavedpost.EdgeImages:
+		return m.clearedimages
+	case unsavedpost.EdgeVideos:
+		return m.clearedvideos
+	case unsavedpost.EdgeAttachments:
+		return m.clearedattachments
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UnsavedPostMutation) ClearEdge(name string) error {
+	switch name {
+	case unsavedpost.EdgeAuthor:
+		m.ClearAuthor()
+		return nil
+	case unsavedpost.EdgeThumbnail:
+		m.ClearThumbnail()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPost unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UnsavedPostMutation) ResetEdge(name string) error {
+	switch name {
+	case unsavedpost.EdgeAuthor:
+		m.ResetAuthor()
+		return nil
+	case unsavedpost.EdgeThumbnail:
+		m.ResetThumbnail()
+		return nil
+	case unsavedpost.EdgeImages:
+		m.ResetImages()
+		return nil
+	case unsavedpost.EdgeVideos:
+		m.ResetVideos()
+		return nil
+	case unsavedpost.EdgeAttachments:
+		m.ResetAttachments()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPost edge %s", name)
+}
+
+// UnsavedPostAttachmentMutation represents an operation that mutates the UnsavedPostAttachment nodes in the graph.
+type UnsavedPostAttachmentMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	uuid                *string
+	size                *uint64
+	addsize             *uint64
+	name                *string
+	mime                *string
+	url                 *string
+	created_at          *time.Time
+	clearedFields       map[string]struct{}
+	unsaved_post        *int
+	clearedunsaved_post bool
+	done                bool
+	oldValue            func(context.Context) (*UnsavedPostAttachment, error)
+	predicates          []predicate.UnsavedPostAttachment
+}
+
+var _ ent.Mutation = (*UnsavedPostAttachmentMutation)(nil)
+
+// unsavedpostattachmentOption allows management of the mutation configuration using functional options.
+type unsavedpostattachmentOption func(*UnsavedPostAttachmentMutation)
+
+// newUnsavedPostAttachmentMutation creates new mutation for the UnsavedPostAttachment entity.
+func newUnsavedPostAttachmentMutation(c config, op Op, opts ...unsavedpostattachmentOption) *UnsavedPostAttachmentMutation {
+	m := &UnsavedPostAttachmentMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUnsavedPostAttachment,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUnsavedPostAttachmentID sets the ID field of the mutation.
+func withUnsavedPostAttachmentID(id int) unsavedpostattachmentOption {
+	return func(m *UnsavedPostAttachmentMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UnsavedPostAttachment
+		)
+		m.oldValue = func(ctx context.Context) (*UnsavedPostAttachment, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UnsavedPostAttachment.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUnsavedPostAttachment sets the old UnsavedPostAttachment of the mutation.
+func withUnsavedPostAttachment(node *UnsavedPostAttachment) unsavedpostattachmentOption {
+	return func(m *UnsavedPostAttachmentMutation) {
+		m.oldValue = func(context.Context) (*UnsavedPostAttachment, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UnsavedPostAttachmentMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UnsavedPostAttachmentMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID
+// is only available if it was provided to the builder.
+func (m *UnsavedPostAttachmentMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetUUID sets the "uuid" field.
+func (m *UnsavedPostAttachmentMutation) SetUUID(s string) {
+	m.uuid = &s
+}
+
+// UUID returns the value of the "uuid" field in the mutation.
+func (m *UnsavedPostAttachmentMutation) UUID() (r string, exists bool) {
+	v := m.uuid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUUID returns the old "uuid" field's value of the UnsavedPostAttachment entity.
+// If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostAttachmentMutation) OldUUID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUUID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUUID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUUID: %w", err)
+	}
+	return oldValue.UUID, nil
+}
+
+// ResetUUID resets all changes to the "uuid" field.
+func (m *UnsavedPostAttachmentMutation) ResetUUID() {
+	m.uuid = nil
+}
+
+// SetSize sets the "size" field.
+func (m *UnsavedPostAttachmentMutation) SetSize(u uint64) {
+	m.size = &u
+	m.addsize = nil
+}
+
+// Size returns the value of the "size" field in the mutation.
+func (m *UnsavedPostAttachmentMutation) Size() (r uint64, exists bool) {
+	v := m.size
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldSize returns the old "size" field's value of the UnsavedPostAttachment entity.
+// If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostAttachmentMutation) OldSize(ctx context.Context) (v uint64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldSize is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldSize requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldSize: %w", err)
+	}
+	return oldValue.Size, nil
+}
+
+// AddSize adds u to the "size" field.
+func (m *UnsavedPostAttachmentMutation) AddSize(u uint64) {
+	if m.addsize != nil {
+		*m.addsize += u
+	} else {
+		m.addsize = &u
+	}
+}
+
+// AddedSize returns the value that was added to the "size" field in this mutation.
+func (m *UnsavedPostAttachmentMutation) AddedSize() (r uint64, exists bool) {
+	v := m.addsize
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetSize resets all changes to the "size" field.
+func (m *UnsavedPostAttachmentMutation) ResetSize() {
+	m.size = nil
+	m.addsize = nil
+}
+
+// SetName sets the "name" field.
+func (m *UnsavedPostAttachmentMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *UnsavedPostAttachmentMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the UnsavedPostAttachment entity.
+// If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostAttachmentMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *UnsavedPostAttachmentMutation) ResetName() {
+	m.name = nil
+}
+
+// SetMime sets the "mime" field.
+func (m *UnsavedPostAttachmentMutation) SetMime(s string) {
+	m.mime = &s
+}
+
+// Mime returns the value of the "mime" field in the mutation.
+func (m *UnsavedPostAttachmentMutation) Mime() (r string, exists bool) {
+	v := m.mime
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMime returns the old "mime" field's value of the UnsavedPostAttachment entity.
+// If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostAttachmentMutation) OldMime(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMime is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMime requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMime: %w", err)
+	}
+	return oldValue.Mime, nil
+}
+
+// ResetMime resets all changes to the "mime" field.
+func (m *UnsavedPostAttachmentMutation) ResetMime() {
+	m.mime = nil
+}
+
+// SetURL sets the "url" field.
+func (m *UnsavedPostAttachmentMutation) SetURL(s string) {
+	m.url = &s
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *UnsavedPostAttachmentMutation) URL() (r string, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the UnsavedPostAttachment entity.
+// If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostAttachmentMutation) OldURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *UnsavedPostAttachmentMutation) ResetURL() {
+	m.url = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UnsavedPostAttachmentMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UnsavedPostAttachmentMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UnsavedPostAttachment entity.
+// If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostAttachmentMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UnsavedPostAttachmentMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUnsavedPostID sets the "unsaved_post" edge to the UnsavedPost entity by id.
+func (m *UnsavedPostAttachmentMutation) SetUnsavedPostID(id int) {
+	m.unsaved_post = &id
+}
+
+// ClearUnsavedPost clears the "unsaved_post" edge to the UnsavedPost entity.
+func (m *UnsavedPostAttachmentMutation) ClearUnsavedPost() {
+	m.clearedunsaved_post = true
+}
+
+// UnsavedPostCleared reports if the "unsaved_post" edge to the UnsavedPost entity was cleared.
+func (m *UnsavedPostAttachmentMutation) UnsavedPostCleared() bool {
+	return m.clearedunsaved_post
+}
+
+// UnsavedPostID returns the "unsaved_post" edge ID in the mutation.
+func (m *UnsavedPostAttachmentMutation) UnsavedPostID() (id int, exists bool) {
+	if m.unsaved_post != nil {
+		return *m.unsaved_post, true
+	}
+	return
+}
+
+// UnsavedPostIDs returns the "unsaved_post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UnsavedPostID instead. It exists only for internal usage by the builders.
+func (m *UnsavedPostAttachmentMutation) UnsavedPostIDs() (ids []int) {
+	if id := m.unsaved_post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUnsavedPost resets all changes to the "unsaved_post" edge.
+func (m *UnsavedPostAttachmentMutation) ResetUnsavedPost() {
+	m.unsaved_post = nil
+	m.clearedunsaved_post = false
+}
+
+// Op returns the operation name.
+func (m *UnsavedPostAttachmentMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (UnsavedPostAttachment).
+func (m *UnsavedPostAttachmentMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UnsavedPostAttachmentMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.uuid != nil {
+		fields = append(fields, unsavedpostattachment.FieldUUID)
+	}
+	if m.size != nil {
+		fields = append(fields, unsavedpostattachment.FieldSize)
+	}
+	if m.name != nil {
+		fields = append(fields, unsavedpostattachment.FieldName)
+	}
+	if m.mime != nil {
+		fields = append(fields, unsavedpostattachment.FieldMime)
+	}
+	if m.url != nil {
+		fields = append(fields, unsavedpostattachment.FieldURL)
+	}
+	if m.created_at != nil {
+		fields = append(fields, unsavedpostattachment.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UnsavedPostAttachmentMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case unsavedpostattachment.FieldUUID:
+		return m.UUID()
+	case unsavedpostattachment.FieldSize:
+		return m.Size()
+	case unsavedpostattachment.FieldName:
+		return m.Name()
+	case unsavedpostattachment.FieldMime:
+		return m.Mime()
+	case unsavedpostattachment.FieldURL:
+		return m.URL()
+	case unsavedpostattachment.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UnsavedPostAttachmentMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case unsavedpostattachment.FieldUUID:
+		return m.OldUUID(ctx)
+	case unsavedpostattachment.FieldSize:
+		return m.OldSize(ctx)
+	case unsavedpostattachment.FieldName:
+		return m.OldName(ctx)
+	case unsavedpostattachment.FieldMime:
+		return m.OldMime(ctx)
+	case unsavedpostattachment.FieldURL:
+		return m.OldURL(ctx)
+	case unsavedpostattachment.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown UnsavedPostAttachment field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostAttachmentMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case unsavedpostattachment.FieldUUID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUUID(v)
+		return nil
+	case unsavedpostattachment.FieldSize:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetSize(v)
+		return nil
+	case unsavedpostattachment.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case unsavedpostattachment.FieldMime:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMime(v)
+		return nil
+	case unsavedpostattachment.FieldURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	case unsavedpostattachment.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostAttachment field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UnsavedPostAttachmentMutation) AddedFields() []string {
+	var fields []string
+	if m.addsize != nil {
+		fields = append(fields, unsavedpostattachment.FieldSize)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UnsavedPostAttachmentMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case unsavedpostattachment.FieldSize:
+		return m.AddedSize()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostAttachmentMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case unsavedpostattachment.FieldSize:
+		v, ok := value.(uint64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddSize(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostAttachment numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UnsavedPostAttachmentMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UnsavedPostAttachmentMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UnsavedPostAttachmentMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown UnsavedPostAttachment nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UnsavedPostAttachmentMutation) ResetField(name string) error {
+	switch name {
+	case unsavedpostattachment.FieldUUID:
+		m.ResetUUID()
+		return nil
+	case unsavedpostattachment.FieldSize:
+		m.ResetSize()
+		return nil
+	case unsavedpostattachment.FieldName:
+		m.ResetName()
+		return nil
+	case unsavedpostattachment.FieldMime:
+		m.ResetMime()
+		return nil
+	case unsavedpostattachment.FieldURL:
+		m.ResetURL()
+		return nil
+	case unsavedpostattachment.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostAttachment field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UnsavedPostAttachmentMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.unsaved_post != nil {
+		edges = append(edges, unsavedpostattachment.EdgeUnsavedPost)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UnsavedPostAttachmentMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case unsavedpostattachment.EdgeUnsavedPost:
+		if id := m.unsaved_post; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UnsavedPostAttachmentMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UnsavedPostAttachmentMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UnsavedPostAttachmentMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedunsaved_post {
+		edges = append(edges, unsavedpostattachment.EdgeUnsavedPost)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UnsavedPostAttachmentMutation) EdgeCleared(name string) bool {
+	switch name {
+	case unsavedpostattachment.EdgeUnsavedPost:
+		return m.clearedunsaved_post
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UnsavedPostAttachmentMutation) ClearEdge(name string) error {
+	switch name {
+	case unsavedpostattachment.EdgeUnsavedPost:
+		m.ClearUnsavedPost()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostAttachment unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UnsavedPostAttachmentMutation) ResetEdge(name string) error {
+	switch name {
+	case unsavedpostattachment.EdgeUnsavedPost:
+		m.ResetUnsavedPost()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostAttachment edge %s", name)
+}
+
+// UnsavedPostImageMutation represents an operation that mutates the UnsavedPostImage nodes in the graph.
+type UnsavedPostImageMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	uuid                *string
+	width               *uint32
+	addwidth            *uint32
+	height              *uint32
+	addheight           *uint32
+	hash                *string
+	title               *string
+	url                 *string
+	created_at          *time.Time
+	clearedFields       map[string]struct{}
+	unsaved_post        *int
+	clearedunsaved_post bool
+	done                bool
+	oldValue            func(context.Context) (*UnsavedPostImage, error)
+	predicates          []predicate.UnsavedPostImage
+}
+
+var _ ent.Mutation = (*UnsavedPostImageMutation)(nil)
+
+// unsavedpostimageOption allows management of the mutation configuration using functional options.
+type unsavedpostimageOption func(*UnsavedPostImageMutation)
+
+// newUnsavedPostImageMutation creates new mutation for the UnsavedPostImage entity.
+func newUnsavedPostImageMutation(c config, op Op, opts ...unsavedpostimageOption) *UnsavedPostImageMutation {
+	m := &UnsavedPostImageMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUnsavedPostImage,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUnsavedPostImageID sets the ID field of the mutation.
+func withUnsavedPostImageID(id int) unsavedpostimageOption {
+	return func(m *UnsavedPostImageMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UnsavedPostImage
+		)
+		m.oldValue = func(ctx context.Context) (*UnsavedPostImage, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UnsavedPostImage.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUnsavedPostImage sets the old UnsavedPostImage of the mutation.
+func withUnsavedPostImage(node *UnsavedPostImage) unsavedpostimageOption {
+	return func(m *UnsavedPostImageMutation) {
+		m.oldValue = func(context.Context) (*UnsavedPostImage, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UnsavedPostImageMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UnsavedPostImageMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID
+// is only available if it was provided to the builder.
+func (m *UnsavedPostImageMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetUUID sets the "uuid" field.
+func (m *UnsavedPostImageMutation) SetUUID(s string) {
+	m.uuid = &s
+}
+
+// UUID returns the value of the "uuid" field in the mutation.
+func (m *UnsavedPostImageMutation) UUID() (r string, exists bool) {
+	v := m.uuid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUUID returns the old "uuid" field's value of the UnsavedPostImage entity.
+// If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostImageMutation) OldUUID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUUID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUUID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUUID: %w", err)
+	}
+	return oldValue.UUID, nil
+}
+
+// ResetUUID resets all changes to the "uuid" field.
+func (m *UnsavedPostImageMutation) ResetUUID() {
+	m.uuid = nil
+}
+
+// SetWidth sets the "width" field.
+func (m *UnsavedPostImageMutation) SetWidth(u uint32) {
+	m.width = &u
+	m.addwidth = nil
+}
+
+// Width returns the value of the "width" field in the mutation.
+func (m *UnsavedPostImageMutation) Width() (r uint32, exists bool) {
+	v := m.width
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWidth returns the old "width" field's value of the UnsavedPostImage entity.
+// If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostImageMutation) OldWidth(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldWidth is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldWidth requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWidth: %w", err)
+	}
+	return oldValue.Width, nil
+}
+
+// AddWidth adds u to the "width" field.
+func (m *UnsavedPostImageMutation) AddWidth(u uint32) {
+	if m.addwidth != nil {
+		*m.addwidth += u
+	} else {
+		m.addwidth = &u
+	}
+}
+
+// AddedWidth returns the value that was added to the "width" field in this mutation.
+func (m *UnsavedPostImageMutation) AddedWidth() (r uint32, exists bool) {
+	v := m.addwidth
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWidth resets all changes to the "width" field.
+func (m *UnsavedPostImageMutation) ResetWidth() {
+	m.width = nil
+	m.addwidth = nil
+}
+
+// SetHeight sets the "height" field.
+func (m *UnsavedPostImageMutation) SetHeight(u uint32) {
+	m.height = &u
+	m.addheight = nil
+}
+
+// Height returns the value of the "height" field in the mutation.
+func (m *UnsavedPostImageMutation) Height() (r uint32, exists bool) {
+	v := m.height
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHeight returns the old "height" field's value of the UnsavedPostImage entity.
+// If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostImageMutation) OldHeight(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldHeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldHeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHeight: %w", err)
+	}
+	return oldValue.Height, nil
+}
+
+// AddHeight adds u to the "height" field.
+func (m *UnsavedPostImageMutation) AddHeight(u uint32) {
+	if m.addheight != nil {
+		*m.addheight += u
+	} else {
+		m.addheight = &u
+	}
+}
+
+// AddedHeight returns the value that was added to the "height" field in this mutation.
+func (m *UnsavedPostImageMutation) AddedHeight() (r uint32, exists bool) {
+	v := m.addheight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetHeight resets all changes to the "height" field.
+func (m *UnsavedPostImageMutation) ResetHeight() {
+	m.height = nil
+	m.addheight = nil
+}
+
+// SetHash sets the "hash" field.
+func (m *UnsavedPostImageMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *UnsavedPostImageMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the UnsavedPostImage entity.
+// If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostImageMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *UnsavedPostImageMutation) ResetHash() {
+	m.hash = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *UnsavedPostImageMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *UnsavedPostImageMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the UnsavedPostImage entity.
+// If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostImageMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *UnsavedPostImageMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetURL sets the "url" field.
+func (m *UnsavedPostImageMutation) SetURL(s string) {
+	m.url = &s
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *UnsavedPostImageMutation) URL() (r string, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the UnsavedPostImage entity.
+// If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostImageMutation) OldURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *UnsavedPostImageMutation) ResetURL() {
+	m.url = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UnsavedPostImageMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UnsavedPostImageMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UnsavedPostImage entity.
+// If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostImageMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UnsavedPostImageMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUnsavedPostID sets the "unsaved_post" edge to the UnsavedPost entity by id.
+func (m *UnsavedPostImageMutation) SetUnsavedPostID(id int) {
+	m.unsaved_post = &id
+}
+
+// ClearUnsavedPost clears the "unsaved_post" edge to the UnsavedPost entity.
+func (m *UnsavedPostImageMutation) ClearUnsavedPost() {
+	m.clearedunsaved_post = true
+}
+
+// UnsavedPostCleared reports if the "unsaved_post" edge to the UnsavedPost entity was cleared.
+func (m *UnsavedPostImageMutation) UnsavedPostCleared() bool {
+	return m.clearedunsaved_post
+}
+
+// UnsavedPostID returns the "unsaved_post" edge ID in the mutation.
+func (m *UnsavedPostImageMutation) UnsavedPostID() (id int, exists bool) {
+	if m.unsaved_post != nil {
+		return *m.unsaved_post, true
+	}
+	return
+}
+
+// UnsavedPostIDs returns the "unsaved_post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UnsavedPostID instead. It exists only for internal usage by the builders.
+func (m *UnsavedPostImageMutation) UnsavedPostIDs() (ids []int) {
+	if id := m.unsaved_post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUnsavedPost resets all changes to the "unsaved_post" edge.
+func (m *UnsavedPostImageMutation) ResetUnsavedPost() {
+	m.unsaved_post = nil
+	m.clearedunsaved_post = false
+}
+
+// Op returns the operation name.
+func (m *UnsavedPostImageMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (UnsavedPostImage).
+func (m *UnsavedPostImageMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UnsavedPostImageMutation) Fields() []string {
+	fields := make([]string, 0, 7)
+	if m.uuid != nil {
+		fields = append(fields, unsavedpostimage.FieldUUID)
+	}
+	if m.width != nil {
+		fields = append(fields, unsavedpostimage.FieldWidth)
+	}
+	if m.height != nil {
+		fields = append(fields, unsavedpostimage.FieldHeight)
+	}
+	if m.hash != nil {
+		fields = append(fields, unsavedpostimage.FieldHash)
+	}
+	if m.title != nil {
+		fields = append(fields, unsavedpostimage.FieldTitle)
+	}
+	if m.url != nil {
+		fields = append(fields, unsavedpostimage.FieldURL)
+	}
+	if m.created_at != nil {
+		fields = append(fields, unsavedpostimage.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UnsavedPostImageMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case unsavedpostimage.FieldUUID:
+		return m.UUID()
+	case unsavedpostimage.FieldWidth:
+		return m.Width()
+	case unsavedpostimage.FieldHeight:
+		return m.Height()
+	case unsavedpostimage.FieldHash:
+		return m.Hash()
+	case unsavedpostimage.FieldTitle:
+		return m.Title()
+	case unsavedpostimage.FieldURL:
+		return m.URL()
+	case unsavedpostimage.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UnsavedPostImageMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case unsavedpostimage.FieldUUID:
+		return m.OldUUID(ctx)
+	case unsavedpostimage.FieldWidth:
+		return m.OldWidth(ctx)
+	case unsavedpostimage.FieldHeight:
+		return m.OldHeight(ctx)
+	case unsavedpostimage.FieldHash:
+		return m.OldHash(ctx)
+	case unsavedpostimage.FieldTitle:
+		return m.OldTitle(ctx)
+	case unsavedpostimage.FieldURL:
+		return m.OldURL(ctx)
+	case unsavedpostimage.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown UnsavedPostImage field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostImageMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case unsavedpostimage.FieldUUID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUUID(v)
+		return nil
+	case unsavedpostimage.FieldWidth:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWidth(v)
+		return nil
+	case unsavedpostimage.FieldHeight:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHeight(v)
+		return nil
+	case unsavedpostimage.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case unsavedpostimage.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case unsavedpostimage.FieldURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	case unsavedpostimage.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostImage field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UnsavedPostImageMutation) AddedFields() []string {
+	var fields []string
+	if m.addwidth != nil {
+		fields = append(fields, unsavedpostimage.FieldWidth)
+	}
+	if m.addheight != nil {
+		fields = append(fields, unsavedpostimage.FieldHeight)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UnsavedPostImageMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case unsavedpostimage.FieldWidth:
+		return m.AddedWidth()
+	case unsavedpostimage.FieldHeight:
+		return m.AddedHeight()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostImageMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case unsavedpostimage.FieldWidth:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWidth(v)
+		return nil
+	case unsavedpostimage.FieldHeight:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostImage numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UnsavedPostImageMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UnsavedPostImageMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UnsavedPostImageMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown UnsavedPostImage nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UnsavedPostImageMutation) ResetField(name string) error {
+	switch name {
+	case unsavedpostimage.FieldUUID:
+		m.ResetUUID()
+		return nil
+	case unsavedpostimage.FieldWidth:
+		m.ResetWidth()
+		return nil
+	case unsavedpostimage.FieldHeight:
+		m.ResetHeight()
+		return nil
+	case unsavedpostimage.FieldHash:
+		m.ResetHash()
+		return nil
+	case unsavedpostimage.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case unsavedpostimage.FieldURL:
+		m.ResetURL()
+		return nil
+	case unsavedpostimage.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostImage field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UnsavedPostImageMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.unsaved_post != nil {
+		edges = append(edges, unsavedpostimage.EdgeUnsavedPost)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UnsavedPostImageMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case unsavedpostimage.EdgeUnsavedPost:
+		if id := m.unsaved_post; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UnsavedPostImageMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UnsavedPostImageMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UnsavedPostImageMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedunsaved_post {
+		edges = append(edges, unsavedpostimage.EdgeUnsavedPost)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UnsavedPostImageMutation) EdgeCleared(name string) bool {
+	switch name {
+	case unsavedpostimage.EdgeUnsavedPost:
+		return m.clearedunsaved_post
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UnsavedPostImageMutation) ClearEdge(name string) error {
+	switch name {
+	case unsavedpostimage.EdgeUnsavedPost:
+		m.ClearUnsavedPost()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostImage unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UnsavedPostImageMutation) ResetEdge(name string) error {
+	switch name {
+	case unsavedpostimage.EdgeUnsavedPost:
+		m.ResetUnsavedPost()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostImage edge %s", name)
+}
+
+// UnsavedPostThumbnailMutation represents an operation that mutates the UnsavedPostThumbnail nodes in the graph.
+type UnsavedPostThumbnailMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	width               *uint32
+	addwidth            *uint32
+	height              *uint32
+	addheight           *uint32
+	hash                *string
+	url                 *string
+	created_at          *time.Time
+	clearedFields       map[string]struct{}
+	unsaved_post        *int
+	clearedunsaved_post bool
+	done                bool
+	oldValue            func(context.Context) (*UnsavedPostThumbnail, error)
+	predicates          []predicate.UnsavedPostThumbnail
+}
+
+var _ ent.Mutation = (*UnsavedPostThumbnailMutation)(nil)
+
+// unsavedpostthumbnailOption allows management of the mutation configuration using functional options.
+type unsavedpostthumbnailOption func(*UnsavedPostThumbnailMutation)
+
+// newUnsavedPostThumbnailMutation creates new mutation for the UnsavedPostThumbnail entity.
+func newUnsavedPostThumbnailMutation(c config, op Op, opts ...unsavedpostthumbnailOption) *UnsavedPostThumbnailMutation {
+	m := &UnsavedPostThumbnailMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUnsavedPostThumbnail,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUnsavedPostThumbnailID sets the ID field of the mutation.
+func withUnsavedPostThumbnailID(id int) unsavedpostthumbnailOption {
+	return func(m *UnsavedPostThumbnailMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UnsavedPostThumbnail
+		)
+		m.oldValue = func(ctx context.Context) (*UnsavedPostThumbnail, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UnsavedPostThumbnail.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUnsavedPostThumbnail sets the old UnsavedPostThumbnail of the mutation.
+func withUnsavedPostThumbnail(node *UnsavedPostThumbnail) unsavedpostthumbnailOption {
+	return func(m *UnsavedPostThumbnailMutation) {
+		m.oldValue = func(context.Context) (*UnsavedPostThumbnail, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UnsavedPostThumbnailMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UnsavedPostThumbnailMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID
+// is only available if it was provided to the builder.
+func (m *UnsavedPostThumbnailMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetWidth sets the "width" field.
+func (m *UnsavedPostThumbnailMutation) SetWidth(u uint32) {
+	m.width = &u
+	m.addwidth = nil
+}
+
+// Width returns the value of the "width" field in the mutation.
+func (m *UnsavedPostThumbnailMutation) Width() (r uint32, exists bool) {
+	v := m.width
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldWidth returns the old "width" field's value of the UnsavedPostThumbnail entity.
+// If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostThumbnailMutation) OldWidth(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldWidth is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldWidth requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldWidth: %w", err)
+	}
+	return oldValue.Width, nil
+}
+
+// AddWidth adds u to the "width" field.
+func (m *UnsavedPostThumbnailMutation) AddWidth(u uint32) {
+	if m.addwidth != nil {
+		*m.addwidth += u
+	} else {
+		m.addwidth = &u
+	}
+}
+
+// AddedWidth returns the value that was added to the "width" field in this mutation.
+func (m *UnsavedPostThumbnailMutation) AddedWidth() (r uint32, exists bool) {
+	v := m.addwidth
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetWidth resets all changes to the "width" field.
+func (m *UnsavedPostThumbnailMutation) ResetWidth() {
+	m.width = nil
+	m.addwidth = nil
+}
+
+// SetHeight sets the "height" field.
+func (m *UnsavedPostThumbnailMutation) SetHeight(u uint32) {
+	m.height = &u
+	m.addheight = nil
+}
+
+// Height returns the value of the "height" field in the mutation.
+func (m *UnsavedPostThumbnailMutation) Height() (r uint32, exists bool) {
+	v := m.height
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHeight returns the old "height" field's value of the UnsavedPostThumbnail entity.
+// If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostThumbnailMutation) OldHeight(ctx context.Context) (v uint32, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldHeight is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldHeight requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHeight: %w", err)
+	}
+	return oldValue.Height, nil
+}
+
+// AddHeight adds u to the "height" field.
+func (m *UnsavedPostThumbnailMutation) AddHeight(u uint32) {
+	if m.addheight != nil {
+		*m.addheight += u
+	} else {
+		m.addheight = &u
+	}
+}
+
+// AddedHeight returns the value that was added to the "height" field in this mutation.
+func (m *UnsavedPostThumbnailMutation) AddedHeight() (r uint32, exists bool) {
+	v := m.addheight
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetHeight resets all changes to the "height" field.
+func (m *UnsavedPostThumbnailMutation) ResetHeight() {
+	m.height = nil
+	m.addheight = nil
+}
+
+// SetHash sets the "hash" field.
+func (m *UnsavedPostThumbnailMutation) SetHash(s string) {
+	m.hash = &s
+}
+
+// Hash returns the value of the "hash" field in the mutation.
+func (m *UnsavedPostThumbnailMutation) Hash() (r string, exists bool) {
+	v := m.hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHash returns the old "hash" field's value of the UnsavedPostThumbnail entity.
+// If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostThumbnailMutation) OldHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHash: %w", err)
+	}
+	return oldValue.Hash, nil
+}
+
+// ResetHash resets all changes to the "hash" field.
+func (m *UnsavedPostThumbnailMutation) ResetHash() {
+	m.hash = nil
+}
+
+// SetURL sets the "url" field.
+func (m *UnsavedPostThumbnailMutation) SetURL(s string) {
+	m.url = &s
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *UnsavedPostThumbnailMutation) URL() (r string, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the UnsavedPostThumbnail entity.
+// If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostThumbnailMutation) OldURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *UnsavedPostThumbnailMutation) ResetURL() {
+	m.url = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UnsavedPostThumbnailMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UnsavedPostThumbnailMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UnsavedPostThumbnail entity.
+// If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostThumbnailMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UnsavedPostThumbnailMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUnsavedPostID sets the "unsaved_post" edge to the UnsavedPost entity by id.
+func (m *UnsavedPostThumbnailMutation) SetUnsavedPostID(id int) {
+	m.unsaved_post = &id
+}
+
+// ClearUnsavedPost clears the "unsaved_post" edge to the UnsavedPost entity.
+func (m *UnsavedPostThumbnailMutation) ClearUnsavedPost() {
+	m.clearedunsaved_post = true
+}
+
+// UnsavedPostCleared reports if the "unsaved_post" edge to the UnsavedPost entity was cleared.
+func (m *UnsavedPostThumbnailMutation) UnsavedPostCleared() bool {
+	return m.clearedunsaved_post
+}
+
+// UnsavedPostID returns the "unsaved_post" edge ID in the mutation.
+func (m *UnsavedPostThumbnailMutation) UnsavedPostID() (id int, exists bool) {
+	if m.unsaved_post != nil {
+		return *m.unsaved_post, true
+	}
+	return
+}
+
+// UnsavedPostIDs returns the "unsaved_post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UnsavedPostID instead. It exists only for internal usage by the builders.
+func (m *UnsavedPostThumbnailMutation) UnsavedPostIDs() (ids []int) {
+	if id := m.unsaved_post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUnsavedPost resets all changes to the "unsaved_post" edge.
+func (m *UnsavedPostThumbnailMutation) ResetUnsavedPost() {
+	m.unsaved_post = nil
+	m.clearedunsaved_post = false
+}
+
+// Op returns the operation name.
+func (m *UnsavedPostThumbnailMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (UnsavedPostThumbnail).
+func (m *UnsavedPostThumbnailMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UnsavedPostThumbnailMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.width != nil {
+		fields = append(fields, unsavedpostthumbnail.FieldWidth)
+	}
+	if m.height != nil {
+		fields = append(fields, unsavedpostthumbnail.FieldHeight)
+	}
+	if m.hash != nil {
+		fields = append(fields, unsavedpostthumbnail.FieldHash)
+	}
+	if m.url != nil {
+		fields = append(fields, unsavedpostthumbnail.FieldURL)
+	}
+	if m.created_at != nil {
+		fields = append(fields, unsavedpostthumbnail.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UnsavedPostThumbnailMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case unsavedpostthumbnail.FieldWidth:
+		return m.Width()
+	case unsavedpostthumbnail.FieldHeight:
+		return m.Height()
+	case unsavedpostthumbnail.FieldHash:
+		return m.Hash()
+	case unsavedpostthumbnail.FieldURL:
+		return m.URL()
+	case unsavedpostthumbnail.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UnsavedPostThumbnailMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case unsavedpostthumbnail.FieldWidth:
+		return m.OldWidth(ctx)
+	case unsavedpostthumbnail.FieldHeight:
+		return m.OldHeight(ctx)
+	case unsavedpostthumbnail.FieldHash:
+		return m.OldHash(ctx)
+	case unsavedpostthumbnail.FieldURL:
+		return m.OldURL(ctx)
+	case unsavedpostthumbnail.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown UnsavedPostThumbnail field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostThumbnailMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case unsavedpostthumbnail.FieldWidth:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetWidth(v)
+		return nil
+	case unsavedpostthumbnail.FieldHeight:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHeight(v)
+		return nil
+	case unsavedpostthumbnail.FieldHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHash(v)
+		return nil
+	case unsavedpostthumbnail.FieldURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	case unsavedpostthumbnail.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostThumbnail field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UnsavedPostThumbnailMutation) AddedFields() []string {
+	var fields []string
+	if m.addwidth != nil {
+		fields = append(fields, unsavedpostthumbnail.FieldWidth)
+	}
+	if m.addheight != nil {
+		fields = append(fields, unsavedpostthumbnail.FieldHeight)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UnsavedPostThumbnailMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case unsavedpostthumbnail.FieldWidth:
+		return m.AddedWidth()
+	case unsavedpostthumbnail.FieldHeight:
+		return m.AddedHeight()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostThumbnailMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case unsavedpostthumbnail.FieldWidth:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddWidth(v)
+		return nil
+	case unsavedpostthumbnail.FieldHeight:
+		v, ok := value.(uint32)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddHeight(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostThumbnail numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UnsavedPostThumbnailMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UnsavedPostThumbnailMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UnsavedPostThumbnailMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown UnsavedPostThumbnail nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UnsavedPostThumbnailMutation) ResetField(name string) error {
+	switch name {
+	case unsavedpostthumbnail.FieldWidth:
+		m.ResetWidth()
+		return nil
+	case unsavedpostthumbnail.FieldHeight:
+		m.ResetHeight()
+		return nil
+	case unsavedpostthumbnail.FieldHash:
+		m.ResetHash()
+		return nil
+	case unsavedpostthumbnail.FieldURL:
+		m.ResetURL()
+		return nil
+	case unsavedpostthumbnail.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostThumbnail field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UnsavedPostThumbnailMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.unsaved_post != nil {
+		edges = append(edges, unsavedpostthumbnail.EdgeUnsavedPost)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UnsavedPostThumbnailMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case unsavedpostthumbnail.EdgeUnsavedPost:
+		if id := m.unsaved_post; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UnsavedPostThumbnailMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UnsavedPostThumbnailMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UnsavedPostThumbnailMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedunsaved_post {
+		edges = append(edges, unsavedpostthumbnail.EdgeUnsavedPost)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UnsavedPostThumbnailMutation) EdgeCleared(name string) bool {
+	switch name {
+	case unsavedpostthumbnail.EdgeUnsavedPost:
+		return m.clearedunsaved_post
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UnsavedPostThumbnailMutation) ClearEdge(name string) error {
+	switch name {
+	case unsavedpostthumbnail.EdgeUnsavedPost:
+		m.ClearUnsavedPost()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostThumbnail unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UnsavedPostThumbnailMutation) ResetEdge(name string) error {
+	switch name {
+	case unsavedpostthumbnail.EdgeUnsavedPost:
+		m.ResetUnsavedPost()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostThumbnail edge %s", name)
+}
+
+// UnsavedPostVideoMutation represents an operation that mutates the UnsavedPostVideo nodes in the graph.
+type UnsavedPostVideoMutation struct {
+	config
+	op                  Op
+	typ                 string
+	id                  *int
+	uuid                *string
+	title               *string
+	url                 *string
+	created_at          *time.Time
+	clearedFields       map[string]struct{}
+	unsaved_post        *int
+	clearedunsaved_post bool
+	done                bool
+	oldValue            func(context.Context) (*UnsavedPostVideo, error)
+	predicates          []predicate.UnsavedPostVideo
+}
+
+var _ ent.Mutation = (*UnsavedPostVideoMutation)(nil)
+
+// unsavedpostvideoOption allows management of the mutation configuration using functional options.
+type unsavedpostvideoOption func(*UnsavedPostVideoMutation)
+
+// newUnsavedPostVideoMutation creates new mutation for the UnsavedPostVideo entity.
+func newUnsavedPostVideoMutation(c config, op Op, opts ...unsavedpostvideoOption) *UnsavedPostVideoMutation {
+	m := &UnsavedPostVideoMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUnsavedPostVideo,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUnsavedPostVideoID sets the ID field of the mutation.
+func withUnsavedPostVideoID(id int) unsavedpostvideoOption {
+	return func(m *UnsavedPostVideoMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UnsavedPostVideo
+		)
+		m.oldValue = func(ctx context.Context) (*UnsavedPostVideo, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UnsavedPostVideo.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUnsavedPostVideo sets the old UnsavedPostVideo of the mutation.
+func withUnsavedPostVideo(node *UnsavedPostVideo) unsavedpostvideoOption {
+	return func(m *UnsavedPostVideoMutation) {
+		m.oldValue = func(context.Context) (*UnsavedPostVideo, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UnsavedPostVideoMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UnsavedPostVideoMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID
+// is only available if it was provided to the builder.
+func (m *UnsavedPostVideoMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetUUID sets the "uuid" field.
+func (m *UnsavedPostVideoMutation) SetUUID(s string) {
+	m.uuid = &s
+}
+
+// UUID returns the value of the "uuid" field in the mutation.
+func (m *UnsavedPostVideoMutation) UUID() (r string, exists bool) {
+	v := m.uuid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUUID returns the old "uuid" field's value of the UnsavedPostVideo entity.
+// If the UnsavedPostVideo object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostVideoMutation) OldUUID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUUID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUUID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUUID: %w", err)
+	}
+	return oldValue.UUID, nil
+}
+
+// ResetUUID resets all changes to the "uuid" field.
+func (m *UnsavedPostVideoMutation) ResetUUID() {
+	m.uuid = nil
+}
+
+// SetTitle sets the "title" field.
+func (m *UnsavedPostVideoMutation) SetTitle(s string) {
+	m.title = &s
+}
+
+// Title returns the value of the "title" field in the mutation.
+func (m *UnsavedPostVideoMutation) Title() (r string, exists bool) {
+	v := m.title
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTitle returns the old "title" field's value of the UnsavedPostVideo entity.
+// If the UnsavedPostVideo object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostVideoMutation) OldTitle(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldTitle requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTitle: %w", err)
+	}
+	return oldValue.Title, nil
+}
+
+// ResetTitle resets all changes to the "title" field.
+func (m *UnsavedPostVideoMutation) ResetTitle() {
+	m.title = nil
+}
+
+// SetURL sets the "url" field.
+func (m *UnsavedPostVideoMutation) SetURL(s string) {
+	m.url = &s
+}
+
+// URL returns the value of the "url" field in the mutation.
+func (m *UnsavedPostVideoMutation) URL() (r string, exists bool) {
+	v := m.url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldURL returns the old "url" field's value of the UnsavedPostVideo entity.
+// If the UnsavedPostVideo object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostVideoMutation) OldURL(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldURL: %w", err)
+	}
+	return oldValue.URL, nil
+}
+
+// ResetURL resets all changes to the "url" field.
+func (m *UnsavedPostVideoMutation) ResetURL() {
+	m.url = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *UnsavedPostVideoMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *UnsavedPostVideoMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the UnsavedPostVideo entity.
+// If the UnsavedPostVideo object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostVideoMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *UnsavedPostVideoMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUnsavedPostID sets the "unsaved_post" edge to the UnsavedPost entity by id.
+func (m *UnsavedPostVideoMutation) SetUnsavedPostID(id int) {
+	m.unsaved_post = &id
+}
+
+// ClearUnsavedPost clears the "unsaved_post" edge to the UnsavedPost entity.
+func (m *UnsavedPostVideoMutation) ClearUnsavedPost() {
+	m.clearedunsaved_post = true
+}
+
+// UnsavedPostCleared reports if the "unsaved_post" edge to the UnsavedPost entity was cleared.
+func (m *UnsavedPostVideoMutation) UnsavedPostCleared() bool {
+	return m.clearedunsaved_post
+}
+
+// UnsavedPostID returns the "unsaved_post" edge ID in the mutation.
+func (m *UnsavedPostVideoMutation) UnsavedPostID() (id int, exists bool) {
+	if m.unsaved_post != nil {
+		return *m.unsaved_post, true
+	}
+	return
+}
+
+// UnsavedPostIDs returns the "unsaved_post" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UnsavedPostID instead. It exists only for internal usage by the builders.
+func (m *UnsavedPostVideoMutation) UnsavedPostIDs() (ids []int) {
+	if id := m.unsaved_post; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUnsavedPost resets all changes to the "unsaved_post" edge.
+func (m *UnsavedPostVideoMutation) ResetUnsavedPost() {
+	m.unsaved_post = nil
+	m.clearedunsaved_post = false
+}
+
+// Op returns the operation name.
+func (m *UnsavedPostVideoMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (UnsavedPostVideo).
+func (m *UnsavedPostVideoMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UnsavedPostVideoMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.uuid != nil {
+		fields = append(fields, unsavedpostvideo.FieldUUID)
+	}
+	if m.title != nil {
+		fields = append(fields, unsavedpostvideo.FieldTitle)
+	}
+	if m.url != nil {
+		fields = append(fields, unsavedpostvideo.FieldURL)
+	}
+	if m.created_at != nil {
+		fields = append(fields, unsavedpostvideo.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UnsavedPostVideoMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case unsavedpostvideo.FieldUUID:
+		return m.UUID()
+	case unsavedpostvideo.FieldTitle:
+		return m.Title()
+	case unsavedpostvideo.FieldURL:
+		return m.URL()
+	case unsavedpostvideo.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UnsavedPostVideoMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case unsavedpostvideo.FieldUUID:
+		return m.OldUUID(ctx)
+	case unsavedpostvideo.FieldTitle:
+		return m.OldTitle(ctx)
+	case unsavedpostvideo.FieldURL:
+		return m.OldURL(ctx)
+	case unsavedpostvideo.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown UnsavedPostVideo field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostVideoMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case unsavedpostvideo.FieldUUID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUUID(v)
+		return nil
+	case unsavedpostvideo.FieldTitle:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTitle(v)
+		return nil
+	case unsavedpostvideo.FieldURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetURL(v)
+		return nil
+	case unsavedpostvideo.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostVideo field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UnsavedPostVideoMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UnsavedPostVideoMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UnsavedPostVideoMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown UnsavedPostVideo numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UnsavedPostVideoMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UnsavedPostVideoMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UnsavedPostVideoMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown UnsavedPostVideo nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UnsavedPostVideoMutation) ResetField(name string) error {
+	switch name {
+	case unsavedpostvideo.FieldUUID:
+		m.ResetUUID()
+		return nil
+	case unsavedpostvideo.FieldTitle:
+		m.ResetTitle()
+		return nil
+	case unsavedpostvideo.FieldURL:
+		m.ResetURL()
+		return nil
+	case unsavedpostvideo.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostVideo field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UnsavedPostVideoMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.unsaved_post != nil {
+		edges = append(edges, unsavedpostvideo.EdgeUnsavedPost)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UnsavedPostVideoMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case unsavedpostvideo.EdgeUnsavedPost:
+		if id := m.unsaved_post; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UnsavedPostVideoMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UnsavedPostVideoMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UnsavedPostVideoMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedunsaved_post {
+		edges = append(edges, unsavedpostvideo.EdgeUnsavedPost)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UnsavedPostVideoMutation) EdgeCleared(name string) bool {
+	switch name {
+	case unsavedpostvideo.EdgeUnsavedPost:
+		return m.clearedunsaved_post
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UnsavedPostVideoMutation) ClearEdge(name string) error {
+	switch name {
+	case unsavedpostvideo.EdgeUnsavedPost:
+		m.ClearUnsavedPost()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostVideo unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UnsavedPostVideoMutation) ResetEdge(name string) error {
+	switch name {
+	case unsavedpostvideo.EdgeUnsavedPost:
+		m.ResetUnsavedPost()
+		return nil
+	}
+	return fmt.Errorf("unknown UnsavedPostVideo edge %s", name)
 }

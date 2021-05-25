@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostAttachmentQuery is the builder for querying PostAttachment entities.
@@ -21,6 +21,7 @@ type PostAttachmentQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.PostAttachment
@@ -50,6 +51,13 @@ func (paq *PostAttachmentQuery) Offset(offset int) *PostAttachmentQuery {
 	return paq
 }
 
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (paq *PostAttachmentQuery) Unique(unique bool) *PostAttachmentQuery {
+	paq.unique = &unique
+	return paq
+}
+
 // Order adds an order step to the query.
 func (paq *PostAttachmentQuery) Order(o ...OrderFunc) *PostAttachmentQuery {
 	paq.order = append(paq.order, o...)
@@ -63,7 +71,7 @@ func (paq *PostAttachmentQuery) QueryPost() *PostQuery {
 		if err := paq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := paq.sqlQuery()
+		selector := paq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -299,7 +307,7 @@ func (paq *PostAttachmentQuery) GroupBy(field string, fields ...string) *PostAtt
 		if err := paq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return paq.sqlQuery(), nil
+		return paq.sqlQuery(ctx), nil
 	}
 	return group
 }
@@ -377,10 +385,14 @@ func (paq *PostAttachmentQuery) sqlAll(ctx context.Context) ([]*PostAttachment, 
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*PostAttachment)
 		for i := range nodes {
-			if fk := nodes[i].post_attachments; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			if nodes[i].post_attachments == nil {
+				continue
 			}
+			fk := *nodes[i].post_attachments
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
 		query.Where(post.IDIn(ids...))
 		neighbors, err := query.All(ctx)
@@ -409,7 +421,7 @@ func (paq *PostAttachmentQuery) sqlCount(ctx context.Context) (int, error) {
 func (paq *PostAttachmentQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := paq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -426,6 +438,9 @@ func (paq *PostAttachmentQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   paq.sql,
 		Unique: true,
+	}
+	if unique := paq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := paq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -452,14 +467,14 @@ func (paq *PostAttachmentQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := paq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, postattachment.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
 	return _spec
 }
 
-func (paq *PostAttachmentQuery) sqlQuery() *sql.Selector {
+func (paq *PostAttachmentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(paq.driver.Dialect())
 	t1 := builder.Table(postattachment.Table)
 	selector := builder.Select(t1.Columns(postattachment.Columns...)...).From(t1)
@@ -471,7 +486,7 @@ func (paq *PostAttachmentQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range paq.order {
-		p(selector, postattachment.ValidColumn)
+		p(selector)
 	}
 	if offset := paq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -737,7 +752,7 @@ func (pagb *PostAttachmentGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(pagb.fields)+len(pagb.fns))
 	columns = append(columns, pagb.fields...)
 	for _, fn := range pagb.fns {
-		columns = append(columns, fn(selector, postattachment.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(pagb.fields...)
 }
@@ -754,7 +769,7 @@ func (pas *PostAttachmentSelect) Scan(ctx context.Context, v interface{}) error 
 	if err := pas.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pas.sql = pas.PostAttachmentQuery.sqlQuery()
+	pas.sql = pas.PostAttachmentQuery.sqlQuery(ctx)
 	return pas.sqlScan(ctx, v)
 }
 

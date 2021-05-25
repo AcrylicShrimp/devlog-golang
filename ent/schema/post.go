@@ -1,9 +1,9 @@
 package schema
 
 import (
-	"github.com/facebook/ent"
-	"github.com/facebook/ent/schema/edge"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
 	"time"
 )
 
@@ -15,7 +15,6 @@ type Post struct {
 // Fields of the Post.
 func (Post) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("uuid").MaxLen(64).Unique(),
 		field.String("slug").MaxLen(255).Unique(),
 		field.Enum("access_level").Values("public", "unlisted", "private"),
 		field.String("title").MaxLen(255),

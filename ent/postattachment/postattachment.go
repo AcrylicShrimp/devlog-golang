@@ -23,10 +23,8 @@ const (
 	FieldURL = "url"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-
 	// EdgePost holds the string denoting the post edge name in mutations.
 	EdgePost = "post"
-
 	// Table holds the table name of the postattachment in the database.
 	Table = "post_attachments"
 	// PostTable is the table the holds the post relation/edge.
@@ -49,7 +47,8 @@ var Columns = []string{
 	FieldCreatedAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the PostAttachment type.
+// ForeignKeys holds the SQL foreign-keys that are owned by the "post_attachments"
+// table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"post_attachments",
 }
@@ -70,6 +69,8 @@ func ValidColumn(column string) bool {
 }
 
 var (
+	// UUIDValidator is a validator for the "uuid" field. It is called by the builders before save.
+	UUIDValidator func(string) error
 	// NameValidator is a validator for the "name" field. It is called by the builders before save.
 	NameValidator func(string) error
 	// MimeValidator is a validator for the "mime" field. It is called by the builders before save.

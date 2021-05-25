@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostImageUpdate is the builder for updating PostImage entities.
@@ -174,6 +174,11 @@ func (piu *PostImageUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (piu *PostImageUpdate) check() error {
+	if v, ok := piu.mutation.UUID(); ok {
+		if err := postimage.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if v, ok := piu.mutation.Hash(); ok {
 		if err := postimage.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
@@ -325,6 +330,7 @@ func (piu *PostImageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // PostImageUpdateOne is the builder for updating a single PostImage entity.
 type PostImageUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *PostImageMutation
 }
@@ -415,6 +421,13 @@ func (piuo *PostImageUpdateOne) ClearPost() *PostImageUpdateOne {
 	return piuo
 }
 
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (piuo *PostImageUpdateOne) Select(field string, fields ...string) *PostImageUpdateOne {
+	piuo.fields = append([]string{field}, fields...)
+	return piuo
+}
+
 // Save executes the query and returns the updated PostImage entity.
 func (piuo *PostImageUpdateOne) Save(ctx context.Context) (*PostImage, error) {
 	var (
@@ -474,6 +487,11 @@ func (piuo *PostImageUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (piuo *PostImageUpdateOne) check() error {
+	if v, ok := piuo.mutation.UUID(); ok {
+		if err := postimage.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if v, ok := piuo.mutation.Hash(); ok {
 		if err := postimage.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
@@ -511,6 +529,25 @@ func (piuo *PostImageUpdateOne) sqlSave(ctx context.Context) (_node *PostImage, 
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing PostImage.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := piuo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, postimage.FieldID)
+		for _, f := range fields {
+			if !postimage.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != postimage.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
+	if ps := piuo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
+	}
 	if value, ok := piuo.mutation.UUID(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,

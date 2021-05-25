@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostVideoQuery is the builder for querying PostVideo entities.
@@ -21,6 +21,7 @@ type PostVideoQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.PostVideo
@@ -50,6 +51,13 @@ func (pvq *PostVideoQuery) Offset(offset int) *PostVideoQuery {
 	return pvq
 }
 
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (pvq *PostVideoQuery) Unique(unique bool) *PostVideoQuery {
+	pvq.unique = &unique
+	return pvq
+}
+
 // Order adds an order step to the query.
 func (pvq *PostVideoQuery) Order(o ...OrderFunc) *PostVideoQuery {
 	pvq.order = append(pvq.order, o...)
@@ -63,7 +71,7 @@ func (pvq *PostVideoQuery) QueryPost() *PostQuery {
 		if err := pvq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := pvq.sqlQuery()
+		selector := pvq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -299,7 +307,7 @@ func (pvq *PostVideoQuery) GroupBy(field string, fields ...string) *PostVideoGro
 		if err := pvq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return pvq.sqlQuery(), nil
+		return pvq.sqlQuery(ctx), nil
 	}
 	return group
 }
@@ -377,10 +385,14 @@ func (pvq *PostVideoQuery) sqlAll(ctx context.Context) ([]*PostVideo, error) {
 		ids := make([]int, 0, len(nodes))
 		nodeids := make(map[int][]*PostVideo)
 		for i := range nodes {
-			if fk := nodes[i].post_videos; fk != nil {
-				ids = append(ids, *fk)
-				nodeids[*fk] = append(nodeids[*fk], nodes[i])
+			if nodes[i].post_videos == nil {
+				continue
 			}
+			fk := *nodes[i].post_videos
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
 		query.Where(post.IDIn(ids...))
 		neighbors, err := query.All(ctx)
@@ -409,7 +421,7 @@ func (pvq *PostVideoQuery) sqlCount(ctx context.Context) (int, error) {
 func (pvq *PostVideoQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := pvq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -426,6 +438,9 @@ func (pvq *PostVideoQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   pvq.sql,
 		Unique: true,
+	}
+	if unique := pvq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := pvq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -452,14 +467,14 @@ func (pvq *PostVideoQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := pvq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, postvideo.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
 	return _spec
 }
 
-func (pvq *PostVideoQuery) sqlQuery() *sql.Selector {
+func (pvq *PostVideoQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(pvq.driver.Dialect())
 	t1 := builder.Table(postvideo.Table)
 	selector := builder.Select(t1.Columns(postvideo.Columns...)...).From(t1)
@@ -471,7 +486,7 @@ func (pvq *PostVideoQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range pvq.order {
-		p(selector, postvideo.ValidColumn)
+		p(selector)
 	}
 	if offset := pvq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -737,7 +752,7 @@ func (pvgb *PostVideoGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(pvgb.fields)+len(pvgb.fns))
 	columns = append(columns, pvgb.fields...)
 	for _, fn := range pvgb.fns {
-		columns = append(columns, fn(selector, postvideo.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(pvgb.fields...)
 }
@@ -754,7 +769,7 @@ func (pvs *PostVideoSelect) Scan(ctx context.Context, v interface{}) error {
 	if err := pvs.prepareQuery(ctx); err != nil {
 		return err
 	}
-	pvs.sql = pvs.PostVideoQuery.sqlQuery()
+	pvs.sql = pvs.PostVideoQuery.sqlQuery(ctx)
 	return pvs.sqlScan(ctx, v)
 }
 

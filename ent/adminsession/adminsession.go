@@ -17,10 +17,8 @@ const (
 	FieldUsedAt = "used_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
-
 	// Table holds the table name of the adminsession in the database.
 	Table = "admin_sessions"
 	// UserTable is the table the holds the user relation/edge.
@@ -40,7 +38,8 @@ var Columns = []string{
 	FieldCreatedAt,
 }
 
-// ForeignKeys holds the SQL foreign-keys that are owned by the AdminSession type.
+// ForeignKeys holds the SQL foreign-keys that are owned by the "admin_sessions"
+// table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"admin_sessions",
 }

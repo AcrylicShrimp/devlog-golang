@@ -3,7 +3,7 @@
 package predicate
 
 import (
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // Admin is the predicate function for admin builders.
@@ -29,3 +29,18 @@ type PostThumbnail func(*sql.Selector)
 
 // PostVideo is the predicate function for postvideo builders.
 type PostVideo func(*sql.Selector)
+
+// UnsavedPost is the predicate function for unsavedpost builders.
+type UnsavedPost func(*sql.Selector)
+
+// UnsavedPostAttachment is the predicate function for unsavedpostattachment builders.
+type UnsavedPostAttachment func(*sql.Selector)
+
+// UnsavedPostImage is the predicate function for unsavedpostimage builders.
+type UnsavedPostImage func(*sql.Selector)
+
+// UnsavedPostThumbnail is the predicate function for unsavedpostthumbnail builders.
+type UnsavedPostThumbnail func(*sql.Selector)
+
+// UnsavedPostVideo is the predicate function for unsavedpostvideo builders.
+type UnsavedPostVideo func(*sql.Selector)

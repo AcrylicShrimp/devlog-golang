@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // Post is the model entity for the Post schema.
@@ -19,8 +19,6 @@ type Post struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// UUID holds the value of the "uuid" field.
-	UUID string `json:"uuid,omitempty"`
 	// Slug holds the value of the "slug" field.
 	Slug string `json:"slug,omitempty"`
 	// AccessLevel holds the value of the "access_level" field.
@@ -47,17 +45,17 @@ type Post struct {
 // PostEdges holds the relations/edges for other nodes in the graph.
 type PostEdges struct {
 	// Author holds the value of the author edge.
-	Author *Admin
+	Author *Admin `json:"author,omitempty"`
 	// Category holds the value of the category edge.
-	Category *Category
+	Category *Category `json:"category,omitempty"`
 	// Thumbnail holds the value of the thumbnail edge.
-	Thumbnail *PostThumbnail
+	Thumbnail *PostThumbnail `json:"thumbnail,omitempty"`
 	// Images holds the value of the images edge.
-	Images []*PostImage
+	Images []*PostImage `json:"images,omitempty"`
 	// Videos holds the value of the videos edge.
-	Videos []*PostVideo
+	Videos []*PostVideo `json:"videos,omitempty"`
 	// Attachments holds the value of the attachments edge.
-	Attachments []*PostAttachment
+	Attachments []*PostAttachment `json:"attachments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [6]bool
@@ -138,15 +136,15 @@ func (*Post) scanValues(columns []string) ([]interface{}, error) {
 	for i := range columns {
 		switch columns[i] {
 		case post.FieldID:
-			values[i] = &sql.NullInt64{}
-		case post.FieldUUID, post.FieldSlug, post.FieldAccessLevel, post.FieldTitle, post.FieldContent, post.FieldHTMLContent, post.FieldPreviewContent:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullInt64)
+		case post.FieldSlug, post.FieldAccessLevel, post.FieldTitle, post.FieldContent, post.FieldHTMLContent, post.FieldPreviewContent:
+			values[i] = new(sql.NullString)
 		case post.FieldCreatedAt, post.FieldModifiedAt:
-			values[i] = &sql.NullTime{}
+			values[i] = new(sql.NullTime)
 		case post.ForeignKeys[0]: // admin_posts
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		case post.ForeignKeys[1]: // category_posts
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type Post", columns[i])
 		}
@@ -168,12 +166,6 @@ func (po *Post) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			po.ID = int(value.Int64)
-		case post.FieldUUID:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field uuid", values[i])
-			} else if value.Valid {
-				po.UUID = value.String
-			}
 		case post.FieldSlug:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field slug", values[i])
@@ -294,8 +286,6 @@ func (po *Post) String() string {
 	var builder strings.Builder
 	builder.WriteString("Post(")
 	builder.WriteString(fmt.Sprintf("id=%v", po.ID))
-	builder.WriteString(", uuid=")
-	builder.WriteString(po.UUID)
 	builder.WriteString(", slug=")
 	builder.WriteString(po.Slug)
 	builder.WriteString(", access_level=")

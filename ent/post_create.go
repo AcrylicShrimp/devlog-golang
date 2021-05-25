@@ -15,8 +15,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostCreate is the builder for creating a Post entity.
@@ -24,12 +24,6 @@ type PostCreate struct {
 	config
 	mutation *PostMutation
 	hooks    []Hook
-}
-
-// SetUUID sets the "uuid" field.
-func (pc *PostCreate) SetUUID(s string) *PostCreate {
-	pc.mutation.SetUUID(s)
-	return pc
 }
 
 // SetSlug sets the "slug" field.
@@ -254,14 +248,6 @@ func (pc *PostCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (pc *PostCreate) check() error {
-	if _, ok := pc.mutation.UUID(); !ok {
-		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
-	}
-	if v, ok := pc.mutation.UUID(); ok {
-		if err := post.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
-		}
-	}
 	if _, ok := pc.mutation.Slug(); !ok {
 		return &ValidationError{Name: "slug", err: errors.New("ent: missing required field \"slug\"")}
 	}
@@ -336,14 +322,6 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
-	if value, ok := pc.mutation.UUID(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: post.FieldUUID,
-		})
-		_node.UUID = value
-	}
 	if value, ok := pc.mutation.Slug(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -425,6 +403,7 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.admin_posts = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := pc.mutation.CategoryIDs(); len(nodes) > 0 {
@@ -444,6 +423,7 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.category_posts = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := pc.mutation.ThumbnailIDs(); len(nodes) > 0 {

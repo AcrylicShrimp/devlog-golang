@@ -6,8 +6,8 @@ import (
 	"devlog/ent/predicate"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // ID filters vertices based on their ID field.
@@ -577,6 +577,34 @@ func HasPostsWith(preds ...predicate.Post) predicate.Admin {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(PostsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, PostsTable, PostsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasUnsavedPosts applies the HasEdge predicate on the "unsaved_posts" edge.
+func HasUnsavedPosts() predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(UnsavedPostsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UnsavedPostsTable, UnsavedPostsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUnsavedPostsWith applies the HasEdge predicate on the "unsaved_posts" edge with a given conditions (other predicates).
+func HasUnsavedPostsWith(preds ...predicate.UnsavedPost) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(UnsavedPostsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UnsavedPostsTable, UnsavedPostsColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

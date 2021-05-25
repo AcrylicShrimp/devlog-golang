@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostImageCreate is the builder for creating a PostImage entity.
@@ -144,6 +144,11 @@ func (pic *PostImageCreate) defaults() {
 func (pic *PostImageCreate) check() error {
 	if _, ok := pic.mutation.UUID(); !ok {
 		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+	}
+	if v, ok := pic.mutation.UUID(); ok {
+		if err := postimage.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
 	}
 	if _, ok := pic.mutation.Width(); !ok {
 		return &ValidationError{Name: "width", err: errors.New("ent: missing required field \"width\"")}
@@ -281,6 +286,7 @@ func (pic *PostImageCreate) createSpec() (*PostImage, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.post_images = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

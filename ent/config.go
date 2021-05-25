@@ -3,8 +3,8 @@
 package ent
 
 import (
-	"github.com/facebook/ent"
-	"github.com/facebook/ent/dialect"
+	"entgo.io/ent"
+	"entgo.io/ent/dialect"
 )
 
 // Option function to configure the client.
@@ -24,14 +24,19 @@ type config struct {
 
 // hooks per client, for fast access.
 type hooks struct {
-	Admin          []ent.Hook
-	AdminSession   []ent.Hook
-	Category       []ent.Hook
-	Post           []ent.Hook
-	PostAttachment []ent.Hook
-	PostImage      []ent.Hook
-	PostThumbnail  []ent.Hook
-	PostVideo      []ent.Hook
+	Admin                 []ent.Hook
+	AdminSession          []ent.Hook
+	Category              []ent.Hook
+	Post                  []ent.Hook
+	PostAttachment        []ent.Hook
+	PostImage             []ent.Hook
+	PostThumbnail         []ent.Hook
+	PostVideo             []ent.Hook
+	UnsavedPost           []ent.Hook
+	UnsavedPostAttachment []ent.Hook
+	UnsavedPostImage      []ent.Hook
+	UnsavedPostThumbnail  []ent.Hook
+	UnsavedPostVideo      []ent.Hook
 }
 
 // Options applies the options on the config object.

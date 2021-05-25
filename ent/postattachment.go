@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql"
 )
 
 // PostAttachment is the model entity for the PostAttachment schema.
@@ -38,7 +38,7 @@ type PostAttachment struct {
 // PostAttachmentEdges holds the relations/edges for other nodes in the graph.
 type PostAttachmentEdges struct {
 	// Post holds the value of the post edge.
-	Post *Post
+	Post *Post `json:"post,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
@@ -64,13 +64,13 @@ func (*PostAttachment) scanValues(columns []string) ([]interface{}, error) {
 	for i := range columns {
 		switch columns[i] {
 		case postattachment.FieldID, postattachment.FieldSize:
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		case postattachment.FieldUUID, postattachment.FieldName, postattachment.FieldMime, postattachment.FieldURL:
-			values[i] = &sql.NullString{}
+			values[i] = new(sql.NullString)
 		case postattachment.FieldCreatedAt:
-			values[i] = &sql.NullTime{}
+			values[i] = new(sql.NullTime)
 		case postattachment.ForeignKeys[0]: // post_attachments
-			values[i] = &sql.NullInt64{}
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type PostAttachment", columns[i])
 		}

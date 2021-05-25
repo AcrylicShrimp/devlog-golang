@@ -11,9 +11,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // PostVideoUpdate is the builder for updating PostVideo entities.
@@ -142,6 +142,11 @@ func (pvu *PostVideoUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pvu *PostVideoUpdate) check() error {
+	if v, ok := pvu.mutation.UUID(); ok {
+		if err := postvideo.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if v, ok := pvu.mutation.Title(); ok {
 		if err := postvideo.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
@@ -253,6 +258,7 @@ func (pvu *PostVideoUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // PostVideoUpdateOne is the builder for updating a single PostVideo entity.
 type PostVideoUpdateOne struct {
 	config
+	fields   []string
 	hooks    []Hook
 	mutation *PostVideoMutation
 }
@@ -308,6 +314,13 @@ func (pvuo *PostVideoUpdateOne) Mutation() *PostVideoMutation {
 // ClearPost clears the "post" edge to the Post entity.
 func (pvuo *PostVideoUpdateOne) ClearPost() *PostVideoUpdateOne {
 	pvuo.mutation.ClearPost()
+	return pvuo
+}
+
+// Select allows selecting one or more fields (columns) of the returned entity.
+// The default is selecting all fields defined in the entity schema.
+func (pvuo *PostVideoUpdateOne) Select(field string, fields ...string) *PostVideoUpdateOne {
+	pvuo.fields = append([]string{field}, fields...)
 	return pvuo
 }
 
@@ -370,6 +383,11 @@ func (pvuo *PostVideoUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pvuo *PostVideoUpdateOne) check() error {
+	if v, ok := pvuo.mutation.UUID(); ok {
+		if err := postvideo.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if v, ok := pvuo.mutation.Title(); ok {
 		if err := postvideo.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
@@ -402,6 +420,25 @@ func (pvuo *PostVideoUpdateOne) sqlSave(ctx context.Context) (_node *PostVideo, 
 		return nil, &ValidationError{Name: "ID", err: fmt.Errorf("missing PostVideo.ID for update")}
 	}
 	_spec.Node.ID.Value = id
+	if fields := pvuo.fields; len(fields) > 0 {
+		_spec.Node.Columns = make([]string, 0, len(fields))
+		_spec.Node.Columns = append(_spec.Node.Columns, postvideo.FieldID)
+		for _, f := range fields {
+			if !postvideo.ValidColumn(f) {
+				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
+			}
+			if f != postvideo.FieldID {
+				_spec.Node.Columns = append(_spec.Node.Columns, f)
+			}
+		}
+	}
+	if ps := pvuo.mutation.predicates; len(ps) > 0 {
+		_spec.Predicate = func(selector *sql.Selector) {
+			for i := range ps {
+				ps[i](selector)
+			}
+		}
+	}
 	if value, ok := pvuo.mutation.UUID(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,

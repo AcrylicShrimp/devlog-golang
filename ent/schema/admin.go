@@ -1,9 +1,9 @@
 package schema
 
 import (
-	"github.com/facebook/ent"
-	"github.com/facebook/ent/schema/edge"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
+	"entgo.io/ent/schema/field"
 	"time"
 )
 
@@ -27,5 +27,6 @@ func (Admin) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("sessions", AdminSession.Type),
 		edge.To("posts", Post.Type),
+		edge.To("unsaved_posts", UnsavedPost.Type),
 	}
 }

@@ -1,7 +1,6 @@
 package common
 
 import (
-	"context"
 	"devlog/ent"
 	"github.com/labstack/echo"
 )
@@ -9,17 +8,21 @@ import (
 type Context struct {
 	echo.Context
 	client *ent.Client
-	ctx    context.Context
+	admin  *ent.Admin
 }
 
-func NewContext(c echo.Context, client *ent.Client, ctx context.Context) *Context {
-	return &Context{c, client, ctx}
+func NewContext(c echo.Context, client *ent.Client) *Context {
+	return &Context{c, client, nil}
 }
 
 func (c *Context) Client() *ent.Client {
 	return c.client
 }
 
-func (c *Context) Ctx() context.Context {
-	return c.ctx
+func (c *Context) Admin() *ent.Admin {
+	return c.admin
+}
+
+func (c *Context) SetAdmin(admin *ent.Admin) {
+	c.admin = admin
 }

@@ -9,13 +9,14 @@ import (
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
 	"devlog/ent/predicate"
+	"devlog/ent/unsavedpost"
 	"errors"
 	"fmt"
 	"math"
 
-	"github.com/facebook/ent/dialect/sql"
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // AdminQuery is the builder for querying Admin entities.
@@ -23,12 +24,14 @@ type AdminQuery struct {
 	config
 	limit      *int
 	offset     *int
+	unique     *bool
 	order      []OrderFunc
 	fields     []string
 	predicates []predicate.Admin
 	// eager-loading edges.
-	withSessions *AdminSessionQuery
-	withPosts    *PostQuery
+	withSessions     *AdminSessionQuery
+	withPosts        *PostQuery
+	withUnsavedPosts *UnsavedPostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -52,6 +55,13 @@ func (aq *AdminQuery) Offset(offset int) *AdminQuery {
 	return aq
 }
 
+// Unique configures the query builder to filter duplicate records on query.
+// By default, unique is set to true, and can be disabled using this method.
+func (aq *AdminQuery) Unique(unique bool) *AdminQuery {
+	aq.unique = &unique
+	return aq
+}
+
 // Order adds an order step to the query.
 func (aq *AdminQuery) Order(o ...OrderFunc) *AdminQuery {
 	aq.order = append(aq.order, o...)
@@ -65,7 +75,7 @@ func (aq *AdminQuery) QuerySessions() *AdminSessionQuery {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := aq.sqlQuery()
+		selector := aq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -87,7 +97,7 @@ func (aq *AdminQuery) QueryPosts() *PostQuery {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		selector := aq.sqlQuery()
+		selector := aq.sqlQuery(ctx)
 		if err := selector.Err(); err != nil {
 			return nil, err
 		}
@@ -95,6 +105,28 @@ func (aq *AdminQuery) QueryPosts() *PostQuery {
 			sqlgraph.From(admin.Table, admin.FieldID, selector),
 			sqlgraph.To(post.Table, post.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, admin.PostsTable, admin.PostsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUnsavedPosts chains the current query on the "unsaved_posts" edge.
+func (aq *AdminQuery) QueryUnsavedPosts() *UnsavedPostQuery {
+	query := &UnsavedPostQuery{config: aq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(admin.Table, admin.FieldID, selector),
+			sqlgraph.To(unsavedpost.Table, unsavedpost.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, admin.UnsavedPostsTable, admin.UnsavedPostsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -278,13 +310,14 @@ func (aq *AdminQuery) Clone() *AdminQuery {
 		return nil
 	}
 	return &AdminQuery{
-		config:       aq.config,
-		limit:        aq.limit,
-		offset:       aq.offset,
-		order:        append([]OrderFunc{}, aq.order...),
-		predicates:   append([]predicate.Admin{}, aq.predicates...),
-		withSessions: aq.withSessions.Clone(),
-		withPosts:    aq.withPosts.Clone(),
+		config:           aq.config,
+		limit:            aq.limit,
+		offset:           aq.offset,
+		order:            append([]OrderFunc{}, aq.order...),
+		predicates:       append([]predicate.Admin{}, aq.predicates...),
+		withSessions:     aq.withSessions.Clone(),
+		withPosts:        aq.withPosts.Clone(),
+		withUnsavedPosts: aq.withUnsavedPosts.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
@@ -313,6 +346,17 @@ func (aq *AdminQuery) WithPosts(opts ...func(*PostQuery)) *AdminQuery {
 	return aq
 }
 
+// WithUnsavedPosts tells the query-builder to eager-load the nodes that are connected to
+// the "unsaved_posts" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AdminQuery) WithUnsavedPosts(opts ...func(*UnsavedPostQuery)) *AdminQuery {
+	query := &UnsavedPostQuery{config: aq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withUnsavedPosts = query
+	return aq
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
@@ -335,7 +379,7 @@ func (aq *AdminQuery) GroupBy(field string, fields ...string) *AdminGroupBy {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
 		}
-		return aq.sqlQuery(), nil
+		return aq.sqlQuery(ctx), nil
 	}
 	return group
 }
@@ -378,9 +422,10 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 	var (
 		nodes       = []*Admin{}
 		_spec       = aq.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			aq.withSessions != nil,
 			aq.withPosts != nil,
+			aq.withUnsavedPosts != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -461,6 +506,35 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 		}
 	}
 
+	if query := aq.withUnsavedPosts; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Admin)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.UnsavedPosts = []*UnsavedPost{}
+		}
+		query.withFKs = true
+		query.Where(predicate.UnsavedPost(func(s *sql.Selector) {
+			s.Where(sql.InValues(admin.UnsavedPostsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.admin_unsaved_posts
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "admin_unsaved_posts" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "admin_unsaved_posts" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.UnsavedPosts = append(node.Edges.UnsavedPosts, n)
+		}
+	}
+
 	return nodes, nil
 }
 
@@ -472,7 +546,7 @@ func (aq *AdminQuery) sqlCount(ctx context.Context) (int, error) {
 func (aq *AdminQuery) sqlExist(ctx context.Context) (bool, error) {
 	n, err := aq.sqlCount(ctx)
 	if err != nil {
-		return false, fmt.Errorf("ent: check existence: %v", err)
+		return false, fmt.Errorf("ent: check existence: %w", err)
 	}
 	return n > 0, nil
 }
@@ -489,6 +563,9 @@ func (aq *AdminQuery) querySpec() *sqlgraph.QuerySpec {
 		},
 		From:   aq.sql,
 		Unique: true,
+	}
+	if unique := aq.unique; unique != nil {
+		_spec.Unique = *unique
 	}
 	if fields := aq.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
@@ -515,14 +592,14 @@ func (aq *AdminQuery) querySpec() *sqlgraph.QuerySpec {
 	if ps := aq.order; len(ps) > 0 {
 		_spec.Order = func(selector *sql.Selector) {
 			for i := range ps {
-				ps[i](selector, admin.ValidColumn)
+				ps[i](selector)
 			}
 		}
 	}
 	return _spec
 }
 
-func (aq *AdminQuery) sqlQuery() *sql.Selector {
+func (aq *AdminQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(aq.driver.Dialect())
 	t1 := builder.Table(admin.Table)
 	selector := builder.Select(t1.Columns(admin.Columns...)...).From(t1)
@@ -534,7 +611,7 @@ func (aq *AdminQuery) sqlQuery() *sql.Selector {
 		p(selector)
 	}
 	for _, p := range aq.order {
-		p(selector, admin.ValidColumn)
+		p(selector)
 	}
 	if offset := aq.offset; offset != nil {
 		// limit is mandatory for offset clause. We start
@@ -800,7 +877,7 @@ func (agb *AdminGroupBy) sqlQuery() *sql.Selector {
 	columns := make([]string, 0, len(agb.fields)+len(agb.fns))
 	columns = append(columns, agb.fields...)
 	for _, fn := range agb.fns {
-		columns = append(columns, fn(selector, admin.ValidColumn))
+		columns = append(columns, fn(selector))
 	}
 	return selector.Select(columns...).GroupBy(agb.fields...)
 }
@@ -817,7 +894,7 @@ func (as *AdminSelect) Scan(ctx context.Context, v interface{}) error {
 	if err := as.prepareQuery(ctx); err != nil {
 		return err
 	}
-	as.sql = as.AdminQuery.sqlQuery()
+	as.sql = as.AdminQuery.sqlQuery(ctx)
 	return as.sqlScan(ctx, v)
 }
 

@@ -7,12 +7,13 @@ import (
 	"devlog/ent/admin"
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
+	"devlog/ent/unsavedpost"
 	"errors"
 	"fmt"
 	"time"
 
-	"github.com/facebook/ent/dialect/sql/sqlgraph"
-	"github.com/facebook/ent/schema/field"
+	"entgo.io/ent/dialect/sql/sqlgraph"
+	"entgo.io/ent/schema/field"
 )
 
 // AdminCreate is the builder for creating a Admin entity.
@@ -82,6 +83,21 @@ func (ac *AdminCreate) AddPosts(p ...*Post) *AdminCreate {
 		ids[i] = p[i].ID
 	}
 	return ac.AddPostIDs(ids...)
+}
+
+// AddUnsavedPostIDs adds the "unsaved_posts" edge to the UnsavedPost entity by IDs.
+func (ac *AdminCreate) AddUnsavedPostIDs(ids ...int) *AdminCreate {
+	ac.mutation.AddUnsavedPostIDs(ids...)
+	return ac
+}
+
+// AddUnsavedPosts adds the "unsaved_posts" edges to the UnsavedPost entity.
+func (ac *AdminCreate) AddUnsavedPosts(u ...*UnsavedPost) *AdminCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return ac.AddUnsavedPostIDs(ids...)
 }
 
 // Mutation returns the AdminMutation object of the builder.
@@ -260,6 +276,25 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: post.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.UnsavedPostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   admin.UnsavedPostsTable,
+			Columns: []string{admin.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
 				},
 			},
 		}
