@@ -27,7 +27,7 @@ var (
 	AdminSessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "token", Type: field.TypeString, Unique: true, Size: 256},
-		{Name: "used_at", Type: field.TypeTime},
+		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "admin_sessions", Type: field.TypeInt, Nullable: true},
 	}
@@ -200,7 +200,6 @@ var (
 		{Name: "access_level", Type: field.TypeEnum, Nullable: true, Enums: []string{"public", "unlisted", "private"}},
 		{Name: "title", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "content", Type: field.TypeString, Nullable: true, Size: 2147483647},
-		{Name: "html_content", Type: field.TypeString, Nullable: true, Size: 2147483647},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "modified_at", Type: field.TypeTime},
 		{Name: "admin_unsaved_posts", Type: field.TypeInt, Nullable: true},
@@ -213,7 +212,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "unsaved_posts_admins_unsaved_posts",
-				Columns:    []*schema.Column{UnsavedPostsColumns[9]},
+				Columns:    []*schema.Column{UnsavedPostsColumns[8]},
 				RefColumns: []*schema.Column{AdminsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

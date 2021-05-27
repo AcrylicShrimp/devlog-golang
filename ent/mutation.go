@@ -761,7 +761,7 @@ type AdminSessionMutation struct {
 	typ           string
 	id            *int
 	token         *string
-	used_at       *time.Time
+	expires_at    *time.Time
 	created_at    *time.Time
 	clearedFields map[string]struct{}
 	user          *int
@@ -886,40 +886,40 @@ func (m *AdminSessionMutation) ResetToken() {
 	m.token = nil
 }
 
-// SetUsedAt sets the "used_at" field.
-func (m *AdminSessionMutation) SetUsedAt(t time.Time) {
-	m.used_at = &t
+// SetExpiresAt sets the "expires_at" field.
+func (m *AdminSessionMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
 }
 
-// UsedAt returns the value of the "used_at" field in the mutation.
-func (m *AdminSessionMutation) UsedAt() (r time.Time, exists bool) {
-	v := m.used_at
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *AdminSessionMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldUsedAt returns the old "used_at" field's value of the AdminSession entity.
+// OldExpiresAt returns the old "expires_at" field's value of the AdminSession entity.
 // If the AdminSession object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminSessionMutation) OldUsedAt(ctx context.Context) (v time.Time, err error) {
+func (m *AdminSessionMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldUsedAt is only allowed on UpdateOne operations")
+		return v, fmt.Errorf("OldExpiresAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldUsedAt requires an ID field in the mutation")
+		return v, fmt.Errorf("OldExpiresAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUsedAt: %w", err)
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
 	}
-	return oldValue.UsedAt, nil
+	return oldValue.ExpiresAt, nil
 }
 
-// ResetUsedAt resets all changes to the "used_at" field.
-func (m *AdminSessionMutation) ResetUsedAt() {
-	m.used_at = nil
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *AdminSessionMutation) ResetExpiresAt() {
+	m.expires_at = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -1015,8 +1015,8 @@ func (m *AdminSessionMutation) Fields() []string {
 	if m.token != nil {
 		fields = append(fields, adminsession.FieldToken)
 	}
-	if m.used_at != nil {
-		fields = append(fields, adminsession.FieldUsedAt)
+	if m.expires_at != nil {
+		fields = append(fields, adminsession.FieldExpiresAt)
 	}
 	if m.created_at != nil {
 		fields = append(fields, adminsession.FieldCreatedAt)
@@ -1031,8 +1031,8 @@ func (m *AdminSessionMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case adminsession.FieldToken:
 		return m.Token()
-	case adminsession.FieldUsedAt:
-		return m.UsedAt()
+	case adminsession.FieldExpiresAt:
+		return m.ExpiresAt()
 	case adminsession.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -1046,8 +1046,8 @@ func (m *AdminSessionMutation) OldField(ctx context.Context, name string) (ent.V
 	switch name {
 	case adminsession.FieldToken:
 		return m.OldToken(ctx)
-	case adminsession.FieldUsedAt:
-		return m.OldUsedAt(ctx)
+	case adminsession.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
 	case adminsession.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -1066,12 +1066,12 @@ func (m *AdminSessionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetToken(v)
 		return nil
-	case adminsession.FieldUsedAt:
+	case adminsession.FieldExpiresAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetUsedAt(v)
+		m.SetExpiresAt(v)
 		return nil
 	case adminsession.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -1132,8 +1132,8 @@ func (m *AdminSessionMutation) ResetField(name string) error {
 	case adminsession.FieldToken:
 		m.ResetToken()
 		return nil
-	case adminsession.FieldUsedAt:
-		m.ResetUsedAt()
+	case adminsession.FieldExpiresAt:
+		m.ResetExpiresAt()
 		return nil
 	case adminsession.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -5460,7 +5460,6 @@ type UnsavedPostMutation struct {
 	access_level       *unsavedpost.AccessLevel
 	title              *string
 	content            *string
-	html_content       *string
 	created_at         *time.Time
 	modified_at        *time.Time
 	clearedFields      map[string]struct{}
@@ -5614,7 +5613,7 @@ func (m *UnsavedPostMutation) Slug() (r string, exists bool) {
 // OldSlug returns the old "slug" field's value of the UnsavedPost entity.
 // If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostMutation) OldSlug(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostMutation) OldSlug(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldSlug is only allowed on UpdateOne operations")
 	}
@@ -5663,7 +5662,7 @@ func (m *UnsavedPostMutation) AccessLevel() (r unsavedpost.AccessLevel, exists b
 // OldAccessLevel returns the old "access_level" field's value of the UnsavedPost entity.
 // If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostMutation) OldAccessLevel(ctx context.Context) (v unsavedpost.AccessLevel, err error) {
+func (m *UnsavedPostMutation) OldAccessLevel(ctx context.Context) (v *unsavedpost.AccessLevel, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldAccessLevel is only allowed on UpdateOne operations")
 	}
@@ -5712,7 +5711,7 @@ func (m *UnsavedPostMutation) Title() (r string, exists bool) {
 // OldTitle returns the old "title" field's value of the UnsavedPost entity.
 // If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostMutation) OldTitle(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostMutation) OldTitle(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
 	}
@@ -5761,7 +5760,7 @@ func (m *UnsavedPostMutation) Content() (r string, exists bool) {
 // OldContent returns the old "content" field's value of the UnsavedPost entity.
 // If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostMutation) OldContent(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostMutation) OldContent(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldContent is only allowed on UpdateOne operations")
 	}
@@ -5791,55 +5790,6 @@ func (m *UnsavedPostMutation) ContentCleared() bool {
 func (m *UnsavedPostMutation) ResetContent() {
 	m.content = nil
 	delete(m.clearedFields, unsavedpost.FieldContent)
-}
-
-// SetHTMLContent sets the "html_content" field.
-func (m *UnsavedPostMutation) SetHTMLContent(s string) {
-	m.html_content = &s
-}
-
-// HTMLContent returns the value of the "html_content" field in the mutation.
-func (m *UnsavedPostMutation) HTMLContent() (r string, exists bool) {
-	v := m.html_content
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldHTMLContent returns the old "html_content" field's value of the UnsavedPost entity.
-// If the UnsavedPost object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostMutation) OldHTMLContent(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldHTMLContent is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldHTMLContent requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldHTMLContent: %w", err)
-	}
-	return oldValue.HTMLContent, nil
-}
-
-// ClearHTMLContent clears the value of the "html_content" field.
-func (m *UnsavedPostMutation) ClearHTMLContent() {
-	m.html_content = nil
-	m.clearedFields[unsavedpost.FieldHTMLContent] = struct{}{}
-}
-
-// HTMLContentCleared returns if the "html_content" field was cleared in this mutation.
-func (m *UnsavedPostMutation) HTMLContentCleared() bool {
-	_, ok := m.clearedFields[unsavedpost.FieldHTMLContent]
-	return ok
-}
-
-// ResetHTMLContent resets all changes to the "html_content" field.
-func (m *UnsavedPostMutation) ResetHTMLContent() {
-	m.html_content = nil
-	delete(m.clearedFields, unsavedpost.FieldHTMLContent)
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -6165,7 +6115,7 @@ func (m *UnsavedPostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnsavedPostMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 7)
 	if m.uuid != nil {
 		fields = append(fields, unsavedpost.FieldUUID)
 	}
@@ -6180,9 +6130,6 @@ func (m *UnsavedPostMutation) Fields() []string {
 	}
 	if m.content != nil {
 		fields = append(fields, unsavedpost.FieldContent)
-	}
-	if m.html_content != nil {
-		fields = append(fields, unsavedpost.FieldHTMLContent)
 	}
 	if m.created_at != nil {
 		fields = append(fields, unsavedpost.FieldCreatedAt)
@@ -6208,8 +6155,6 @@ func (m *UnsavedPostMutation) Field(name string) (ent.Value, bool) {
 		return m.Title()
 	case unsavedpost.FieldContent:
 		return m.Content()
-	case unsavedpost.FieldHTMLContent:
-		return m.HTMLContent()
 	case unsavedpost.FieldCreatedAt:
 		return m.CreatedAt()
 	case unsavedpost.FieldModifiedAt:
@@ -6233,8 +6178,6 @@ func (m *UnsavedPostMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldTitle(ctx)
 	case unsavedpost.FieldContent:
 		return m.OldContent(ctx)
-	case unsavedpost.FieldHTMLContent:
-		return m.OldHTMLContent(ctx)
 	case unsavedpost.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case unsavedpost.FieldModifiedAt:
@@ -6282,13 +6225,6 @@ func (m *UnsavedPostMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetContent(v)
-		return nil
-	case unsavedpost.FieldHTMLContent:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetHTMLContent(v)
 		return nil
 	case unsavedpost.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -6346,9 +6282,6 @@ func (m *UnsavedPostMutation) ClearedFields() []string {
 	if m.FieldCleared(unsavedpost.FieldContent) {
 		fields = append(fields, unsavedpost.FieldContent)
 	}
-	if m.FieldCleared(unsavedpost.FieldHTMLContent) {
-		fields = append(fields, unsavedpost.FieldHTMLContent)
-	}
 	return fields
 }
 
@@ -6375,9 +6308,6 @@ func (m *UnsavedPostMutation) ClearField(name string) error {
 	case unsavedpost.FieldContent:
 		m.ClearContent()
 		return nil
-	case unsavedpost.FieldHTMLContent:
-		m.ClearHTMLContent()
-		return nil
 	}
 	return fmt.Errorf("unknown UnsavedPost nullable field %s", name)
 }
@@ -6400,9 +6330,6 @@ func (m *UnsavedPostMutation) ResetField(name string) error {
 		return nil
 	case unsavedpost.FieldContent:
 		m.ResetContent()
-		return nil
-	case unsavedpost.FieldHTMLContent:
-		m.ResetHTMLContent()
 		return nil
 	case unsavedpost.FieldCreatedAt:
 		m.ResetCreatedAt()

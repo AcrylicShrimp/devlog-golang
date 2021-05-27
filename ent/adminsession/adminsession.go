@@ -13,8 +13,8 @@ const (
 	FieldID = "id"
 	// FieldToken holds the string denoting the token field in the database.
 	FieldToken = "token"
-	// FieldUsedAt holds the string denoting the used_at field in the database.
-	FieldUsedAt = "used_at"
+	// FieldExpiresAt holds the string denoting the expires_at field in the database.
+	FieldExpiresAt = "expires_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -34,7 +34,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldToken,
-	FieldUsedAt,
+	FieldExpiresAt,
 	FieldCreatedAt,
 }
 
@@ -62,8 +62,6 @@ func ValidColumn(column string) bool {
 var (
 	// TokenValidator is a validator for the "token" field. It is called by the builders before save.
 	TokenValidator func(string) error
-	// DefaultUsedAt holds the default value on creation for the "used_at" field.
-	DefaultUsedAt func() time.Time
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )

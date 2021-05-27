@@ -19,8 +19,8 @@ type AdminSession struct {
 	ID int `json:"id,omitempty"`
 	// Token holds the value of the "token" field.
 	Token string `json:"token,omitempty"`
-	// UsedAt holds the value of the "used_at" field.
-	UsedAt time.Time `json:"used_at,omitempty"`
+	// ExpiresAt holds the value of the "expires_at" field.
+	ExpiresAt time.Time `json:"expires_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -61,7 +61,7 @@ func (*AdminSession) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullInt64)
 		case adminsession.FieldToken:
 			values[i] = new(sql.NullString)
-		case adminsession.FieldUsedAt, adminsession.FieldCreatedAt:
+		case adminsession.FieldExpiresAt, adminsession.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case adminsession.ForeignKeys[0]: // admin_sessions
 			values[i] = new(sql.NullInt64)
@@ -92,11 +92,11 @@ func (as *AdminSession) assignValues(columns []string, values []interface{}) err
 			} else if value.Valid {
 				as.Token = value.String
 			}
-		case adminsession.FieldUsedAt:
+		case adminsession.FieldExpiresAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field used_at", values[i])
+				return fmt.Errorf("unexpected type %T for field expires_at", values[i])
 			} else if value.Valid {
-				as.UsedAt = value.Time
+				as.ExpiresAt = value.Time
 			}
 		case adminsession.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -146,8 +146,8 @@ func (as *AdminSession) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", as.ID))
 	builder.WriteString(", token=")
 	builder.WriteString(as.Token)
-	builder.WriteString(", used_at=")
-	builder.WriteString(as.UsedAt.Format(time.ANSIC))
+	builder.WriteString(", expires_at=")
+	builder.WriteString(as.ExpiresAt.Format(time.ANSIC))
 	builder.WriteString(", created_at=")
 	builder.WriteString(as.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')

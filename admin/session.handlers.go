@@ -1,15 +1,16 @@
 package admin
 
 import (
+	"context"
 	"devlog/common"
 	"devlog/ent"
 	dbAdmin "devlog/ent/admin"
 	dbAdminSession "devlog/ent/adminsession"
 	"devlog/util"
-	"encoding/hex"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"time"
 )
 
 func AttachSession(group *echo.Group) {
@@ -31,44 +32,52 @@ func NewSessionHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
-	client := c.(*common.Context).Client()
-	ctx := c.(*common.Context).Ctx()
-
-	admin, err := client.Admin.Query().Where(dbAdmin.UsernameEQ(authInfo.Username)).Select(dbAdmin.FieldID, dbAdmin.FieldPassword).First(ctx)
-	if err != nil {
-		if _, ok := err.(*ent.NotFoundError); ok {
-			return echo.NewHTTPError(http.StatusUnauthorized)
+	res, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
+		admin, err := tx.Admin.Query().
+			Where(dbAdmin.UsernameEQ(authInfo.Username)).
+			Select(dbAdmin.FieldID, dbAdmin.FieldPassword).
+			First(context.Background())
+		if err != nil {
+			if _, ok := err.(*ent.NotFoundError); ok {
+				return nil, echo.NewHTTPError(http.StatusUnauthorized)
+			}
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
-		return echo.NewHTTPError(http.StatusInternalServerError)
-	}
 
-	password, err := hex.DecodeString(admin.Password)
+		if bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(authInfo.Password)) != nil {
+			return nil, echo.NewHTTPError(http.StatusUnauthorized)
+		}
+
+		token, err := util.GenerateToken256()
+		if err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		if _, err := tx.AdminSession.Create().
+			SetUser(admin).
+			SetToken(token).
+			SetExpiresAt(time.Now().Add(time.Hour * 24 * 5)).
+			Save(context.Background()); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		type Token struct {
+			Token string `json:"token"`
+		}
+
+		return Token{Token: token}, nil
+	})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError)
+		return err
 	}
 
-	if bcrypt.CompareHashAndPassword(password, []byte(authInfo.Password)) != nil {
-		return echo.NewHTTPError(http.StatusUnauthorized)
-	}
+	return c.JSON(http.StatusCreated, res)
 
-	token, err := util.GenerateToken256()
-	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError)
-	}
-	if _, err := client.AdminSession.Create().SetUser(admin).SetToken(token).Save(ctx); err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError)
-	}
-
-	type Token struct {
-		Token string `json:"token"`
-	}
-
-	return c.JSON(http.StatusCreated, Token{Token: token})
 }
 
 func DeleteSessionHandler(c echo.Context) error {
 	type TokenInfo struct {
-		Token string `param:"token" validate:"required"`
+		Token string `param:"token" validate:"required,hexadecimal,len=256"`
 	}
 
 	tokenInfo := new(TokenInfo)
@@ -79,10 +88,11 @@ func DeleteSessionHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
-	client := c.(*common.Context).Client()
-	ctx := c.(*common.Context).Ctx()
+	ctx := c.(*common.Context)
 
-	if _, err := client.AdminSession.Delete().Where(dbAdminSession.TokenEQ(tokenInfo.Token)).Exec(ctx); err != nil {
+	if _, err := ctx.Client().AdminSession.Delete().
+		Where(dbAdminSession.TokenEQ(tokenInfo.Token)).
+		Exec(context.Background()); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 

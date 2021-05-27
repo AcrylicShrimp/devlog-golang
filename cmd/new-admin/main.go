@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"context"
 	"devlog/ent"
-	"encoding/hex"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -16,31 +17,31 @@ func main() {
 		panic(err)
 	}
 
-	reader := bufio.NewReader(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Print("Email: ")
-	email, err := reader.ReadString('\n')
-	if err != nil {
-		panic(err)
+	if !scanner.Scan() {
+		panic("Email required")
 	}
+	email := scanner.Text()
 
 	fmt.Print("Username: ")
-	username, err := reader.ReadString('\n')
-	if err != nil {
-		panic(err)
+	if !scanner.Scan() {
+		panic("Username required")
 	}
+	username := scanner.Text()
 
 	fmt.Print("Password: ")
-	password, err := reader.ReadString('\n')
-	if err != nil {
-		panic(err)
+	if !scanner.Scan() {
+		panic("Password required")
 	}
+	password := scanner.Text()
 
 	fmt.Print("Password confirm: ")
-	passwordConfirm, err := reader.ReadString('\n')
-	if err != nil {
-		panic(err)
+	if !scanner.Scan() {
+		panic("Password confirm required")
 	}
+	passwordConfirm := scanner.Text()
 
 	if password != passwordConfirm {
 		panic("Password not match")
@@ -51,6 +52,6 @@ func main() {
 		panic(err)
 	}
 
-	admin := client.Admin.Create().SetEmail(email).SetUsername(username).SetPassword(hex.EncodeToString(passwordHash)).SaveX(context.Background())
+	admin := client.Admin.Create().SetEmail(strings.TrimSpace(email)).SetUsername(strings.TrimSpace(username)).SetPassword(string(passwordHash)).SaveX(context.Background())
 	fmt.Print("A new admin has been successfully created: ", admin.ID)
 }

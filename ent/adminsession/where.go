@@ -100,10 +100,10 @@ func Token(v string) predicate.AdminSession {
 	})
 }
 
-// UsedAt applies equality check predicate on the "used_at" field. It's identical to UsedAtEQ.
-func UsedAt(v time.Time) predicate.AdminSession {
+// ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
+func ExpiresAt(v time.Time) predicate.AdminSession {
 	return predicate.AdminSession(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUsedAt), v))
+		s.Where(sql.EQ(s.C(FieldExpiresAt), v))
 	})
 }
 
@@ -225,22 +225,22 @@ func TokenContainsFold(v string) predicate.AdminSession {
 	})
 }
 
-// UsedAtEQ applies the EQ predicate on the "used_at" field.
-func UsedAtEQ(v time.Time) predicate.AdminSession {
+// ExpiresAtEQ applies the EQ predicate on the "expires_at" field.
+func ExpiresAtEQ(v time.Time) predicate.AdminSession {
 	return predicate.AdminSession(func(s *sql.Selector) {
-		s.Where(sql.EQ(s.C(FieldUsedAt), v))
+		s.Where(sql.EQ(s.C(FieldExpiresAt), v))
 	})
 }
 
-// UsedAtNEQ applies the NEQ predicate on the "used_at" field.
-func UsedAtNEQ(v time.Time) predicate.AdminSession {
+// ExpiresAtNEQ applies the NEQ predicate on the "expires_at" field.
+func ExpiresAtNEQ(v time.Time) predicate.AdminSession {
 	return predicate.AdminSession(func(s *sql.Selector) {
-		s.Where(sql.NEQ(s.C(FieldUsedAt), v))
+		s.Where(sql.NEQ(s.C(FieldExpiresAt), v))
 	})
 }
 
-// UsedAtIn applies the In predicate on the "used_at" field.
-func UsedAtIn(vs ...time.Time) predicate.AdminSession {
+// ExpiresAtIn applies the In predicate on the "expires_at" field.
+func ExpiresAtIn(vs ...time.Time) predicate.AdminSession {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -252,12 +252,12 @@ func UsedAtIn(vs ...time.Time) predicate.AdminSession {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.In(s.C(FieldUsedAt), v...))
+		s.Where(sql.In(s.C(FieldExpiresAt), v...))
 	})
 }
 
-// UsedAtNotIn applies the NotIn predicate on the "used_at" field.
-func UsedAtNotIn(vs ...time.Time) predicate.AdminSession {
+// ExpiresAtNotIn applies the NotIn predicate on the "expires_at" field.
+func ExpiresAtNotIn(vs ...time.Time) predicate.AdminSession {
 	v := make([]interface{}, len(vs))
 	for i := range v {
 		v[i] = vs[i]
@@ -269,35 +269,35 @@ func UsedAtNotIn(vs ...time.Time) predicate.AdminSession {
 			s.Where(sql.False())
 			return
 		}
-		s.Where(sql.NotIn(s.C(FieldUsedAt), v...))
+		s.Where(sql.NotIn(s.C(FieldExpiresAt), v...))
 	})
 }
 
-// UsedAtGT applies the GT predicate on the "used_at" field.
-func UsedAtGT(v time.Time) predicate.AdminSession {
+// ExpiresAtGT applies the GT predicate on the "expires_at" field.
+func ExpiresAtGT(v time.Time) predicate.AdminSession {
 	return predicate.AdminSession(func(s *sql.Selector) {
-		s.Where(sql.GT(s.C(FieldUsedAt), v))
+		s.Where(sql.GT(s.C(FieldExpiresAt), v))
 	})
 }
 
-// UsedAtGTE applies the GTE predicate on the "used_at" field.
-func UsedAtGTE(v time.Time) predicate.AdminSession {
+// ExpiresAtGTE applies the GTE predicate on the "expires_at" field.
+func ExpiresAtGTE(v time.Time) predicate.AdminSession {
 	return predicate.AdminSession(func(s *sql.Selector) {
-		s.Where(sql.GTE(s.C(FieldUsedAt), v))
+		s.Where(sql.GTE(s.C(FieldExpiresAt), v))
 	})
 }
 
-// UsedAtLT applies the LT predicate on the "used_at" field.
-func UsedAtLT(v time.Time) predicate.AdminSession {
+// ExpiresAtLT applies the LT predicate on the "expires_at" field.
+func ExpiresAtLT(v time.Time) predicate.AdminSession {
 	return predicate.AdminSession(func(s *sql.Selector) {
-		s.Where(sql.LT(s.C(FieldUsedAt), v))
+		s.Where(sql.LT(s.C(FieldExpiresAt), v))
 	})
 }
 
-// UsedAtLTE applies the LTE predicate on the "used_at" field.
-func UsedAtLTE(v time.Time) predicate.AdminSession {
+// ExpiresAtLTE applies the LTE predicate on the "expires_at" field.
+func ExpiresAtLTE(v time.Time) predicate.AdminSession {
 	return predicate.AdminSession(func(s *sql.Selector) {
-		s.Where(sql.LTE(s.C(FieldUsedAt), v))
+		s.Where(sql.LTE(s.C(FieldExpiresAt), v))
 	})
 }
 

@@ -87,20 +87,6 @@ func (upc *UnsavedPostCreate) SetNillableContent(s *string) *UnsavedPostCreate {
 	return upc
 }
 
-// SetHTMLContent sets the "html_content" field.
-func (upc *UnsavedPostCreate) SetHTMLContent(s string) *UnsavedPostCreate {
-	upc.mutation.SetHTMLContent(s)
-	return upc
-}
-
-// SetNillableHTMLContent sets the "html_content" field if the given value is not nil.
-func (upc *UnsavedPostCreate) SetNillableHTMLContent(s *string) *UnsavedPostCreate {
-	if s != nil {
-		upc.SetHTMLContent(*s)
-	}
-	return upc
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (upc *UnsavedPostCreate) SetCreatedAt(t time.Time) *UnsavedPostCreate {
 	upc.mutation.SetCreatedAt(t)
@@ -341,7 +327,7 @@ func (upc *UnsavedPostCreate) createSpec() (*UnsavedPost, *sqlgraph.CreateSpec) 
 			Value:  value,
 			Column: unsavedpost.FieldSlug,
 		})
-		_node.Slug = value
+		_node.Slug = &value
 	}
 	if value, ok := upc.mutation.AccessLevel(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -349,7 +335,7 @@ func (upc *UnsavedPostCreate) createSpec() (*UnsavedPost, *sqlgraph.CreateSpec) 
 			Value:  value,
 			Column: unsavedpost.FieldAccessLevel,
 		})
-		_node.AccessLevel = value
+		_node.AccessLevel = &value
 	}
 	if value, ok := upc.mutation.Title(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -357,7 +343,7 @@ func (upc *UnsavedPostCreate) createSpec() (*UnsavedPost, *sqlgraph.CreateSpec) 
 			Value:  value,
 			Column: unsavedpost.FieldTitle,
 		})
-		_node.Title = value
+		_node.Title = &value
 	}
 	if value, ok := upc.mutation.Content(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -365,15 +351,7 @@ func (upc *UnsavedPostCreate) createSpec() (*UnsavedPost, *sqlgraph.CreateSpec) 
 			Value:  value,
 			Column: unsavedpost.FieldContent,
 		})
-		_node.Content = value
-	}
-	if value, ok := upc.mutation.HTMLContent(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: unsavedpost.FieldHTMLContent,
-		})
-		_node.HTMLContent = value
+		_node.Content = &value
 	}
 	if value, ok := upc.mutation.CreatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

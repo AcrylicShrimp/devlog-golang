@@ -16,11 +16,10 @@ type UnsavedPost struct {
 func (UnsavedPost) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("uuid").MaxLen(64).Unique(),
-		field.String("slug").MaxLen(255).Optional(),
-		field.Enum("access_level").Values("public", "unlisted", "private").Optional(),
-		field.String("title").MaxLen(255).Optional(),
-		field.Text("content").Optional(),
-		field.Text("html_content").Optional(),
+		field.String("slug").MaxLen(255).Optional().Nillable(),
+		field.Enum("access_level").Values("public", "unlisted", "private").Optional().Nillable(),
+		field.String("title").MaxLen(255).Optional().Nillable(),
+		field.Text("content").Optional().Nillable(),
 		field.Time("created_at").Default(time.Now),
 		field.Time("modified_at").Default(time.Now).UpdateDefault(time.Now),
 	}

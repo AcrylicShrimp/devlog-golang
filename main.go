@@ -1,12 +1,12 @@
 package main
 
 import (
-	"context"
 	"devlog/admin"
 	"devlog/common"
+	"devlog/env"
 	"github.com/joho/godotenv"
-	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
+	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 func main() {
@@ -14,6 +14,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	env.InitEnvVars()
 
 	e := echo.New()
 	e.HideBanner = true
@@ -28,7 +30,7 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			return next(common.NewContext(c, client, context.Background()))
+			return next(common.NewContext(c, client))
 		}
 	})
 

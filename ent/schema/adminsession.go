@@ -17,7 +17,7 @@ type AdminSession struct {
 func (AdminSession) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("token").MaxLen(256).Unique(),
-		field.Time("used_at").Default(time.Now),
+		field.Time("expires_at"),
 		field.Time("created_at").Default(time.Now),
 	}
 }
@@ -32,6 +32,6 @@ func (AdminSession) Edges() []ent.Edge {
 // Indices of the AdminSession.
 func (AdminSession) Indices() []ent.Index {
 	return []ent.Index{
-		index.Fields("used_at"),
+		index.Fields("expires_at"),
 	}
 }

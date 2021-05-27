@@ -22,8 +22,6 @@ const (
 	FieldTitle = "title"
 	// FieldContent holds the string denoting the content field in the database.
 	FieldContent = "content"
-	// FieldHTMLContent holds the string denoting the html_content field in the database.
-	FieldHTMLContent = "html_content"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldModifiedAt holds the string denoting the modified_at field in the database.
@@ -85,7 +83,6 @@ var Columns = []string{
 	FieldAccessLevel,
 	FieldTitle,
 	FieldContent,
-	FieldHTMLContent,
 	FieldCreatedAt,
 	FieldModifiedAt,
 }

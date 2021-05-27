@@ -48,10 +48,6 @@ func init() {
 	adminsessionDescToken := adminsessionFields[0].Descriptor()
 	// adminsession.TokenValidator is a validator for the "token" field. It is called by the builders before save.
 	adminsession.TokenValidator = adminsessionDescToken.Validators[0].(func(string) error)
-	// adminsessionDescUsedAt is the schema descriptor for used_at field.
-	adminsessionDescUsedAt := adminsessionFields[1].Descriptor()
-	// adminsession.DefaultUsedAt holds the default value on creation for the used_at field.
-	adminsession.DefaultUsedAt = adminsessionDescUsedAt.Default.(func() time.Time)
 	// adminsessionDescCreatedAt is the schema descriptor for created_at field.
 	adminsessionDescCreatedAt := adminsessionFields[2].Descriptor()
 	// adminsession.DefaultCreatedAt holds the default value on creation for the created_at field.
@@ -191,11 +187,11 @@ func init() {
 	// unsavedpost.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	unsavedpost.TitleValidator = unsavedpostDescTitle.Validators[0].(func(string) error)
 	// unsavedpostDescCreatedAt is the schema descriptor for created_at field.
-	unsavedpostDescCreatedAt := unsavedpostFields[6].Descriptor()
+	unsavedpostDescCreatedAt := unsavedpostFields[5].Descriptor()
 	// unsavedpost.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unsavedpost.DefaultCreatedAt = unsavedpostDescCreatedAt.Default.(func() time.Time)
 	// unsavedpostDescModifiedAt is the schema descriptor for modified_at field.
-	unsavedpostDescModifiedAt := unsavedpostFields[7].Descriptor()
+	unsavedpostDescModifiedAt := unsavedpostFields[6].Descriptor()
 	// unsavedpost.DefaultModifiedAt holds the default value on creation for the modified_at field.
 	unsavedpost.DefaultModifiedAt = unsavedpostDescModifiedAt.Default.(func() time.Time)
 	// unsavedpost.UpdateDefaultModifiedAt holds the default value on update for the modified_at field.

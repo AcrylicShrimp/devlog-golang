@@ -27,17 +27,9 @@ func (asc *AdminSessionCreate) SetToken(s string) *AdminSessionCreate {
 	return asc
 }
 
-// SetUsedAt sets the "used_at" field.
-func (asc *AdminSessionCreate) SetUsedAt(t time.Time) *AdminSessionCreate {
-	asc.mutation.SetUsedAt(t)
-	return asc
-}
-
-// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
-func (asc *AdminSessionCreate) SetNillableUsedAt(t *time.Time) *AdminSessionCreate {
-	if t != nil {
-		asc.SetUsedAt(*t)
-	}
+// SetExpiresAt sets the "expires_at" field.
+func (asc *AdminSessionCreate) SetExpiresAt(t time.Time) *AdminSessionCreate {
+	asc.mutation.SetExpiresAt(t)
 	return asc
 }
 
@@ -118,10 +110,6 @@ func (asc *AdminSessionCreate) SaveX(ctx context.Context) *AdminSession {
 
 // defaults sets the default values of the builder before save.
 func (asc *AdminSessionCreate) defaults() {
-	if _, ok := asc.mutation.UsedAt(); !ok {
-		v := adminsession.DefaultUsedAt()
-		asc.mutation.SetUsedAt(v)
-	}
 	if _, ok := asc.mutation.CreatedAt(); !ok {
 		v := adminsession.DefaultCreatedAt()
 		asc.mutation.SetCreatedAt(v)
@@ -138,8 +126,8 @@ func (asc *AdminSessionCreate) check() error {
 			return &ValidationError{Name: "token", err: fmt.Errorf("ent: validator failed for field \"token\": %w", err)}
 		}
 	}
-	if _, ok := asc.mutation.UsedAt(); !ok {
-		return &ValidationError{Name: "used_at", err: errors.New("ent: missing required field \"used_at\"")}
+	if _, ok := asc.mutation.ExpiresAt(); !ok {
+		return &ValidationError{Name: "expires_at", err: errors.New("ent: missing required field \"expires_at\"")}
 	}
 	if _, ok := asc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
@@ -182,13 +170,13 @@ func (asc *AdminSessionCreate) createSpec() (*AdminSession, *sqlgraph.CreateSpec
 		})
 		_node.Token = value
 	}
-	if value, ok := asc.mutation.UsedAt(); ok {
+	if value, ok := asc.mutation.ExpiresAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: adminsession.FieldUsedAt,
+			Column: adminsession.FieldExpiresAt,
 		})
-		_node.UsedAt = value
+		_node.ExpiresAt = value
 	}
 	if value, ok := asc.mutation.CreatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

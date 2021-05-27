@@ -4,7 +4,7 @@ import (
 	"context"
 	"devlog/common"
 	"devlog/ent"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 func WithTx(c echo.Context, fn func(ctx *common.Context, tx *ent.Tx) (interface{}, error)) (interface{}, error) {

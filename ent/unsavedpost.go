@@ -21,15 +21,13 @@ type UnsavedPost struct {
 	// UUID holds the value of the "uuid" field.
 	UUID string `json:"uuid,omitempty"`
 	// Slug holds the value of the "slug" field.
-	Slug string `json:"slug,omitempty"`
+	Slug *string `json:"slug,omitempty"`
 	// AccessLevel holds the value of the "access_level" field.
-	AccessLevel unsavedpost.AccessLevel `json:"access_level,omitempty"`
+	AccessLevel *unsavedpost.AccessLevel `json:"access_level,omitempty"`
 	// Title holds the value of the "title" field.
-	Title string `json:"title,omitempty"`
+	Title *string `json:"title,omitempty"`
 	// Content holds the value of the "content" field.
-	Content string `json:"content,omitempty"`
-	// HTMLContent holds the value of the "html_content" field.
-	HTMLContent string `json:"html_content,omitempty"`
+	Content *string `json:"content,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// ModifiedAt holds the value of the "modified_at" field.
@@ -119,7 +117,7 @@ func (*UnsavedPost) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case unsavedpost.FieldID:
 			values[i] = new(sql.NullInt64)
-		case unsavedpost.FieldUUID, unsavedpost.FieldSlug, unsavedpost.FieldAccessLevel, unsavedpost.FieldTitle, unsavedpost.FieldContent, unsavedpost.FieldHTMLContent:
+		case unsavedpost.FieldUUID, unsavedpost.FieldSlug, unsavedpost.FieldAccessLevel, unsavedpost.FieldTitle, unsavedpost.FieldContent:
 			values[i] = new(sql.NullString)
 		case unsavedpost.FieldCreatedAt, unsavedpost.FieldModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -156,31 +154,29 @@ func (up *UnsavedPost) assignValues(columns []string, values []interface{}) erro
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field slug", values[i])
 			} else if value.Valid {
-				up.Slug = value.String
+				up.Slug = new(string)
+				*up.Slug = value.String
 			}
 		case unsavedpost.FieldAccessLevel:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field access_level", values[i])
 			} else if value.Valid {
-				up.AccessLevel = unsavedpost.AccessLevel(value.String)
+				up.AccessLevel = new(unsavedpost.AccessLevel)
+				*up.AccessLevel = unsavedpost.AccessLevel(value.String)
 			}
 		case unsavedpost.FieldTitle:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field title", values[i])
 			} else if value.Valid {
-				up.Title = value.String
+				up.Title = new(string)
+				*up.Title = value.String
 			}
 		case unsavedpost.FieldContent:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field content", values[i])
 			} else if value.Valid {
-				up.Content = value.String
-			}
-		case unsavedpost.FieldHTMLContent:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field html_content", values[i])
-			} else if value.Valid {
-				up.HTMLContent = value.String
+				up.Content = new(string)
+				*up.Content = value.String
 			}
 		case unsavedpost.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -256,16 +252,22 @@ func (up *UnsavedPost) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", up.ID))
 	builder.WriteString(", uuid=")
 	builder.WriteString(up.UUID)
-	builder.WriteString(", slug=")
-	builder.WriteString(up.Slug)
-	builder.WriteString(", access_level=")
-	builder.WriteString(fmt.Sprintf("%v", up.AccessLevel))
-	builder.WriteString(", title=")
-	builder.WriteString(up.Title)
-	builder.WriteString(", content=")
-	builder.WriteString(up.Content)
-	builder.WriteString(", html_content=")
-	builder.WriteString(up.HTMLContent)
+	if v := up.Slug; v != nil {
+		builder.WriteString(", slug=")
+		builder.WriteString(*v)
+	}
+	if v := up.AccessLevel; v != nil {
+		builder.WriteString(", access_level=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	if v := up.Title; v != nil {
+		builder.WriteString(", title=")
+		builder.WriteString(*v)
+	}
+	if v := up.Content; v != nil {
+		builder.WriteString(", content=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", created_at=")
 	builder.WriteString(up.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", modified_at=")

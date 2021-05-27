@@ -4,18 +4,10 @@ go 1.15
 
 require (
 	entgo.io/ent v0.8.0
-	github.com/aws/aws-sdk-go v1.38.13
-	github.com/facebook/ent v0.5.4
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/go-sql-driver/mysql v1.5.1-0.20200311113236-681ffa848bae
-	github.com/google/uuid v1.2.0 // indirect
-	github.com/h2non/bimg v1.1.5
 	github.com/joho/godotenv v1.3.0
-	github.com/labstack/echo v3.3.10+incompatible
-	github.com/labstack/gommon v0.3.0 // indirect
-	github.com/stretchr/testify v1.7.0 // indirect
-	github.com/valyala/fasttemplate v1.2.1 // indirect
+	github.com/labstack/echo/v4 v4.3.0
 	github.com/yuin/goldmark v1.3.3
-	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad
-	gopkg.in/yaml.v2 v2.4.0 // indirect
+	golang.org/x/crypto v0.0.0-20210322153248-0c34fe9e7dc2
 )

@@ -119,26 +119,6 @@ func (upu *UnsavedPostUpdate) ClearContent() *UnsavedPostUpdate {
 	return upu
 }
 
-// SetHTMLContent sets the "html_content" field.
-func (upu *UnsavedPostUpdate) SetHTMLContent(s string) *UnsavedPostUpdate {
-	upu.mutation.SetHTMLContent(s)
-	return upu
-}
-
-// SetNillableHTMLContent sets the "html_content" field if the given value is not nil.
-func (upu *UnsavedPostUpdate) SetNillableHTMLContent(s *string) *UnsavedPostUpdate {
-	if s != nil {
-		upu.SetHTMLContent(*s)
-	}
-	return upu
-}
-
-// ClearHTMLContent clears the value of the "html_content" field.
-func (upu *UnsavedPostUpdate) ClearHTMLContent() *UnsavedPostUpdate {
-	upu.mutation.ClearHTMLContent()
-	return upu
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (upu *UnsavedPostUpdate) SetCreatedAt(t time.Time) *UnsavedPostUpdate {
 	upu.mutation.SetCreatedAt(t)
@@ -483,19 +463,6 @@ func (upu *UnsavedPostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: unsavedpost.FieldContent,
-		})
-	}
-	if value, ok := upu.mutation.HTMLContent(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: unsavedpost.FieldHTMLContent,
-		})
-	}
-	if upu.mutation.HTMLContentCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: unsavedpost.FieldHTMLContent,
 		})
 	}
 	if value, ok := upu.mutation.CreatedAt(); ok {
@@ -846,26 +813,6 @@ func (upuo *UnsavedPostUpdateOne) SetNillableContent(s *string) *UnsavedPostUpda
 // ClearContent clears the value of the "content" field.
 func (upuo *UnsavedPostUpdateOne) ClearContent() *UnsavedPostUpdateOne {
 	upuo.mutation.ClearContent()
-	return upuo
-}
-
-// SetHTMLContent sets the "html_content" field.
-func (upuo *UnsavedPostUpdateOne) SetHTMLContent(s string) *UnsavedPostUpdateOne {
-	upuo.mutation.SetHTMLContent(s)
-	return upuo
-}
-
-// SetNillableHTMLContent sets the "html_content" field if the given value is not nil.
-func (upuo *UnsavedPostUpdateOne) SetNillableHTMLContent(s *string) *UnsavedPostUpdateOne {
-	if s != nil {
-		upuo.SetHTMLContent(*s)
-	}
-	return upuo
-}
-
-// ClearHTMLContent clears the value of the "html_content" field.
-func (upuo *UnsavedPostUpdateOne) ClearHTMLContent() *UnsavedPostUpdateOne {
-	upuo.mutation.ClearHTMLContent()
 	return upuo
 }
 
@@ -1237,19 +1184,6 @@ func (upuo *UnsavedPostUpdateOne) sqlSave(ctx context.Context) (_node *UnsavedPo
 		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Column: unsavedpost.FieldContent,
-		})
-	}
-	if value, ok := upuo.mutation.HTMLContent(); ok {
-		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: unsavedpost.FieldHTMLContent,
-		})
-	}
-	if upuo.mutation.HTMLContentCleared() {
-		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Column: unsavedpost.FieldHTMLContent,
 		})
 	}
 	if value, ok := upuo.mutation.CreatedAt(); ok {

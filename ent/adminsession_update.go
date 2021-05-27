@@ -35,17 +35,9 @@ func (asu *AdminSessionUpdate) SetToken(s string) *AdminSessionUpdate {
 	return asu
 }
 
-// SetUsedAt sets the "used_at" field.
-func (asu *AdminSessionUpdate) SetUsedAt(t time.Time) *AdminSessionUpdate {
-	asu.mutation.SetUsedAt(t)
-	return asu
-}
-
-// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
-func (asu *AdminSessionUpdate) SetNillableUsedAt(t *time.Time) *AdminSessionUpdate {
-	if t != nil {
-		asu.SetUsedAt(*t)
-	}
+// SetExpiresAt sets the "expires_at" field.
+func (asu *AdminSessionUpdate) SetExpiresAt(t time.Time) *AdminSessionUpdate {
+	asu.mutation.SetExpiresAt(t)
 	return asu
 }
 
@@ -180,11 +172,11 @@ func (asu *AdminSessionUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Column: adminsession.FieldToken,
 		})
 	}
-	if value, ok := asu.mutation.UsedAt(); ok {
+	if value, ok := asu.mutation.ExpiresAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: adminsession.FieldUsedAt,
+			Column: adminsession.FieldExpiresAt,
 		})
 	}
 	if value, ok := asu.mutation.CreatedAt(); ok {
@@ -254,17 +246,9 @@ func (asuo *AdminSessionUpdateOne) SetToken(s string) *AdminSessionUpdateOne {
 	return asuo
 }
 
-// SetUsedAt sets the "used_at" field.
-func (asuo *AdminSessionUpdateOne) SetUsedAt(t time.Time) *AdminSessionUpdateOne {
-	asuo.mutation.SetUsedAt(t)
-	return asuo
-}
-
-// SetNillableUsedAt sets the "used_at" field if the given value is not nil.
-func (asuo *AdminSessionUpdateOne) SetNillableUsedAt(t *time.Time) *AdminSessionUpdateOne {
-	if t != nil {
-		asuo.SetUsedAt(*t)
-	}
+// SetExpiresAt sets the "expires_at" field.
+func (asuo *AdminSessionUpdateOne) SetExpiresAt(t time.Time) *AdminSessionUpdateOne {
+	asuo.mutation.SetExpiresAt(t)
 	return asuo
 }
 
@@ -423,11 +407,11 @@ func (asuo *AdminSessionUpdateOne) sqlSave(ctx context.Context) (_node *AdminSes
 			Column: adminsession.FieldToken,
 		})
 	}
-	if value, ok := asuo.mutation.UsedAt(); ok {
+	if value, ok := asuo.mutation.ExpiresAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
 			Value:  value,
-			Column: adminsession.FieldUsedAt,
+			Column: adminsession.FieldExpiresAt,
 		})
 	}
 	if value, ok := asuo.mutation.CreatedAt(); ok {
