@@ -232,12 +232,8 @@ func init() {
 	unsavedpostimageDescTitle := unsavedpostimageFields[4].Descriptor()
 	// unsavedpostimage.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	unsavedpostimage.TitleValidator = unsavedpostimageDescTitle.Validators[0].(func(string) error)
-	// unsavedpostimageDescURL is the schema descriptor for url field.
-	unsavedpostimageDescURL := unsavedpostimageFields[5].Descriptor()
-	// unsavedpostimage.URLValidator is a validator for the "url" field. It is called by the builders before save.
-	unsavedpostimage.URLValidator = unsavedpostimageDescURL.Validators[0].(func(string) error)
 	// unsavedpostimageDescCreatedAt is the schema descriptor for created_at field.
-	unsavedpostimageDescCreatedAt := unsavedpostimageFields[6].Descriptor()
+	unsavedpostimageDescCreatedAt := unsavedpostimageFields[5].Descriptor()
 	// unsavedpostimage.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unsavedpostimage.DefaultCreatedAt = unsavedpostimageDescCreatedAt.Default.(func() time.Time)
 	unsavedpostthumbnailFields := schema.UnsavedPostThumbnail{}.Fields()
@@ -246,12 +242,8 @@ func init() {
 	unsavedpostthumbnailDescHash := unsavedpostthumbnailFields[2].Descriptor()
 	// unsavedpostthumbnail.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	unsavedpostthumbnail.HashValidator = unsavedpostthumbnailDescHash.Validators[0].(func(string) error)
-	// unsavedpostthumbnailDescURL is the schema descriptor for url field.
-	unsavedpostthumbnailDescURL := unsavedpostthumbnailFields[3].Descriptor()
-	// unsavedpostthumbnail.URLValidator is a validator for the "url" field. It is called by the builders before save.
-	unsavedpostthumbnail.URLValidator = unsavedpostthumbnailDescURL.Validators[0].(func(string) error)
 	// unsavedpostthumbnailDescCreatedAt is the schema descriptor for created_at field.
-	unsavedpostthumbnailDescCreatedAt := unsavedpostthumbnailFields[4].Descriptor()
+	unsavedpostthumbnailDescCreatedAt := unsavedpostthumbnailFields[3].Descriptor()
 	// unsavedpostthumbnail.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unsavedpostthumbnail.DefaultCreatedAt = unsavedpostthumbnailDescCreatedAt.Default.(func() time.Time)
 	unsavedpostvideoFields := schema.UnsavedPostVideo{}.Fields()

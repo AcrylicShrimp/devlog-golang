@@ -15,10 +15,9 @@ type UnsavedPostThumbnail struct {
 // Fields of the UnsavedPostThumbnail.
 func (UnsavedPostThumbnail) Fields() []ent.Field {
 	return []ent.Field{
-		field.Uint32("width"),
-		field.Uint32("height"),
-		field.String("hash").MaxLen(64),
-		field.String("url").MaxLen(512).Unique(),
+		field.Uint32("width").Optional().Nillable(),
+		field.Uint32("height").Optional().Nillable(),
+		field.String("hash").MaxLen(64).Optional().Nillable(),
 		field.Time("created_at").Default(time.Now),
 	}
 }

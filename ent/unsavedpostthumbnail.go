@@ -18,13 +18,11 @@ type UnsavedPostThumbnail struct {
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
 	// Width holds the value of the "width" field.
-	Width uint32 `json:"width,omitempty"`
+	Width *uint32 `json:"width,omitempty"`
 	// Height holds the value of the "height" field.
-	Height uint32 `json:"height,omitempty"`
+	Height *uint32 `json:"height,omitempty"`
 	// Hash holds the value of the "hash" field.
-	Hash string `json:"hash,omitempty"`
-	// URL holds the value of the "url" field.
-	URL string `json:"url,omitempty"`
+	Hash *string `json:"hash,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -63,7 +61,7 @@ func (*UnsavedPostThumbnail) scanValues(columns []string) ([]interface{}, error)
 		switch columns[i] {
 		case unsavedpostthumbnail.FieldID, unsavedpostthumbnail.FieldWidth, unsavedpostthumbnail.FieldHeight:
 			values[i] = new(sql.NullInt64)
-		case unsavedpostthumbnail.FieldHash, unsavedpostthumbnail.FieldURL:
+		case unsavedpostthumbnail.FieldHash:
 			values[i] = new(sql.NullString)
 		case unsavedpostthumbnail.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -94,25 +92,22 @@ func (upt *UnsavedPostThumbnail) assignValues(columns []string, values []interfa
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field width", values[i])
 			} else if value.Valid {
-				upt.Width = uint32(value.Int64)
+				upt.Width = new(uint32)
+				*upt.Width = uint32(value.Int64)
 			}
 		case unsavedpostthumbnail.FieldHeight:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field height", values[i])
 			} else if value.Valid {
-				upt.Height = uint32(value.Int64)
+				upt.Height = new(uint32)
+				*upt.Height = uint32(value.Int64)
 			}
 		case unsavedpostthumbnail.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hash", values[i])
 			} else if value.Valid {
-				upt.Hash = value.String
-			}
-		case unsavedpostthumbnail.FieldURL:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field url", values[i])
-			} else if value.Valid {
-				upt.URL = value.String
+				upt.Hash = new(string)
+				*upt.Hash = value.String
 			}
 		case unsavedpostthumbnail.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -160,14 +155,18 @@ func (upt *UnsavedPostThumbnail) String() string {
 	var builder strings.Builder
 	builder.WriteString("UnsavedPostThumbnail(")
 	builder.WriteString(fmt.Sprintf("id=%v", upt.ID))
-	builder.WriteString(", width=")
-	builder.WriteString(fmt.Sprintf("%v", upt.Width))
-	builder.WriteString(", height=")
-	builder.WriteString(fmt.Sprintf("%v", upt.Height))
-	builder.WriteString(", hash=")
-	builder.WriteString(upt.Hash)
-	builder.WriteString(", url=")
-	builder.WriteString(upt.URL)
+	if v := upt.Width; v != nil {
+		builder.WriteString(", width=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	if v := upt.Height; v != nil {
+		builder.WriteString(", height=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	if v := upt.Hash; v != nil {
+		builder.WriteString(", hash=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", created_at=")
 	builder.WriteString(upt.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
