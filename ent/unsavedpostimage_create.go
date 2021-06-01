@@ -33,9 +33,25 @@ func (upic *UnsavedPostImageCreate) SetWidth(u uint32) *UnsavedPostImageCreate {
 	return upic
 }
 
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (upic *UnsavedPostImageCreate) SetNillableWidth(u *uint32) *UnsavedPostImageCreate {
+	if u != nil {
+		upic.SetWidth(*u)
+	}
+	return upic
+}
+
 // SetHeight sets the "height" field.
 func (upic *UnsavedPostImageCreate) SetHeight(u uint32) *UnsavedPostImageCreate {
 	upic.mutation.SetHeight(u)
+	return upic
+}
+
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (upic *UnsavedPostImageCreate) SetNillableHeight(u *uint32) *UnsavedPostImageCreate {
+	if u != nil {
+		upic.SetHeight(*u)
+	}
 	return upic
 }
 
@@ -45,15 +61,17 @@ func (upic *UnsavedPostImageCreate) SetHash(s string) *UnsavedPostImageCreate {
 	return upic
 }
 
-// SetTitle sets the "title" field.
-func (upic *UnsavedPostImageCreate) SetTitle(s string) *UnsavedPostImageCreate {
-	upic.mutation.SetTitle(s)
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (upic *UnsavedPostImageCreate) SetNillableHash(s *string) *UnsavedPostImageCreate {
+	if s != nil {
+		upic.SetHash(*s)
+	}
 	return upic
 }
 
-// SetURL sets the "url" field.
-func (upic *UnsavedPostImageCreate) SetURL(s string) *UnsavedPostImageCreate {
-	upic.mutation.SetURL(s)
+// SetTitle sets the "title" field.
+func (upic *UnsavedPostImageCreate) SetTitle(s string) *UnsavedPostImageCreate {
+	upic.mutation.SetTitle(s)
 	return upic
 }
 
@@ -150,15 +168,6 @@ func (upic *UnsavedPostImageCreate) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
-	if _, ok := upic.mutation.Width(); !ok {
-		return &ValidationError{Name: "width", err: errors.New("ent: missing required field \"width\"")}
-	}
-	if _, ok := upic.mutation.Height(); !ok {
-		return &ValidationError{Name: "height", err: errors.New("ent: missing required field \"height\"")}
-	}
-	if _, ok := upic.mutation.Hash(); !ok {
-		return &ValidationError{Name: "hash", err: errors.New("ent: missing required field \"hash\"")}
-	}
 	if v, ok := upic.mutation.Hash(); ok {
 		if err := unsavedpostimage.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
@@ -170,14 +179,6 @@ func (upic *UnsavedPostImageCreate) check() error {
 	if v, ok := upic.mutation.Title(); ok {
 		if err := unsavedpostimage.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
-		}
-	}
-	if _, ok := upic.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
-	}
-	if v, ok := upic.mutation.URL(); ok {
-		if err := unsavedpostimage.URLValidator(v); err != nil {
-			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
 		}
 	}
 	if _, ok := upic.mutation.CreatedAt(); !ok {
@@ -227,7 +228,7 @@ func (upic *UnsavedPostImageCreate) createSpec() (*UnsavedPostImage, *sqlgraph.C
 			Value:  value,
 			Column: unsavedpostimage.FieldWidth,
 		})
-		_node.Width = value
+		_node.Width = &value
 	}
 	if value, ok := upic.mutation.Height(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -235,7 +236,7 @@ func (upic *UnsavedPostImageCreate) createSpec() (*UnsavedPostImage, *sqlgraph.C
 			Value:  value,
 			Column: unsavedpostimage.FieldHeight,
 		})
-		_node.Height = value
+		_node.Height = &value
 	}
 	if value, ok := upic.mutation.Hash(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -243,7 +244,7 @@ func (upic *UnsavedPostImageCreate) createSpec() (*UnsavedPostImage, *sqlgraph.C
 			Value:  value,
 			Column: unsavedpostimage.FieldHash,
 		})
-		_node.Hash = value
+		_node.Hash = &value
 	}
 	if value, ok := upic.mutation.Title(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -252,14 +253,6 @@ func (upic *UnsavedPostImageCreate) createSpec() (*UnsavedPostImage, *sqlgraph.C
 			Column: unsavedpostimage.FieldTitle,
 		})
 		_node.Title = value
-	}
-	if value, ok := upic.mutation.URL(); ok {
-		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
-			Type:   field.TypeString,
-			Value:  value,
-			Column: unsavedpostimage.FieldURL,
-		})
-		_node.URL = value
 	}
 	if value, ok := upic.mutation.CreatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
