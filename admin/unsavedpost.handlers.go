@@ -104,10 +104,10 @@ func NewUnsavedPost(c echo.Context) error {
 func UpdateUnsavedPost(c echo.Context) error {
 	type UnsavedPostInfo struct {
 		UUID        string                     `param:"uuid" validate:"required,hexadecimal,len=64"`
-		Slug        *string                    `json:"slug" form:"slug" validate:"omitempty,max=255"`
+		Slug        *string                    `json:"slug" form:"slug" validate:"omitempty,min=1,max=255"`
 		AccessLevel *dbUnsavedPost.AccessLevel `json:"access-level" form:"access-level" query:"access-level" validate:"omitempty,oneof=public unlisted private"`
 		Title       *string                    `json:"title" form:"title" query:"title" validate:"omitempty,min=1,max=255"`
-		Content     *string                    `json:"content" form:"content" query:"content" validate:"omitempty"`
+		Content     *string                    `json:"content" form:"content" query:"content" validate:"omitempty,min=1"`
 	}
 
 	unsavedPostInfo := new(UnsavedPostInfo)
