@@ -9,5 +9,3 @@ func AttachUnsavedPostImage(group *echo.Group) {
 	//group.PUT("/:uuid", UpdateUnsavedPost, WithSession, RequireSession)
 	//group.DELETE("/:uuid", DeleteUnsavedPost, WithSession, RequireSession)
 }
-
-

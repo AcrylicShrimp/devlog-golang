@@ -20,13 +20,15 @@ type UnsavedPostImage struct {
 	// UUID holds the value of the "uuid" field.
 	UUID string `json:"uuid,omitempty"`
 	// Width holds the value of the "width" field.
-	Width *uint32 `json:"width,omitempty"`
+	Width uint32 `json:"width,omitempty"`
 	// Height holds the value of the "height" field.
-	Height *uint32 `json:"height,omitempty"`
+	Height uint32 `json:"height,omitempty"`
 	// Hash holds the value of the "hash" field.
-	Hash *string `json:"hash,omitempty"`
+	Hash string `json:"hash,omitempty"`
 	// Title holds the value of the "title" field.
 	Title string `json:"title,omitempty"`
+	// URL holds the value of the "url" field.
+	URL string `json:"url,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -65,7 +67,7 @@ func (*UnsavedPostImage) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case unsavedpostimage.FieldID, unsavedpostimage.FieldWidth, unsavedpostimage.FieldHeight:
 			values[i] = new(sql.NullInt64)
-		case unsavedpostimage.FieldUUID, unsavedpostimage.FieldHash, unsavedpostimage.FieldTitle:
+		case unsavedpostimage.FieldUUID, unsavedpostimage.FieldHash, unsavedpostimage.FieldTitle, unsavedpostimage.FieldURL:
 			values[i] = new(sql.NullString)
 		case unsavedpostimage.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -102,28 +104,31 @@ func (upi *UnsavedPostImage) assignValues(columns []string, values []interface{}
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field width", values[i])
 			} else if value.Valid {
-				upi.Width = new(uint32)
-				*upi.Width = uint32(value.Int64)
+				upi.Width = uint32(value.Int64)
 			}
 		case unsavedpostimage.FieldHeight:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field height", values[i])
 			} else if value.Valid {
-				upi.Height = new(uint32)
-				*upi.Height = uint32(value.Int64)
+				upi.Height = uint32(value.Int64)
 			}
 		case unsavedpostimage.FieldHash:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field hash", values[i])
 			} else if value.Valid {
-				upi.Hash = new(string)
-				*upi.Hash = value.String
+				upi.Hash = value.String
 			}
 		case unsavedpostimage.FieldTitle:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field title", values[i])
 			} else if value.Valid {
 				upi.Title = value.String
+			}
+		case unsavedpostimage.FieldURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field url", values[i])
+			} else if value.Valid {
+				upi.URL = value.String
 			}
 		case unsavedpostimage.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -173,20 +178,16 @@ func (upi *UnsavedPostImage) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", upi.ID))
 	builder.WriteString(", uuid=")
 	builder.WriteString(upi.UUID)
-	if v := upi.Width; v != nil {
-		builder.WriteString(", width=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	if v := upi.Height; v != nil {
-		builder.WriteString(", height=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	if v := upi.Hash; v != nil {
-		builder.WriteString(", hash=")
-		builder.WriteString(*v)
-	}
+	builder.WriteString(", width=")
+	builder.WriteString(fmt.Sprintf("%v", upi.Width))
+	builder.WriteString(", height=")
+	builder.WriteString(fmt.Sprintf("%v", upi.Height))
+	builder.WriteString(", hash=")
+	builder.WriteString(upi.Hash)
 	builder.WriteString(", title=")
 	builder.WriteString(upi.Title)
+	builder.WriteString(", url=")
+	builder.WriteString(upi.URL)
 	builder.WriteString(", created_at=")
 	builder.WriteString(upi.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')

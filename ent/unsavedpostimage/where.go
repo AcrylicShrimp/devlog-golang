@@ -128,6 +128,13 @@ func Title(v string) predicate.UnsavedPostImage {
 	})
 }
 
+// URL applies equality check predicate on the "url" field. It's identical to URLEQ.
+func URL(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldURL), v))
+	})
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.UnsavedPostImage {
 	return predicate.UnsavedPostImage(func(s *sql.Selector) {
@@ -322,20 +329,6 @@ func WidthLTE(v uint32) predicate.UnsavedPostImage {
 	})
 }
 
-// WidthIsNil applies the IsNil predicate on the "width" field.
-func WidthIsNil() predicate.UnsavedPostImage {
-	return predicate.UnsavedPostImage(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldWidth)))
-	})
-}
-
-// WidthNotNil applies the NotNil predicate on the "width" field.
-func WidthNotNil() predicate.UnsavedPostImage {
-	return predicate.UnsavedPostImage(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldWidth)))
-	})
-}
-
 // HeightEQ applies the EQ predicate on the "height" field.
 func HeightEQ(v uint32) predicate.UnsavedPostImage {
 	return predicate.UnsavedPostImage(func(s *sql.Selector) {
@@ -409,20 +402,6 @@ func HeightLT(v uint32) predicate.UnsavedPostImage {
 func HeightLTE(v uint32) predicate.UnsavedPostImage {
 	return predicate.UnsavedPostImage(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldHeight), v))
-	})
-}
-
-// HeightIsNil applies the IsNil predicate on the "height" field.
-func HeightIsNil() predicate.UnsavedPostImage {
-	return predicate.UnsavedPostImage(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldHeight)))
-	})
-}
-
-// HeightNotNil applies the NotNil predicate on the "height" field.
-func HeightNotNil() predicate.UnsavedPostImage {
-	return predicate.UnsavedPostImage(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldHeight)))
 	})
 }
 
@@ -520,20 +499,6 @@ func HashHasPrefix(v string) predicate.UnsavedPostImage {
 func HashHasSuffix(v string) predicate.UnsavedPostImage {
 	return predicate.UnsavedPostImage(func(s *sql.Selector) {
 		s.Where(sql.HasSuffix(s.C(FieldHash), v))
-	})
-}
-
-// HashIsNil applies the IsNil predicate on the "hash" field.
-func HashIsNil() predicate.UnsavedPostImage {
-	return predicate.UnsavedPostImage(func(s *sql.Selector) {
-		s.Where(sql.IsNull(s.C(FieldHash)))
-	})
-}
-
-// HashNotNil applies the NotNil predicate on the "hash" field.
-func HashNotNil() predicate.UnsavedPostImage {
-	return predicate.UnsavedPostImage(func(s *sql.Selector) {
-		s.Where(sql.NotNull(s.C(FieldHash)))
 	})
 }
 
@@ -659,6 +624,117 @@ func TitleEqualFold(v string) predicate.UnsavedPostImage {
 func TitleContainsFold(v string) predicate.UnsavedPostImage {
 	return predicate.UnsavedPostImage(func(s *sql.Selector) {
 		s.Where(sql.ContainsFold(s.C(FieldTitle), v))
+	})
+}
+
+// URLEQ applies the EQ predicate on the "url" field.
+func URLEQ(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldURL), v))
+	})
+}
+
+// URLNEQ applies the NEQ predicate on the "url" field.
+func URLNEQ(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldURL), v))
+	})
+}
+
+// URLIn applies the In predicate on the "url" field.
+func URLIn(vs ...string) predicate.UnsavedPostImage {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldURL), v...))
+	})
+}
+
+// URLNotIn applies the NotIn predicate on the "url" field.
+func URLNotIn(vs ...string) predicate.UnsavedPostImage {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldURL), v...))
+	})
+}
+
+// URLGT applies the GT predicate on the "url" field.
+func URLGT(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldURL), v))
+	})
+}
+
+// URLGTE applies the GTE predicate on the "url" field.
+func URLGTE(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldURL), v))
+	})
+}
+
+// URLLT applies the LT predicate on the "url" field.
+func URLLT(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldURL), v))
+	})
+}
+
+// URLLTE applies the LTE predicate on the "url" field.
+func URLLTE(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldURL), v))
+	})
+}
+
+// URLContains applies the Contains predicate on the "url" field.
+func URLContains(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldURL), v))
+	})
+}
+
+// URLHasPrefix applies the HasPrefix predicate on the "url" field.
+func URLHasPrefix(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldURL), v))
+	})
+}
+
+// URLHasSuffix applies the HasSuffix predicate on the "url" field.
+func URLHasSuffix(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldURL), v))
+	})
+}
+
+// URLEqualFold applies the EqualFold predicate on the "url" field.
+func URLEqualFold(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldURL), v))
+	})
+}
+
+// URLContainsFold applies the ContainsFold predicate on the "url" field.
+func URLContainsFold(v string) predicate.UnsavedPostImage {
+	return predicate.UnsavedPostImage(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldURL), v))
 	})
 }
 

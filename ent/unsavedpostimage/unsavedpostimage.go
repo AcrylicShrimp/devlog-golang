@@ -21,6 +21,8 @@ const (
 	FieldHash = "hash"
 	// FieldTitle holds the string denoting the title field in the database.
 	FieldTitle = "title"
+	// FieldURL holds the string denoting the url field in the database.
+	FieldURL = "url"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeUnsavedPost holds the string denoting the unsaved_post edge name in mutations.
@@ -44,6 +46,7 @@ var Columns = []string{
 	FieldHeight,
 	FieldHash,
 	FieldTitle,
+	FieldURL,
 	FieldCreatedAt,
 }
 
@@ -75,6 +78,8 @@ var (
 	HashValidator func(string) error
 	// TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	TitleValidator func(string) error
+	// URLValidator is a validator for the "url" field. It is called by the builders before save.
+	URLValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )

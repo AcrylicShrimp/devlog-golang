@@ -198,10 +198,11 @@ func DeleteUnsavedPost(c echo.Context) error {
 
 func SetUnsavedPostThumbnail(c echo.Context) error {
 	type ThumbnailInfo struct {
-		PostUUID        string  `param:"uuid" validate:"required,hexadecimal,len=64"`
-		ThumbnailWidth  *uint32 `json:"width" validate:"required"`
-		ThumbnailHeight *uint32 `json:"height" validate:"required"`
-		ThumbnailHash   *string `json:"hash" validate:"required,min=1"`
+		PostUUID        string `param:"uuid" validate:"required,hexadecimal,len=64"`
+		ThumbnailWidth  uint32 `json:"width" validate:"required"`
+		ThumbnailHeight uint32 `json:"height" validate:"required"`
+		ThumbnailHash   string `json:"hash" validate:"required,min=1"`
+		ThumbnailURL    string `json:"url" validate:"required,min=1"`
 	}
 
 	thumbnailInfo := new(ThumbnailInfo)
@@ -226,9 +227,10 @@ func SetUnsavedPostThumbnail(c echo.Context) error {
 		}
 
 		return tx.UnsavedPostThumbnail.Create().
-			SetNillableWidth(thumbnailInfo.ThumbnailWidth).
-			SetNillableHeight(thumbnailInfo.ThumbnailHeight).
-			SetNillableHash(thumbnailInfo.ThumbnailHash).
+			SetWidth(thumbnailInfo.ThumbnailWidth).
+			SetHeight(thumbnailInfo.ThumbnailHeight).
+			SetHash(thumbnailInfo.ThumbnailHash).
+			SetURL(thumbnailInfo.ThumbnailURL).
 			SetUnsavedPost(unsavedPost).
 			Save(context.Background())
 	})
@@ -241,12 +243,13 @@ func SetUnsavedPostThumbnail(c echo.Context) error {
 
 func NewUnsavedPostImage(c echo.Context) error {
 	type ImageInfo struct {
-		PostUUID    string  `param:"uuid" validate:"required,hexadecimal,len=64"`
-		ImageUUID   string  `json:"uuid" validate:"required,hexadecimal,len=64"`
-		ImageWidth  *uint32 `json:"width" validate:"required"`
-		ImageHeight *uint32 `json:"height" validate:"required"`
-		ImageHash   *string `json:"hash" validate:"required,min=1"`
-		ImageTitle  string  `json:"title" validate:"required,hexadecimal,len=64"`
+		PostUUID    string `param:"uuid" validate:"required,hexadecimal,len=64"`
+		ImageUUID   string `json:"uuid" validate:"required,hexadecimal,len=64"`
+		ImageWidth  uint32 `json:"width" validate:"required"`
+		ImageHeight uint32 `json:"height" validate:"required"`
+		ImageHash   string `json:"hash" validate:"required,min=1"`
+		ImageTitle  string `json:"title" validate:"required,min=1"`
+		ImageURL    string `json:"url" validate:"required,min=1"`
 	}
 
 	imageInfo := new(ImageInfo)
@@ -272,10 +275,11 @@ func NewUnsavedPostImage(c echo.Context) error {
 
 		return tx.UnsavedPostImage.Create().
 			SetUUID(imageInfo.ImageUUID).
-			SetNillableWidth(imageInfo.ImageWidth).
-			SetNillableHeight(imageInfo.ImageHeight).
-			SetNillableHash(imageInfo.ImageHash).
+			SetWidth(imageInfo.ImageWidth).
+			SetHeight(imageInfo.ImageHeight).
+			SetHash(imageInfo.ImageHash).
 			SetTitle(imageInfo.ImageTitle).
+			SetURL(imageInfo.ImageURL).
 			SetUnsavedPost(unsavedPost).
 			Save(context.Background())
 	})
