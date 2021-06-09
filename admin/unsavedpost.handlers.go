@@ -63,10 +63,8 @@ func GetUnsavedPost(c echo.Context) error {
 		Select(
 			dbUnsavedPost.FieldUUID,
 			dbUnsavedPost.FieldSlug,
-			dbUnsavedPost.FieldSlug,
 			dbUnsavedPost.FieldAccessLevel,
 			dbUnsavedPost.FieldTitle,
-			dbUnsavedPost.FieldAccessLevel,
 			dbUnsavedPost.FieldContent,
 			dbUnsavedPost.FieldCreatedAt,
 			dbUnsavedPost.FieldModifiedAt).

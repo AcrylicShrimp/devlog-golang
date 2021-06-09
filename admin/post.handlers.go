@@ -1,12 +1,90 @@
 package admin
 
 import (
-	//"github.com/h2non/bimg"
+	"context"
+	"devlog/common"
+	"devlog/ent"
+	dbAdmin "devlog/ent/admin"
+	dbUnsavedPost "devlog/ent/unsavedpost"
+	dbUnsavedPostImage "devlog/ent/unsavedpostimage"
+	dbUnsavedPostThumbnail "devlog/ent/unsavedpostthumbnail"
+	"devlog/util"
 	"github.com/labstack/echo/v4"
+	"net/http"
 )
 
 func AttachPost(group *echo.Group) {
+	group.POST("", NewPost, WithSession, RequireSession)
 	//group.POST("", NewPostHandler, WithSession, RequireSession)
+}
+
+func NewPost(c echo.Context) error {
+	type UUIDInfo struct {
+		UUID string `json:"uuid" validate:"required,hexadecimal,len=64"`
+	}
+
+	uuidInfo := new(UUIDInfo)
+	if err := c.Bind(uuidInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(uuidInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
+		unsavedPost, err := tx.UnsavedPost.Query().
+			Where(dbUnsavedPost.And(dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)), dbUnsavedPost.UUIDEQ(uuidInfo.UUID))).
+			Select(
+				dbUnsavedPost.FieldUUID,
+				dbUnsavedPost.FieldSlug,
+				dbUnsavedPost.FieldAccessLevel,
+				dbUnsavedPost.FieldTitle,
+				dbUnsavedPost.FieldContent).
+			WithThumbnail(func(query *ent.UnsavedPostThumbnailQuery) {
+				query.Select(
+					dbUnsavedPostThumbnail.FieldWidth,
+					dbUnsavedPostThumbnail.FieldHeight,
+					dbUnsavedPostThumbnail.FieldHash,
+					dbUnsavedPostThumbnail.FieldURL)
+			}).
+			WithImages(func(query *ent.UnsavedPostImageQuery) {
+				query.Select(
+					dbUnsavedPostImage.FieldUUID,
+					dbUnsavedPostImage.FieldWidth,
+					dbUnsavedPostImage.FieldHeight,
+					dbUnsavedPostImage.FieldHash,
+					dbUnsavedPostImage.FieldTitle,
+					dbUnsavedPostImage.FieldURL)
+			}).
+			First(context.Background())
+		if err != nil {
+			if _, ok := err.(*ent.NotFoundError); ok {
+				return nil, echo.NewHTTPError(http.StatusBadRequest)
+			}
+
+			return nil, err
+		}
+
+		if unsavedPost.Slug == nil {
+			return nil, echo.NewHTTPError(http.StatusBadRequest)
+		}
+		if unsavedPost.AccessLevel == nil {
+			return nil, echo.NewHTTPError(http.StatusBadRequest)
+		}
+		if unsavedPost.Title == nil {
+			return nil, echo.NewHTTPError(http.StatusBadRequest)
+		}
+		if unsavedPost.Content == nil {
+			return nil, echo.NewHTTPError(http.StatusBadRequest)
+		}
+
+		return nil, tx.UnsavedPost.DeleteOne(unsavedPost).Exec(context.Background())
+	})
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusCreated)
 }
 
 //
