@@ -34,6 +34,12 @@ func (pu *PostUpdate) Where(ps ...predicate.Post) *PostUpdate {
 	return pu
 }
 
+// SetUUID sets the "uuid" field.
+func (pu *PostUpdate) SetUUID(s string) *PostUpdate {
+	pu.mutation.SetUUID(s)
+	return pu
+}
+
 // SetSlug sets the "slug" field.
 func (pu *PostUpdate) SetSlug(s string) *PostUpdate {
 	pu.mutation.SetSlug(s)
@@ -338,6 +344,11 @@ func (pu *PostUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (pu *PostUpdate) check() error {
+	if v, ok := pu.mutation.UUID(); ok {
+		if err := post.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if v, ok := pu.mutation.Slug(); ok {
 		if err := post.SlugValidator(v); err != nil {
 			return &ValidationError{Name: "slug", err: fmt.Errorf("ent: validator failed for field \"slug\": %w", err)}
@@ -381,6 +392,13 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := pu.mutation.UUID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: post.FieldUUID,
+		})
 	}
 	if value, ok := pu.mutation.Slug(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
@@ -724,6 +742,12 @@ type PostUpdateOne struct {
 	mutation *PostMutation
 }
 
+// SetUUID sets the "uuid" field.
+func (puo *PostUpdateOne) SetUUID(s string) *PostUpdateOne {
+	puo.mutation.SetUUID(s)
+	return puo
+}
+
 // SetSlug sets the "slug" field.
 func (puo *PostUpdateOne) SetSlug(s string) *PostUpdateOne {
 	puo.mutation.SetSlug(s)
@@ -1035,6 +1059,11 @@ func (puo *PostUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (puo *PostUpdateOne) check() error {
+	if v, ok := puo.mutation.UUID(); ok {
+		if err := post.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if v, ok := puo.mutation.Slug(); ok {
 		if err := post.SlugValidator(v); err != nil {
 			return &ValidationError{Name: "slug", err: fmt.Errorf("ent: validator failed for field \"slug\": %w", err)}
@@ -1095,6 +1124,13 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := puo.mutation.UUID(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: post.FieldUUID,
+		})
 	}
 	if value, ok := puo.mutation.Slug(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{

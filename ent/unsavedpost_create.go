@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"devlog/ent/admin"
+	"devlog/ent/category"
 	"devlog/ent/unsavedpost"
 	"devlog/ent/unsavedpostattachment"
 	"devlog/ent/unsavedpostimage"
@@ -124,6 +125,25 @@ func (upc *UnsavedPostCreate) SetAuthorID(id int) *UnsavedPostCreate {
 // SetAuthor sets the "author" edge to the Admin entity.
 func (upc *UnsavedPostCreate) SetAuthor(a *Admin) *UnsavedPostCreate {
 	return upc.SetAuthorID(a.ID)
+}
+
+// SetCategoryID sets the "category" edge to the Category entity by ID.
+func (upc *UnsavedPostCreate) SetCategoryID(id int) *UnsavedPostCreate {
+	upc.mutation.SetCategoryID(id)
+	return upc
+}
+
+// SetNillableCategoryID sets the "category" edge to the Category entity by ID if the given value is not nil.
+func (upc *UnsavedPostCreate) SetNillableCategoryID(id *int) *UnsavedPostCreate {
+	if id != nil {
+		upc = upc.SetCategoryID(*id)
+	}
+	return upc
+}
+
+// SetCategory sets the "category" edge to the Category entity.
+func (upc *UnsavedPostCreate) SetCategory(c *Category) *UnsavedPostCreate {
+	return upc.SetCategoryID(c.ID)
 }
 
 // SetThumbnailID sets the "thumbnail" edge to the UnsavedPostThumbnail entity by ID.
@@ -387,6 +407,26 @@ func (upc *UnsavedPostCreate) createSpec() (*UnsavedPost, *sqlgraph.CreateSpec) 
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.admin_unsaved_posts = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := upc.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   unsavedpost.CategoryTable,
+			Columns: []string{unsavedpost.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: category.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.category_unsaved_posts = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := upc.mutation.ThumbnailIDs(); len(nodes) > 0 {

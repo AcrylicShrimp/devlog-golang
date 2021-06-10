@@ -1,9 +1,9 @@
 package main
 
 import (
-	"devlog/admin"
 	"devlog/common"
 	"devlog/env"
+	"devlog/handler"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -34,8 +34,7 @@ func main() {
 		}
 	})
 
-	v1 := e.Group("/v1")
-	admin.Attach(v1.Group("/admin"))
+	handler.Attach(e.Group("/v1"))
 
 	e.Logger.Fatal(e.Start("0.0.0.0:8000"))
 }

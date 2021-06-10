@@ -63,6 +63,7 @@ var (
 	// PostsColumns holds the columns for the "posts" table.
 	PostsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "uuid", Type: field.TypeString, Unique: true, Size: 64},
 		{Name: "slug", Type: field.TypeString, Unique: true, Size: 255},
 		{Name: "access_level", Type: field.TypeEnum, Enums: []string{"public", "unlisted", "private"}},
 		{Name: "title", Type: field.TypeString, Size: 255},
@@ -82,13 +83,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "posts_admins_posts",
-				Columns:    []*schema.Column{PostsColumns[9]},
+				Columns:    []*schema.Column{PostsColumns[10]},
 				RefColumns: []*schema.Column{AdminsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 			{
 				Symbol:     "posts_categories_posts",
-				Columns:    []*schema.Column{PostsColumns[10]},
+				Columns:    []*schema.Column{PostsColumns[11]},
 				RefColumns: []*schema.Column{CategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -203,6 +204,7 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "modified_at", Type: field.TypeTime},
 		{Name: "admin_unsaved_posts", Type: field.TypeInt, Nullable: true},
+		{Name: "category_unsaved_posts", Type: field.TypeInt, Nullable: true},
 	}
 	// UnsavedPostsTable holds the schema information for the "unsaved_posts" table.
 	UnsavedPostsTable = &schema.Table{
@@ -214,6 +216,12 @@ var (
 				Symbol:     "unsaved_posts_admins_unsaved_posts",
 				Columns:    []*schema.Column{UnsavedPostsColumns[8]},
 				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "unsaved_posts_categories_unsaved_posts",
+				Columns:    []*schema.Column{UnsavedPostsColumns[9]},
+				RefColumns: []*schema.Column{CategoriesColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -296,9 +304,9 @@ var (
 	// UnsavedPostVideosColumns holds the columns for the "unsaved_post_videos" table.
 	UnsavedPostVideosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "uuid", Type: field.TypeString, Size: 64},
+		{Name: "uuid", Type: field.TypeString, Unique: true, Size: 64},
 		{Name: "title", Type: field.TypeString, Size: 255},
-		{Name: "url", Type: field.TypeString, Unique: true, Size: 512},
+		{Name: "url", Type: field.TypeString, Size: 512},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "unsaved_post_videos", Type: field.TypeInt, Nullable: true},
 	}
@@ -343,6 +351,7 @@ func init() {
 	PostThumbnailsTable.ForeignKeys[0].RefTable = PostsTable
 	PostVideosTable.ForeignKeys[0].RefTable = PostsTable
 	UnsavedPostsTable.ForeignKeys[0].RefTable = AdminsTable
+	UnsavedPostsTable.ForeignKeys[1].RefTable = CategoriesTable
 	UnsavedPostAttachmentsTable.ForeignKeys[0].RefTable = UnsavedPostsTable
 	UnsavedPostImagesTable.ForeignKeys[0].RefTable = UnsavedPostsTable
 	UnsavedPostThumbnailsTable.ForeignKeys[0].RefTable = UnsavedPostsTable

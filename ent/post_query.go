@@ -472,12 +472,12 @@ func (pq *PostQuery) WithAttachments(opts ...func(*PostAttachmentQuery)) *PostQu
 // Example:
 //
 //	var v []struct {
-//		Slug string `json:"slug,omitempty"`
+//		UUID string `json:"uuid,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Post.Query().
-//		GroupBy(post.FieldSlug).
+//		GroupBy(post.FieldUUID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -499,11 +499,11 @@ func (pq *PostQuery) GroupBy(field string, fields ...string) *PostGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Slug string `json:"slug,omitempty"`
+//		UUID string `json:"uuid,omitempty"`
 //	}
 //
 //	client.Post.Query().
-//		Select(post.FieldSlug).
+//		Select(post.FieldUUID).
 //		Scan(ctx, &v)
 //
 func (pq *PostQuery) Select(field string, fields ...string) *PostSelect {

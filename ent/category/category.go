@@ -21,6 +21,8 @@ const (
 	FieldModifiedAt = "modified_at"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
+	// EdgeUnsavedPosts holds the string denoting the unsaved_posts edge name in mutations.
+	EdgeUnsavedPosts = "unsaved_posts"
 	// Table holds the table name of the category in the database.
 	Table = "categories"
 	// PostsTable is the table the holds the posts relation/edge.
@@ -30,6 +32,13 @@ const (
 	PostsInverseTable = "posts"
 	// PostsColumn is the table column denoting the posts relation/edge.
 	PostsColumn = "category_posts"
+	// UnsavedPostsTable is the table the holds the unsaved_posts relation/edge.
+	UnsavedPostsTable = "unsaved_posts"
+	// UnsavedPostsInverseTable is the table name for the UnsavedPost entity.
+	// It exists in this package in order to avoid circular dependency with the "unsavedpost" package.
+	UnsavedPostsInverseTable = "unsaved_posts"
+	// UnsavedPostsColumn is the table column denoting the unsaved_posts relation/edge.
+	UnsavedPostsColumn = "category_unsaved_posts"
 )
 
 // Columns holds all SQL columns for category fields.

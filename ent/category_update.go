@@ -7,6 +7,7 @@ import (
 	"devlog/ent/category"
 	"devlog/ent/post"
 	"devlog/ent/predicate"
+	"devlog/ent/unsavedpost"
 	"fmt"
 	"time"
 
@@ -89,6 +90,21 @@ func (cu *CategoryUpdate) AddPosts(p ...*Post) *CategoryUpdate {
 	return cu.AddPostIDs(ids...)
 }
 
+// AddUnsavedPostIDs adds the "unsaved_posts" edge to the UnsavedPost entity by IDs.
+func (cu *CategoryUpdate) AddUnsavedPostIDs(ids ...int) *CategoryUpdate {
+	cu.mutation.AddUnsavedPostIDs(ids...)
+	return cu
+}
+
+// AddUnsavedPosts adds the "unsaved_posts" edges to the UnsavedPost entity.
+func (cu *CategoryUpdate) AddUnsavedPosts(u ...*UnsavedPost) *CategoryUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return cu.AddUnsavedPostIDs(ids...)
+}
+
 // Mutation returns the CategoryMutation object of the builder.
 func (cu *CategoryUpdate) Mutation() *CategoryMutation {
 	return cu.mutation
@@ -113,6 +129,27 @@ func (cu *CategoryUpdate) RemovePosts(p ...*Post) *CategoryUpdate {
 		ids[i] = p[i].ID
 	}
 	return cu.RemovePostIDs(ids...)
+}
+
+// ClearUnsavedPosts clears all "unsaved_posts" edges to the UnsavedPost entity.
+func (cu *CategoryUpdate) ClearUnsavedPosts() *CategoryUpdate {
+	cu.mutation.ClearUnsavedPosts()
+	return cu
+}
+
+// RemoveUnsavedPostIDs removes the "unsaved_posts" edge to UnsavedPost entities by IDs.
+func (cu *CategoryUpdate) RemoveUnsavedPostIDs(ids ...int) *CategoryUpdate {
+	cu.mutation.RemoveUnsavedPostIDs(ids...)
+	return cu
+}
+
+// RemoveUnsavedPosts removes "unsaved_posts" edges to UnsavedPost entities.
+func (cu *CategoryUpdate) RemoveUnsavedPosts(u ...*UnsavedPost) *CategoryUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return cu.RemoveUnsavedPostIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -302,6 +339,60 @@ func (cu *CategoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if cu.mutation.UnsavedPostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   category.UnsavedPostsTable,
+			Columns: []string{category.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.RemovedUnsavedPostsIDs(); len(nodes) > 0 && !cu.mutation.UnsavedPostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   category.UnsavedPostsTable,
+			Columns: []string{category.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cu.mutation.UnsavedPostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   category.UnsavedPostsTable,
+			Columns: []string{category.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, cu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{category.Label}
@@ -382,6 +473,21 @@ func (cuo *CategoryUpdateOne) AddPosts(p ...*Post) *CategoryUpdateOne {
 	return cuo.AddPostIDs(ids...)
 }
 
+// AddUnsavedPostIDs adds the "unsaved_posts" edge to the UnsavedPost entity by IDs.
+func (cuo *CategoryUpdateOne) AddUnsavedPostIDs(ids ...int) *CategoryUpdateOne {
+	cuo.mutation.AddUnsavedPostIDs(ids...)
+	return cuo
+}
+
+// AddUnsavedPosts adds the "unsaved_posts" edges to the UnsavedPost entity.
+func (cuo *CategoryUpdateOne) AddUnsavedPosts(u ...*UnsavedPost) *CategoryUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return cuo.AddUnsavedPostIDs(ids...)
+}
+
 // Mutation returns the CategoryMutation object of the builder.
 func (cuo *CategoryUpdateOne) Mutation() *CategoryMutation {
 	return cuo.mutation
@@ -406,6 +512,27 @@ func (cuo *CategoryUpdateOne) RemovePosts(p ...*Post) *CategoryUpdateOne {
 		ids[i] = p[i].ID
 	}
 	return cuo.RemovePostIDs(ids...)
+}
+
+// ClearUnsavedPosts clears all "unsaved_posts" edges to the UnsavedPost entity.
+func (cuo *CategoryUpdateOne) ClearUnsavedPosts() *CategoryUpdateOne {
+	cuo.mutation.ClearUnsavedPosts()
+	return cuo
+}
+
+// RemoveUnsavedPostIDs removes the "unsaved_posts" edge to UnsavedPost entities by IDs.
+func (cuo *CategoryUpdateOne) RemoveUnsavedPostIDs(ids ...int) *CategoryUpdateOne {
+	cuo.mutation.RemoveUnsavedPostIDs(ids...)
+	return cuo
+}
+
+// RemoveUnsavedPosts removes "unsaved_posts" edges to UnsavedPost entities.
+func (cuo *CategoryUpdateOne) RemoveUnsavedPosts(u ...*UnsavedPost) *CategoryUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return cuo.RemoveUnsavedPostIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -611,6 +738,60 @@ func (cuo *CategoryUpdateOne) sqlSave(ctx context.Context) (_node *Category, err
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: post.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if cuo.mutation.UnsavedPostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   category.UnsavedPostsTable,
+			Columns: []string{category.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.RemovedUnsavedPostsIDs(); len(nodes) > 0 && !cuo.mutation.UnsavedPostsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   category.UnsavedPostsTable,
+			Columns: []string{category.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := cuo.mutation.UnsavedPostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   category.UnsavedPostsTable,
+			Columns: []string{category.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
 				},
 			},
 		}

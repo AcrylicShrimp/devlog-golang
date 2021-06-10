@@ -1221,20 +1221,23 @@ func (m *AdminSessionMutation) ResetEdge(name string) error {
 // CategoryMutation represents an operation that mutates the Category nodes in the graph.
 type CategoryMutation struct {
 	config
-	op            Op
-	typ           string
-	id            *int
-	name          *string
-	description   *string
-	created_at    *time.Time
-	modified_at   *time.Time
-	clearedFields map[string]struct{}
-	posts         map[int]struct{}
-	removedposts  map[int]struct{}
-	clearedposts  bool
-	done          bool
-	oldValue      func(context.Context) (*Category, error)
-	predicates    []predicate.Category
+	op                   Op
+	typ                  string
+	id                   *int
+	name                 *string
+	description          *string
+	created_at           *time.Time
+	modified_at          *time.Time
+	clearedFields        map[string]struct{}
+	posts                map[int]struct{}
+	removedposts         map[int]struct{}
+	clearedposts         bool
+	unsaved_posts        map[int]struct{}
+	removedunsaved_posts map[int]struct{}
+	clearedunsaved_posts bool
+	done                 bool
+	oldValue             func(context.Context) (*Category, error)
+	predicates           []predicate.Category
 }
 
 var _ ent.Mutation = (*CategoryMutation)(nil)
@@ -1526,6 +1529,59 @@ func (m *CategoryMutation) ResetPosts() {
 	m.removedposts = nil
 }
 
+// AddUnsavedPostIDs adds the "unsaved_posts" edge to the UnsavedPost entity by ids.
+func (m *CategoryMutation) AddUnsavedPostIDs(ids ...int) {
+	if m.unsaved_posts == nil {
+		m.unsaved_posts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.unsaved_posts[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUnsavedPosts clears the "unsaved_posts" edge to the UnsavedPost entity.
+func (m *CategoryMutation) ClearUnsavedPosts() {
+	m.clearedunsaved_posts = true
+}
+
+// UnsavedPostsCleared reports if the "unsaved_posts" edge to the UnsavedPost entity was cleared.
+func (m *CategoryMutation) UnsavedPostsCleared() bool {
+	return m.clearedunsaved_posts
+}
+
+// RemoveUnsavedPostIDs removes the "unsaved_posts" edge to the UnsavedPost entity by IDs.
+func (m *CategoryMutation) RemoveUnsavedPostIDs(ids ...int) {
+	if m.removedunsaved_posts == nil {
+		m.removedunsaved_posts = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.removedunsaved_posts[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUnsavedPosts returns the removed IDs of the "unsaved_posts" edge to the UnsavedPost entity.
+func (m *CategoryMutation) RemovedUnsavedPostsIDs() (ids []int) {
+	for id := range m.removedunsaved_posts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UnsavedPostsIDs returns the "unsaved_posts" edge IDs in the mutation.
+func (m *CategoryMutation) UnsavedPostsIDs() (ids []int) {
+	for id := range m.unsaved_posts {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUnsavedPosts resets all changes to the "unsaved_posts" edge.
+func (m *CategoryMutation) ResetUnsavedPosts() {
+	m.unsaved_posts = nil
+	m.clearedunsaved_posts = false
+	m.removedunsaved_posts = nil
+}
+
 // Op returns the operation name.
 func (m *CategoryMutation) Op() Op {
 	return m.op
@@ -1699,9 +1755,12 @@ func (m *CategoryMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *CategoryMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.posts != nil {
 		edges = append(edges, category.EdgePosts)
+	}
+	if m.unsaved_posts != nil {
+		edges = append(edges, category.EdgeUnsavedPosts)
 	}
 	return edges
 }
@@ -1716,15 +1775,24 @@ func (m *CategoryMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case category.EdgeUnsavedPosts:
+		ids := make([]ent.Value, 0, len(m.unsaved_posts))
+		for id := range m.unsaved_posts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *CategoryMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedposts != nil {
 		edges = append(edges, category.EdgePosts)
+	}
+	if m.removedunsaved_posts != nil {
+		edges = append(edges, category.EdgeUnsavedPosts)
 	}
 	return edges
 }
@@ -1739,15 +1807,24 @@ func (m *CategoryMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case category.EdgeUnsavedPosts:
+		ids := make([]ent.Value, 0, len(m.removedunsaved_posts))
+		for id := range m.removedunsaved_posts {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *CategoryMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedposts {
 		edges = append(edges, category.EdgePosts)
+	}
+	if m.clearedunsaved_posts {
+		edges = append(edges, category.EdgeUnsavedPosts)
 	}
 	return edges
 }
@@ -1758,6 +1835,8 @@ func (m *CategoryMutation) EdgeCleared(name string) bool {
 	switch name {
 	case category.EdgePosts:
 		return m.clearedposts
+	case category.EdgeUnsavedPosts:
+		return m.clearedunsaved_posts
 	}
 	return false
 }
@@ -1777,6 +1856,9 @@ func (m *CategoryMutation) ResetEdge(name string) error {
 	case category.EdgePosts:
 		m.ResetPosts()
 		return nil
+	case category.EdgeUnsavedPosts:
+		m.ResetUnsavedPosts()
+		return nil
 	}
 	return fmt.Errorf("unknown Category edge %s", name)
 }
@@ -1787,6 +1869,7 @@ type PostMutation struct {
 	op                 Op
 	typ                string
 	id                 *int
+	uuid               *string
 	slug               *string
 	access_level       *post.AccessLevel
 	title              *string
@@ -1893,6 +1976,42 @@ func (m *PostMutation) ID() (id int, exists bool) {
 		return
 	}
 	return *m.id, true
+}
+
+// SetUUID sets the "uuid" field.
+func (m *PostMutation) SetUUID(s string) {
+	m.uuid = &s
+}
+
+// UUID returns the value of the "uuid" field in the mutation.
+func (m *PostMutation) UUID() (r string, exists bool) {
+	v := m.uuid
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUUID returns the old "uuid" field's value of the Post entity.
+// If the Post object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *PostMutation) OldUUID(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldUUID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldUUID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUUID: %w", err)
+	}
+	return oldValue.UUID, nil
+}
+
+// ResetUUID resets all changes to the "uuid" field.
+func (m *PostMutation) ResetUUID() {
+	m.uuid = nil
 }
 
 // SetSlug sets the "slug" field.
@@ -2473,7 +2592,10 @@ func (m *PostMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *PostMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 9)
+	if m.uuid != nil {
+		fields = append(fields, post.FieldUUID)
+	}
 	if m.slug != nil {
 		fields = append(fields, post.FieldSlug)
 	}
@@ -2506,6 +2628,8 @@ func (m *PostMutation) Fields() []string {
 // schema.
 func (m *PostMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case post.FieldUUID:
+		return m.UUID()
 	case post.FieldSlug:
 		return m.Slug()
 	case post.FieldAccessLevel:
@@ -2531,6 +2655,8 @@ func (m *PostMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case post.FieldUUID:
+		return m.OldUUID(ctx)
 	case post.FieldSlug:
 		return m.OldSlug(ctx)
 	case post.FieldAccessLevel:
@@ -2556,6 +2682,13 @@ func (m *PostMutation) OldField(ctx context.Context, name string) (ent.Value, er
 // type.
 func (m *PostMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case post.FieldUUID:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUUID(v)
+		return nil
 	case post.FieldSlug:
 		v, ok := value.(string)
 		if !ok {
@@ -2661,6 +2794,9 @@ func (m *PostMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *PostMutation) ResetField(name string) error {
 	switch name {
+	case post.FieldUUID:
+		m.ResetUUID()
+		return nil
 	case post.FieldSlug:
 		m.ResetSlug()
 		return nil
@@ -5465,6 +5601,8 @@ type UnsavedPostMutation struct {
 	clearedFields      map[string]struct{}
 	author             *int
 	clearedauthor      bool
+	category           *int
+	clearedcategory    bool
 	thumbnail          *int
 	clearedthumbnail   bool
 	images             map[int]struct{}
@@ -5901,6 +6039,45 @@ func (m *UnsavedPostMutation) AuthorIDs() (ids []int) {
 func (m *UnsavedPostMutation) ResetAuthor() {
 	m.author = nil
 	m.clearedauthor = false
+}
+
+// SetCategoryID sets the "category" edge to the Category entity by id.
+func (m *UnsavedPostMutation) SetCategoryID(id int) {
+	m.category = &id
+}
+
+// ClearCategory clears the "category" edge to the Category entity.
+func (m *UnsavedPostMutation) ClearCategory() {
+	m.clearedcategory = true
+}
+
+// CategoryCleared reports if the "category" edge to the Category entity was cleared.
+func (m *UnsavedPostMutation) CategoryCleared() bool {
+	return m.clearedcategory
+}
+
+// CategoryID returns the "category" edge ID in the mutation.
+func (m *UnsavedPostMutation) CategoryID() (id int, exists bool) {
+	if m.category != nil {
+		return *m.category, true
+	}
+	return
+}
+
+// CategoryIDs returns the "category" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// CategoryID instead. It exists only for internal usage by the builders.
+func (m *UnsavedPostMutation) CategoryIDs() (ids []int) {
+	if id := m.category; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetCategory resets all changes to the "category" edge.
+func (m *UnsavedPostMutation) ResetCategory() {
+	m.category = nil
+	m.clearedcategory = false
 }
 
 // SetThumbnailID sets the "thumbnail" edge to the UnsavedPostThumbnail entity by id.
@@ -6343,9 +6520,12 @@ func (m *UnsavedPostMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UnsavedPostMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.author != nil {
 		edges = append(edges, unsavedpost.EdgeAuthor)
+	}
+	if m.category != nil {
+		edges = append(edges, unsavedpost.EdgeCategory)
 	}
 	if m.thumbnail != nil {
 		edges = append(edges, unsavedpost.EdgeThumbnail)
@@ -6368,6 +6548,10 @@ func (m *UnsavedPostMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case unsavedpost.EdgeAuthor:
 		if id := m.author; id != nil {
+			return []ent.Value{*id}
+		}
+	case unsavedpost.EdgeCategory:
+		if id := m.category; id != nil {
 			return []ent.Value{*id}
 		}
 	case unsavedpost.EdgeThumbnail:
@@ -6398,7 +6582,7 @@ func (m *UnsavedPostMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UnsavedPostMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedimages != nil {
 		edges = append(edges, unsavedpost.EdgeImages)
 	}
@@ -6439,9 +6623,12 @@ func (m *UnsavedPostMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UnsavedPostMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedauthor {
 		edges = append(edges, unsavedpost.EdgeAuthor)
+	}
+	if m.clearedcategory {
+		edges = append(edges, unsavedpost.EdgeCategory)
 	}
 	if m.clearedthumbnail {
 		edges = append(edges, unsavedpost.EdgeThumbnail)
@@ -6464,6 +6651,8 @@ func (m *UnsavedPostMutation) EdgeCleared(name string) bool {
 	switch name {
 	case unsavedpost.EdgeAuthor:
 		return m.clearedauthor
+	case unsavedpost.EdgeCategory:
+		return m.clearedcategory
 	case unsavedpost.EdgeThumbnail:
 		return m.clearedthumbnail
 	case unsavedpost.EdgeImages:
@@ -6483,6 +6672,9 @@ func (m *UnsavedPostMutation) ClearEdge(name string) error {
 	case unsavedpost.EdgeAuthor:
 		m.ClearAuthor()
 		return nil
+	case unsavedpost.EdgeCategory:
+		m.ClearCategory()
+		return nil
 	case unsavedpost.EdgeThumbnail:
 		m.ClearThumbnail()
 		return nil
@@ -6496,6 +6688,9 @@ func (m *UnsavedPostMutation) ResetEdge(name string) error {
 	switch name {
 	case unsavedpost.EdgeAuthor:
 		m.ResetAuthor()
+		return nil
+	case unsavedpost.EdgeCategory:
+		m.ResetCategory()
 		return nil
 	case unsavedpost.EdgeThumbnail:
 		m.ResetThumbnail()

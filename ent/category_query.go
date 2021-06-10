@@ -8,6 +8,7 @@ import (
 	"devlog/ent/category"
 	"devlog/ent/post"
 	"devlog/ent/predicate"
+	"devlog/ent/unsavedpost"
 	"errors"
 	"fmt"
 	"math"
@@ -27,7 +28,8 @@ type CategoryQuery struct {
 	fields     []string
 	predicates []predicate.Category
 	// eager-loading edges.
-	withPosts *PostQuery
+	withPosts        *PostQuery
+	withUnsavedPosts *UnsavedPostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -79,6 +81,28 @@ func (cq *CategoryQuery) QueryPosts() *PostQuery {
 			sqlgraph.From(category.Table, category.FieldID, selector),
 			sqlgraph.To(post.Table, post.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, category.PostsTable, category.PostsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryUnsavedPosts chains the current query on the "unsaved_posts" edge.
+func (cq *CategoryQuery) QueryUnsavedPosts() *UnsavedPostQuery {
+	query := &UnsavedPostQuery{config: cq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := cq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := cq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(category.Table, category.FieldID, selector),
+			sqlgraph.To(unsavedpost.Table, unsavedpost.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, category.UnsavedPostsTable, category.UnsavedPostsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(cq.driver.Dialect(), step)
 		return fromU, nil
@@ -262,12 +286,13 @@ func (cq *CategoryQuery) Clone() *CategoryQuery {
 		return nil
 	}
 	return &CategoryQuery{
-		config:     cq.config,
-		limit:      cq.limit,
-		offset:     cq.offset,
-		order:      append([]OrderFunc{}, cq.order...),
-		predicates: append([]predicate.Category{}, cq.predicates...),
-		withPosts:  cq.withPosts.Clone(),
+		config:           cq.config,
+		limit:            cq.limit,
+		offset:           cq.offset,
+		order:            append([]OrderFunc{}, cq.order...),
+		predicates:       append([]predicate.Category{}, cq.predicates...),
+		withPosts:        cq.withPosts.Clone(),
+		withUnsavedPosts: cq.withUnsavedPosts.Clone(),
 		// clone intermediate query.
 		sql:  cq.sql.Clone(),
 		path: cq.path,
@@ -282,6 +307,17 @@ func (cq *CategoryQuery) WithPosts(opts ...func(*PostQuery)) *CategoryQuery {
 		opt(query)
 	}
 	cq.withPosts = query
+	return cq
+}
+
+// WithUnsavedPosts tells the query-builder to eager-load the nodes that are connected to
+// the "unsaved_posts" edge. The optional arguments are used to configure the query builder of the edge.
+func (cq *CategoryQuery) WithUnsavedPosts(opts ...func(*UnsavedPostQuery)) *CategoryQuery {
+	query := &UnsavedPostQuery{config: cq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	cq.withUnsavedPosts = query
 	return cq
 }
 
@@ -350,8 +386,9 @@ func (cq *CategoryQuery) sqlAll(ctx context.Context) ([]*Category, error) {
 	var (
 		nodes       = []*Category{}
 		_spec       = cq.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			cq.withPosts != nil,
+			cq.withUnsavedPosts != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
@@ -400,6 +437,35 @@ func (cq *CategoryQuery) sqlAll(ctx context.Context) ([]*Category, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "category_posts" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Posts = append(node.Edges.Posts, n)
+		}
+	}
+
+	if query := cq.withUnsavedPosts; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		nodeids := make(map[int]*Category)
+		for i := range nodes {
+			fks = append(fks, nodes[i].ID)
+			nodeids[nodes[i].ID] = nodes[i]
+			nodes[i].Edges.UnsavedPosts = []*UnsavedPost{}
+		}
+		query.withFKs = true
+		query.Where(predicate.UnsavedPost(func(s *sql.Selector) {
+			s.Where(sql.InValues(category.UnsavedPostsColumn, fks...))
+		}))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			fk := n.category_unsaved_posts
+			if fk == nil {
+				return nil, fmt.Errorf(`foreign-key "category_unsaved_posts" is nil for node %v`, n.ID)
+			}
+			node, ok := nodeids[*fk]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "category_unsaved_posts" returned %v for node %v`, *fk, n.ID)
+			}
+			node.Edges.UnsavedPosts = append(node.Edges.UnsavedPosts, n)
 		}
 	}
 

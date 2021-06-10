@@ -28,6 +28,8 @@ const (
 	FieldModifiedAt = "modified_at"
 	// EdgeAuthor holds the string denoting the author edge name in mutations.
 	EdgeAuthor = "author"
+	// EdgeCategory holds the string denoting the category edge name in mutations.
+	EdgeCategory = "category"
 	// EdgeThumbnail holds the string denoting the thumbnail edge name in mutations.
 	EdgeThumbnail = "thumbnail"
 	// EdgeImages holds the string denoting the images edge name in mutations.
@@ -45,6 +47,13 @@ const (
 	AuthorInverseTable = "admins"
 	// AuthorColumn is the table column denoting the author relation/edge.
 	AuthorColumn = "admin_unsaved_posts"
+	// CategoryTable is the table the holds the category relation/edge.
+	CategoryTable = "unsaved_posts"
+	// CategoryInverseTable is the table name for the Category entity.
+	// It exists in this package in order to avoid circular dependency with the "category" package.
+	CategoryInverseTable = "categories"
+	// CategoryColumn is the table column denoting the category relation/edge.
+	CategoryColumn = "category_unsaved_posts"
 	// ThumbnailTable is the table the holds the thumbnail relation/edge.
 	ThumbnailTable = "unsaved_post_thumbnails"
 	// ThumbnailInverseTable is the table name for the UnsavedPostThumbnail entity.
@@ -91,6 +100,7 @@ var Columns = []string{
 // table and are not defined as standalone fields in the schema.
 var ForeignKeys = []string{
 	"admin_unsaved_posts",
+	"category_unsaved_posts",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).

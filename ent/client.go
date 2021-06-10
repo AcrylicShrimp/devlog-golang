@@ -551,6 +551,22 @@ func (c *CategoryClient) QueryPosts(ca *Category) *PostQuery {
 	return query
 }
 
+// QueryUnsavedPosts queries the unsaved_posts edge of a Category.
+func (c *CategoryClient) QueryUnsavedPosts(ca *Category) *UnsavedPostQuery {
+	query := &UnsavedPostQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ca.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(category.Table, category.FieldID, id),
+			sqlgraph.To(unsavedpost.Table, unsavedpost.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, category.UnsavedPostsTable, category.UnsavedPostsColumn),
+		)
+		fromV = sqlgraph.Neighbors(ca.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *CategoryClient) Hooks() []Hook {
 	return c.hooks.Category
@@ -1260,6 +1276,22 @@ func (c *UnsavedPostClient) QueryAuthor(up *UnsavedPost) *AdminQuery {
 			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, id),
 			sqlgraph.To(admin.Table, admin.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, unsavedpost.AuthorTable, unsavedpost.AuthorColumn),
+		)
+		fromV = sqlgraph.Neighbors(up.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryCategory queries the category edge of a UnsavedPost.
+func (c *UnsavedPostClient) QueryCategory(up *UnsavedPost) *CategoryQuery {
+	query := &CategoryQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := up.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, id),
+			sqlgraph.To(category.Table, category.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, unsavedpost.CategoryTable, unsavedpost.CategoryColumn),
 		)
 		fromV = sqlgraph.Neighbors(up.driver.Dialect(), step)
 		return fromV, nil

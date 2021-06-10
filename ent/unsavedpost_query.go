@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"devlog/ent/admin"
+	"devlog/ent/category"
 	"devlog/ent/predicate"
 	"devlog/ent/unsavedpost"
 	"devlog/ent/unsavedpostattachment"
@@ -32,6 +33,7 @@ type UnsavedPostQuery struct {
 	predicates []predicate.UnsavedPost
 	// eager-loading edges.
 	withAuthor      *AdminQuery
+	withCategory    *CategoryQuery
 	withThumbnail   *UnsavedPostThumbnailQuery
 	withImages      *UnsavedPostImageQuery
 	withVideos      *UnsavedPostVideoQuery
@@ -88,6 +90,28 @@ func (upq *UnsavedPostQuery) QueryAuthor() *AdminQuery {
 			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, selector),
 			sqlgraph.To(admin.Table, admin.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, unsavedpost.AuthorTable, unsavedpost.AuthorColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(upq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryCategory chains the current query on the "category" edge.
+func (upq *UnsavedPostQuery) QueryCategory() *CategoryQuery {
+	query := &CategoryQuery{config: upq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := upq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := upq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(unsavedpost.Table, unsavedpost.FieldID, selector),
+			sqlgraph.To(category.Table, category.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, unsavedpost.CategoryTable, unsavedpost.CategoryColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(upq.driver.Dialect(), step)
 		return fromU, nil
@@ -365,6 +389,7 @@ func (upq *UnsavedPostQuery) Clone() *UnsavedPostQuery {
 		order:           append([]OrderFunc{}, upq.order...),
 		predicates:      append([]predicate.UnsavedPost{}, upq.predicates...),
 		withAuthor:      upq.withAuthor.Clone(),
+		withCategory:    upq.withCategory.Clone(),
 		withThumbnail:   upq.withThumbnail.Clone(),
 		withImages:      upq.withImages.Clone(),
 		withVideos:      upq.withVideos.Clone(),
@@ -383,6 +408,17 @@ func (upq *UnsavedPostQuery) WithAuthor(opts ...func(*AdminQuery)) *UnsavedPostQ
 		opt(query)
 	}
 	upq.withAuthor = query
+	return upq
+}
+
+// WithCategory tells the query-builder to eager-load the nodes that are connected to
+// the "category" edge. The optional arguments are used to configure the query builder of the edge.
+func (upq *UnsavedPostQuery) WithCategory(opts ...func(*CategoryQuery)) *UnsavedPostQuery {
+	query := &CategoryQuery{config: upq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	upq.withCategory = query
 	return upq
 }
 
@@ -496,15 +532,16 @@ func (upq *UnsavedPostQuery) sqlAll(ctx context.Context) ([]*UnsavedPost, error)
 		nodes       = []*UnsavedPost{}
 		withFKs     = upq.withFKs
 		_spec       = upq.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			upq.withAuthor != nil,
+			upq.withCategory != nil,
 			upq.withThumbnail != nil,
 			upq.withImages != nil,
 			upq.withVideos != nil,
 			upq.withAttachments != nil,
 		}
 	)
-	if upq.withAuthor != nil {
+	if upq.withAuthor != nil || upq.withCategory != nil {
 		withFKs = true
 	}
 	if withFKs {
@@ -555,6 +592,35 @@ func (upq *UnsavedPostQuery) sqlAll(ctx context.Context) ([]*UnsavedPost, error)
 			}
 			for i := range nodes {
 				nodes[i].Edges.Author = n
+			}
+		}
+	}
+
+	if query := upq.withCategory; query != nil {
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*UnsavedPost)
+		for i := range nodes {
+			if nodes[i].category_unsaved_posts == nil {
+				continue
+			}
+			fk := *nodes[i].category_unsaved_posts
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
+		}
+		query.Where(category.IDIn(ids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := nodeids[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected foreign-key "category_unsaved_posts" returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.Category = n
 			}
 		}
 	}

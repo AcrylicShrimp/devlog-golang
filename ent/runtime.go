@@ -74,24 +74,28 @@ func init() {
 	category.UpdateDefaultModifiedAt = categoryDescModifiedAt.UpdateDefault.(func() time.Time)
 	postFields := schema.Post{}.Fields()
 	_ = postFields
+	// postDescUUID is the schema descriptor for uuid field.
+	postDescUUID := postFields[0].Descriptor()
+	// post.UUIDValidator is a validator for the "uuid" field. It is called by the builders before save.
+	post.UUIDValidator = postDescUUID.Validators[0].(func(string) error)
 	// postDescSlug is the schema descriptor for slug field.
-	postDescSlug := postFields[0].Descriptor()
+	postDescSlug := postFields[1].Descriptor()
 	// post.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
 	post.SlugValidator = postDescSlug.Validators[0].(func(string) error)
 	// postDescTitle is the schema descriptor for title field.
-	postDescTitle := postFields[2].Descriptor()
+	postDescTitle := postFields[3].Descriptor()
 	// post.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	post.TitleValidator = postDescTitle.Validators[0].(func(string) error)
 	// postDescPreviewContent is the schema descriptor for preview_content field.
-	postDescPreviewContent := postFields[5].Descriptor()
+	postDescPreviewContent := postFields[6].Descriptor()
 	// post.PreviewContentValidator is a validator for the "preview_content" field. It is called by the builders before save.
 	post.PreviewContentValidator = postDescPreviewContent.Validators[0].(func(string) error)
 	// postDescCreatedAt is the schema descriptor for created_at field.
-	postDescCreatedAt := postFields[6].Descriptor()
+	postDescCreatedAt := postFields[7].Descriptor()
 	// post.DefaultCreatedAt holds the default value on creation for the created_at field.
 	post.DefaultCreatedAt = postDescCreatedAt.Default.(func() time.Time)
 	// postDescModifiedAt is the schema descriptor for modified_at field.
-	postDescModifiedAt := postFields[7].Descriptor()
+	postDescModifiedAt := postFields[8].Descriptor()
 	// post.DefaultModifiedAt holds the default value on creation for the modified_at field.
 	post.DefaultModifiedAt = postDescModifiedAt.Default.(func() time.Time)
 	// post.UpdateDefaultModifiedAt holds the default value on update for the modified_at field.

@@ -33,9 +33,11 @@ type Category struct {
 type CategoryEdges struct {
 	// Posts holds the value of the posts edge.
 	Posts []*Post `json:"posts,omitempty"`
+	// UnsavedPosts holds the value of the unsaved_posts edge.
+	UnsavedPosts []*UnsavedPost `json:"unsaved_posts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
 }
 
 // PostsOrErr returns the Posts value or an error if the edge
@@ -45,6 +47,15 @@ func (e CategoryEdges) PostsOrErr() ([]*Post, error) {
 		return e.Posts, nil
 	}
 	return nil, &NotLoadedError{edge: "posts"}
+}
+
+// UnsavedPostsOrErr returns the UnsavedPosts value or an error if the edge
+// was not loaded in eager-loading.
+func (e CategoryEdges) UnsavedPostsOrErr() ([]*UnsavedPost, error) {
+	if e.loadedTypes[1] {
+		return e.UnsavedPosts, nil
+	}
+	return nil, &NotLoadedError{edge: "unsaved_posts"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -111,6 +122,11 @@ func (c *Category) assignValues(columns []string, values []interface{}) error {
 // QueryPosts queries the "posts" edge of the Category entity.
 func (c *Category) QueryPosts() *PostQuery {
 	return (&CategoryClient{config: c.config}).QueryPosts(c)
+}
+
+// QueryUnsavedPosts queries the "unsaved_posts" edge of the Category entity.
+func (c *Category) QueryUnsavedPosts() *UnsavedPostQuery {
+	return (&CategoryClient{config: c.config}).QueryUnsavedPosts(c)
 }
 
 // Update returns a builder for updating this Category.

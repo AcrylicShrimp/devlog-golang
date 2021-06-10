@@ -19,6 +19,8 @@ type Post struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// UUID holds the value of the "uuid" field.
+	UUID string `json:"uuid,omitempty"`
 	// Slug holds the value of the "slug" field.
 	Slug string `json:"slug,omitempty"`
 	// AccessLevel holds the value of the "access_level" field.
@@ -137,7 +139,7 @@ func (*Post) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case post.FieldID:
 			values[i] = new(sql.NullInt64)
-		case post.FieldSlug, post.FieldAccessLevel, post.FieldTitle, post.FieldContent, post.FieldHTMLContent, post.FieldPreviewContent:
+		case post.FieldUUID, post.FieldSlug, post.FieldAccessLevel, post.FieldTitle, post.FieldContent, post.FieldHTMLContent, post.FieldPreviewContent:
 			values[i] = new(sql.NullString)
 		case post.FieldCreatedAt, post.FieldModifiedAt:
 			values[i] = new(sql.NullTime)
@@ -166,6 +168,12 @@ func (po *Post) assignValues(columns []string, values []interface{}) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			po.ID = int(value.Int64)
+		case post.FieldUUID:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field uuid", values[i])
+			} else if value.Valid {
+				po.UUID = value.String
+			}
 		case post.FieldSlug:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field slug", values[i])
@@ -286,6 +294,8 @@ func (po *Post) String() string {
 	var builder strings.Builder
 	builder.WriteString("Post(")
 	builder.WriteString(fmt.Sprintf("id=%v", po.ID))
+	builder.WriteString(", uuid=")
+	builder.WriteString(po.UUID)
 	builder.WriteString(", slug=")
 	builder.WriteString(po.Slug)
 	builder.WriteString(", access_level=")

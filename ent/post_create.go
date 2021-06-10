@@ -26,6 +26,12 @@ type PostCreate struct {
 	hooks    []Hook
 }
 
+// SetUUID sets the "uuid" field.
+func (pc *PostCreate) SetUUID(s string) *PostCreate {
+	pc.mutation.SetUUID(s)
+	return pc
+}
+
 // SetSlug sets the "slug" field.
 func (pc *PostCreate) SetSlug(s string) *PostCreate {
 	pc.mutation.SetSlug(s)
@@ -248,6 +254,14 @@ func (pc *PostCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (pc *PostCreate) check() error {
+	if _, ok := pc.mutation.UUID(); !ok {
+		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+	}
+	if v, ok := pc.mutation.UUID(); ok {
+		if err := post.UUIDValidator(v); err != nil {
+			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+		}
+	}
 	if _, ok := pc.mutation.Slug(); !ok {
 		return &ValidationError{Name: "slug", err: errors.New("ent: missing required field \"slug\"")}
 	}
@@ -322,6 +336,14 @@ func (pc *PostCreate) createSpec() (*Post, *sqlgraph.CreateSpec) {
 			},
 		}
 	)
+	if value, ok := pc.mutation.UUID(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: post.FieldUUID,
+		})
+		_node.UUID = value
+	}
 	if value, ok := pc.mutation.Slug(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,

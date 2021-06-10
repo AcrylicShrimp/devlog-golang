@@ -4,6 +4,7 @@ package ent
 
 import (
 	"devlog/ent/admin"
+	"devlog/ent/category"
 	"devlog/ent/unsavedpost"
 	"devlog/ent/unsavedpostthumbnail"
 	"fmt"
@@ -34,14 +35,17 @@ type UnsavedPost struct {
 	ModifiedAt time.Time `json:"modified_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UnsavedPostQuery when eager-loading is set.
-	Edges               UnsavedPostEdges `json:"edges"`
-	admin_unsaved_posts *int
+	Edges                  UnsavedPostEdges `json:"edges"`
+	admin_unsaved_posts    *int
+	category_unsaved_posts *int
 }
 
 // UnsavedPostEdges holds the relations/edges for other nodes in the graph.
 type UnsavedPostEdges struct {
 	// Author holds the value of the author edge.
 	Author *Admin `json:"author,omitempty"`
+	// Category holds the value of the category edge.
+	Category *Category `json:"category,omitempty"`
 	// Thumbnail holds the value of the thumbnail edge.
 	Thumbnail *UnsavedPostThumbnail `json:"thumbnail,omitempty"`
 	// Images holds the value of the images edge.
@@ -52,7 +56,7 @@ type UnsavedPostEdges struct {
 	Attachments []*UnsavedPostAttachment `json:"attachments,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // AuthorOrErr returns the Author value or an error if the edge
@@ -69,10 +73,24 @@ func (e UnsavedPostEdges) AuthorOrErr() (*Admin, error) {
 	return nil, &NotLoadedError{edge: "author"}
 }
 
+// CategoryOrErr returns the Category value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UnsavedPostEdges) CategoryOrErr() (*Category, error) {
+	if e.loadedTypes[1] {
+		if e.Category == nil {
+			// The edge category was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: category.Label}
+		}
+		return e.Category, nil
+	}
+	return nil, &NotLoadedError{edge: "category"}
+}
+
 // ThumbnailOrErr returns the Thumbnail value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e UnsavedPostEdges) ThumbnailOrErr() (*UnsavedPostThumbnail, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		if e.Thumbnail == nil {
 			// The edge thumbnail was loaded in eager-loading,
 			// but was not found.
@@ -86,7 +104,7 @@ func (e UnsavedPostEdges) ThumbnailOrErr() (*UnsavedPostThumbnail, error) {
 // ImagesOrErr returns the Images value or an error if the edge
 // was not loaded in eager-loading.
 func (e UnsavedPostEdges) ImagesOrErr() ([]*UnsavedPostImage, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.Images, nil
 	}
 	return nil, &NotLoadedError{edge: "images"}
@@ -95,7 +113,7 @@ func (e UnsavedPostEdges) ImagesOrErr() ([]*UnsavedPostImage, error) {
 // VideosOrErr returns the Videos value or an error if the edge
 // was not loaded in eager-loading.
 func (e UnsavedPostEdges) VideosOrErr() ([]*UnsavedPostVideo, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[4] {
 		return e.Videos, nil
 	}
 	return nil, &NotLoadedError{edge: "videos"}
@@ -104,7 +122,7 @@ func (e UnsavedPostEdges) VideosOrErr() ([]*UnsavedPostVideo, error) {
 // AttachmentsOrErr returns the Attachments value or an error if the edge
 // was not loaded in eager-loading.
 func (e UnsavedPostEdges) AttachmentsOrErr() ([]*UnsavedPostAttachment, error) {
-	if e.loadedTypes[4] {
+	if e.loadedTypes[5] {
 		return e.Attachments, nil
 	}
 	return nil, &NotLoadedError{edge: "attachments"}
@@ -122,6 +140,8 @@ func (*UnsavedPost) scanValues(columns []string) ([]interface{}, error) {
 		case unsavedpost.FieldCreatedAt, unsavedpost.FieldModifiedAt:
 			values[i] = new(sql.NullTime)
 		case unsavedpost.ForeignKeys[0]: // admin_unsaved_posts
+			values[i] = new(sql.NullInt64)
+		case unsavedpost.ForeignKeys[1]: // category_unsaved_posts
 			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type UnsavedPost", columns[i])
@@ -197,6 +217,13 @@ func (up *UnsavedPost) assignValues(columns []string, values []interface{}) erro
 				up.admin_unsaved_posts = new(int)
 				*up.admin_unsaved_posts = int(value.Int64)
 			}
+		case unsavedpost.ForeignKeys[1]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field category_unsaved_posts", value)
+			} else if value.Valid {
+				up.category_unsaved_posts = new(int)
+				*up.category_unsaved_posts = int(value.Int64)
+			}
 		}
 	}
 	return nil
@@ -205,6 +232,11 @@ func (up *UnsavedPost) assignValues(columns []string, values []interface{}) erro
 // QueryAuthor queries the "author" edge of the UnsavedPost entity.
 func (up *UnsavedPost) QueryAuthor() *AdminQuery {
 	return (&UnsavedPostClient{config: up.config}).QueryAuthor(up)
+}
+
+// QueryCategory queries the "category" edge of the UnsavedPost entity.
+func (up *UnsavedPost) QueryCategory() *CategoryQuery {
+	return (&UnsavedPostClient{config: up.config}).QueryCategory(up)
 }
 
 // QueryThumbnail queries the "thumbnail" edge of the UnsavedPost entity.

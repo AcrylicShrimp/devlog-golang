@@ -26,5 +26,6 @@ func (Category) Fields() []ent.Field {
 func (Category) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("posts", Post.Type),
+		edge.To("unsaved_posts", UnsavedPost.Type),
 	}
 }

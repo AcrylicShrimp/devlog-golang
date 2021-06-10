@@ -1,20 +1,32 @@
 package admin
 
 import (
+	"bytes"
 	"context"
 	"devlog/common"
 	"devlog/ent"
 	dbAdmin "devlog/ent/admin"
+	dbCategory "devlog/ent/category"
+	dbPost "devlog/ent/post"
 	dbUnsavedPost "devlog/ent/unsavedpost"
 	dbUnsavedPostImage "devlog/ent/unsavedpostimage"
 	dbUnsavedPostThumbnail "devlog/ent/unsavedpostthumbnail"
+	"devlog/markdown"
+	"devlog/middleware"
+	"devlog/regex"
 	"devlog/util"
 	"github.com/labstack/echo/v4"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer"
+	goldmarkUtil "github.com/yuin/goldmark/util"
 	"net/http"
+	"strings"
 )
 
 func AttachPost(group *echo.Group) {
-	group.POST("", NewPost, WithSession, RequireSession)
+	group.POST("", NewPost, middleware.WithSession, middleware.RequireSession)
 	//group.POST("", NewPostHandler, WithSession, RequireSession)
 }
 
@@ -40,8 +52,13 @@ func NewPost(c echo.Context) error {
 				dbUnsavedPost.FieldAccessLevel,
 				dbUnsavedPost.FieldTitle,
 				dbUnsavedPost.FieldContent).
+			WithCategory(func(query *ent.CategoryQuery) {
+				query.Select(
+					dbCategory.FieldID)
+			}).
 			WithThumbnail(func(query *ent.UnsavedPostThumbnailQuery) {
 				query.Select(
+					dbUnsavedPostThumbnail.FieldID,
 					dbUnsavedPostThumbnail.FieldWidth,
 					dbUnsavedPostThumbnail.FieldHeight,
 					dbUnsavedPostThumbnail.FieldHash,
@@ -49,6 +66,7 @@ func NewPost(c echo.Context) error {
 			}).
 			WithImages(func(query *ent.UnsavedPostImageQuery) {
 				query.Select(
+					dbUnsavedPostImage.FieldID,
 					dbUnsavedPostImage.FieldUUID,
 					dbUnsavedPostImage.FieldWidth,
 					dbUnsavedPostImage.FieldHeight,
@@ -78,6 +96,65 @@ func NewPost(c echo.Context) error {
 			return nil, echo.NewHTTPError(http.StatusBadRequest)
 		}
 
+		markdownHTML := goldmark.New(
+			goldmark.WithExtensions(extension.GFM),
+			goldmark.WithParserOptions(
+				parser.WithAutoHeadingID(),
+			),
+		)
+		markdownPlain := goldmark.New(
+			goldmark.WithExtensions(extension.GFM),
+			goldmark.WithRendererOptions(
+				renderer.WithNodeRenderers(
+					goldmarkUtil.Prioritized(
+						markdown.NewPureMarkdownRenderer(), 1,
+					),
+				),
+			),
+		)
+
+		var htmlContentBuf bytes.Buffer
+		if err := markdownHTML.Convert([]byte(*unsavedPost.Content), &htmlContentBuf); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
+		}
+		htmlContent := htmlContentBuf.String()
+
+		var plainContentBuf bytes.Buffer
+		if err := markdownPlain.Convert([]byte(*unsavedPost.Content), &plainContentBuf); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
+		}
+		plainContent := plainContentBuf.String()
+		plainContent = strings.TrimSpace(plainContent)
+		plainContent = regex.Whitespaces.ReplaceAllString(plainContent, " ")
+		if 255 < len(plainContent) {
+			plainContent = string([]rune(plainContent)[:255])
+		}
+
+		var categoryID *int
+		if unsavedPost.Edges.Category != nil {
+			categoryID = &unsavedPost.Edges.Category.ID
+		}
+
+		_, err = tx.Post.Create().
+			SetUUID(unsavedPost.UUID).
+			SetSlug(*unsavedPost.Slug).
+			SetAccessLevel(dbPost.AccessLevel(*unsavedPost.AccessLevel)).
+			SetTitle(*unsavedPost.Title).
+			SetContent(*unsavedPost.Content).
+			SetHTMLContent(htmlContent).
+			SetPreviewContent(plainContent).
+			SetAuthor(ctx.Admin()).
+			SetNillableCategoryID(categoryID).
+			Save(context.Background())
+		if err != nil {
+			if _, ok := err.(*ent.ConstraintError); ok {
+				return nil, echo.NewHTTPError(http.StatusConflict)
+			}
+
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		// TODO: Remove associated thumbnail and images together.
 		return nil, tx.UnsavedPost.DeleteOne(unsavedPost).Exec(context.Background())
 	})
 	if err != nil {

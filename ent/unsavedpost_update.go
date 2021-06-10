@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"devlog/ent/admin"
+	"devlog/ent/category"
 	"devlog/ent/predicate"
 	"devlog/ent/unsavedpost"
 	"devlog/ent/unsavedpostattachment"
@@ -150,6 +151,25 @@ func (upu *UnsavedPostUpdate) SetAuthor(a *Admin) *UnsavedPostUpdate {
 	return upu.SetAuthorID(a.ID)
 }
 
+// SetCategoryID sets the "category" edge to the Category entity by ID.
+func (upu *UnsavedPostUpdate) SetCategoryID(id int) *UnsavedPostUpdate {
+	upu.mutation.SetCategoryID(id)
+	return upu
+}
+
+// SetNillableCategoryID sets the "category" edge to the Category entity by ID if the given value is not nil.
+func (upu *UnsavedPostUpdate) SetNillableCategoryID(id *int) *UnsavedPostUpdate {
+	if id != nil {
+		upu = upu.SetCategoryID(*id)
+	}
+	return upu
+}
+
+// SetCategory sets the "category" edge to the Category entity.
+func (upu *UnsavedPostUpdate) SetCategory(c *Category) *UnsavedPostUpdate {
+	return upu.SetCategoryID(c.ID)
+}
+
 // SetThumbnailID sets the "thumbnail" edge to the UnsavedPostThumbnail entity by ID.
 func (upu *UnsavedPostUpdate) SetThumbnailID(id int) *UnsavedPostUpdate {
 	upu.mutation.SetThumbnailID(id)
@@ -222,6 +242,12 @@ func (upu *UnsavedPostUpdate) Mutation() *UnsavedPostMutation {
 // ClearAuthor clears the "author" edge to the Admin entity.
 func (upu *UnsavedPostUpdate) ClearAuthor() *UnsavedPostUpdate {
 	upu.mutation.ClearAuthor()
+	return upu
+}
+
+// ClearCategory clears the "category" edge to the Category entity.
+func (upu *UnsavedPostUpdate) ClearCategory() *UnsavedPostUpdate {
+	upu.mutation.ClearCategory()
 	return upu
 }
 
@@ -506,6 +532,41 @@ func (upu *UnsavedPostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if upu.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   unsavedpost.CategoryTable,
+			Columns: []string{unsavedpost.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: category.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := upu.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   unsavedpost.CategoryTable,
+			Columns: []string{unsavedpost.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: category.FieldID,
 				},
 			},
 		}
@@ -847,6 +908,25 @@ func (upuo *UnsavedPostUpdateOne) SetAuthor(a *Admin) *UnsavedPostUpdateOne {
 	return upuo.SetAuthorID(a.ID)
 }
 
+// SetCategoryID sets the "category" edge to the Category entity by ID.
+func (upuo *UnsavedPostUpdateOne) SetCategoryID(id int) *UnsavedPostUpdateOne {
+	upuo.mutation.SetCategoryID(id)
+	return upuo
+}
+
+// SetNillableCategoryID sets the "category" edge to the Category entity by ID if the given value is not nil.
+func (upuo *UnsavedPostUpdateOne) SetNillableCategoryID(id *int) *UnsavedPostUpdateOne {
+	if id != nil {
+		upuo = upuo.SetCategoryID(*id)
+	}
+	return upuo
+}
+
+// SetCategory sets the "category" edge to the Category entity.
+func (upuo *UnsavedPostUpdateOne) SetCategory(c *Category) *UnsavedPostUpdateOne {
+	return upuo.SetCategoryID(c.ID)
+}
+
 // SetThumbnailID sets the "thumbnail" edge to the UnsavedPostThumbnail entity by ID.
 func (upuo *UnsavedPostUpdateOne) SetThumbnailID(id int) *UnsavedPostUpdateOne {
 	upuo.mutation.SetThumbnailID(id)
@@ -919,6 +999,12 @@ func (upuo *UnsavedPostUpdateOne) Mutation() *UnsavedPostMutation {
 // ClearAuthor clears the "author" edge to the Admin entity.
 func (upuo *UnsavedPostUpdateOne) ClearAuthor() *UnsavedPostUpdateOne {
 	upuo.mutation.ClearAuthor()
+	return upuo
+}
+
+// ClearCategory clears the "category" edge to the Category entity.
+func (upuo *UnsavedPostUpdateOne) ClearCategory() *UnsavedPostUpdateOne {
+	upuo.mutation.ClearCategory()
 	return upuo
 }
 
@@ -1227,6 +1313,41 @@ func (upuo *UnsavedPostUpdateOne) sqlSave(ctx context.Context) (_node *UnsavedPo
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: admin.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if upuo.mutation.CategoryCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   unsavedpost.CategoryTable,
+			Columns: []string{unsavedpost.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: category.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := upuo.mutation.CategoryIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   unsavedpost.CategoryTable,
+			Columns: []string{unsavedpost.CategoryColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: category.FieldID,
 				},
 			},
 		}

@@ -29,6 +29,7 @@ func (UnsavedPost) Fields() []ent.Field {
 func (UnsavedPost) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("author", Admin.Type).Ref("unsaved_posts").Unique().Required(),
+		edge.From("category", Category.Type).Ref("unsaved_posts").Unique(),
 		edge.To("thumbnail", UnsavedPostThumbnail.Type).Unique(),
 		edge.To("images", UnsavedPostImage.Type),
 		edge.To("videos", UnsavedPostVideo.Type),

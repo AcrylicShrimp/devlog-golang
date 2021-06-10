@@ -6,6 +6,7 @@ import (
 	"context"
 	"devlog/ent/category"
 	"devlog/ent/post"
+	"devlog/ent/unsavedpost"
 	"errors"
 	"fmt"
 	"time"
@@ -82,6 +83,21 @@ func (cc *CategoryCreate) AddPosts(p ...*Post) *CategoryCreate {
 		ids[i] = p[i].ID
 	}
 	return cc.AddPostIDs(ids...)
+}
+
+// AddUnsavedPostIDs adds the "unsaved_posts" edge to the UnsavedPost entity by IDs.
+func (cc *CategoryCreate) AddUnsavedPostIDs(ids ...int) *CategoryCreate {
+	cc.mutation.AddUnsavedPostIDs(ids...)
+	return cc
+}
+
+// AddUnsavedPosts adds the "unsaved_posts" edges to the UnsavedPost entity.
+func (cc *CategoryCreate) AddUnsavedPosts(u ...*UnsavedPost) *CategoryCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return cc.AddUnsavedPostIDs(ids...)
 }
 
 // Mutation returns the CategoryMutation object of the builder.
@@ -237,6 +253,25 @@ func (cc *CategoryCreate) createSpec() (*Category, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: post.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := cc.mutation.UnsavedPostsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   category.UnsavedPostsTable,
+			Columns: []string{category.UnsavedPostsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: unsavedpost.FieldID,
 				},
 			},
 		}

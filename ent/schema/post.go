@@ -15,6 +15,7 @@ type Post struct {
 // Fields of the Post.
 func (Post) Fields() []ent.Field {
 	return []ent.Field{
+		field.String("uuid").MaxLen(64).Unique(),
 		field.String("slug").MaxLen(255).Unique(),
 		field.Enum("access_level").Values("public", "unlisted", "private"),
 		field.String("title").MaxLen(255),

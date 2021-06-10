@@ -537,6 +537,34 @@ func HasPostsWith(preds ...predicate.Post) predicate.Category {
 	})
 }
 
+// HasUnsavedPosts applies the HasEdge predicate on the "unsaved_posts" edge.
+func HasUnsavedPosts() predicate.Category {
+	return predicate.Category(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(UnsavedPostsTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UnsavedPostsTable, UnsavedPostsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasUnsavedPostsWith applies the HasEdge predicate on the "unsaved_posts" edge with a given conditions (other predicates).
+func HasUnsavedPostsWith(preds ...predicate.UnsavedPost) predicate.Category {
+	return predicate.Category(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(UnsavedPostsInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, UnsavedPostsTable, UnsavedPostsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.Category) predicate.Category {
 	return predicate.Category(func(s *sql.Selector) {
