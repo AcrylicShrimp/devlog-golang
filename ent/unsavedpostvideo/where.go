@@ -232,6 +232,54 @@ func UUIDContainsFold(v string) predicate.UnsavedPostVideo {
 	})
 }
 
+// ValidityEQ applies the EQ predicate on the "validity" field.
+func ValidityEQ(v Validity) predicate.UnsavedPostVideo {
+	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldValidity), v))
+	})
+}
+
+// ValidityNEQ applies the NEQ predicate on the "validity" field.
+func ValidityNEQ(v Validity) predicate.UnsavedPostVideo {
+	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldValidity), v))
+	})
+}
+
+// ValidityIn applies the In predicate on the "validity" field.
+func ValidityIn(vs ...Validity) predicate.UnsavedPostVideo {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldValidity), v...))
+	})
+}
+
+// ValidityNotIn applies the NotIn predicate on the "validity" field.
+func ValidityNotIn(vs ...Validity) predicate.UnsavedPostVideo {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldValidity), v...))
+	})
+}
+
 // TitleEQ applies the EQ predicate on the "title" field.
 func TitleEQ(v string) predicate.UnsavedPostVideo {
 	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
@@ -326,6 +374,20 @@ func TitleHasPrefix(v string) predicate.UnsavedPostVideo {
 func TitleHasSuffix(v string) predicate.UnsavedPostVideo {
 	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
 		s.Where(sql.HasSuffix(s.C(FieldTitle), v))
+	})
+}
+
+// TitleIsNil applies the IsNil predicate on the "title" field.
+func TitleIsNil() predicate.UnsavedPostVideo {
+	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldTitle)))
+	})
+}
+
+// TitleNotNil applies the NotNil predicate on the "title" field.
+func TitleNotNil() predicate.UnsavedPostVideo {
+	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldTitle)))
 	})
 }
 
@@ -437,6 +499,20 @@ func URLHasPrefix(v string) predicate.UnsavedPostVideo {
 func URLHasSuffix(v string) predicate.UnsavedPostVideo {
 	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
 		s.Where(sql.HasSuffix(s.C(FieldURL), v))
+	})
+}
+
+// URLIsNil applies the IsNil predicate on the "url" field.
+func URLIsNil() predicate.UnsavedPostVideo {
+	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldURL)))
+	})
+}
+
+// URLNotNil applies the NotNil predicate on the "url" field.
+func URLNotNil() predicate.UnsavedPostVideo {
+	return predicate.UnsavedPostVideo(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldURL)))
 	})
 }
 

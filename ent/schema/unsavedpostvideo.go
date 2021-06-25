@@ -16,9 +16,10 @@ type UnsavedPostVideo struct {
 // Fields of the UnsavedPostVideo.
 func (UnsavedPostVideo) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("uuid").MaxLen(64).Unique(),
-		field.String("title").MaxLen(255),
-		field.String("url").MaxLen(512),
+		field.String("uuid").MaxLen(64),
+		field.Enum("validity").Values("pending", "valid", "invalid").Default("pending"),
+		field.String("title").MaxLen(255).Optional().Nillable(),
+		field.String("url").MaxLen(512).Optional().Nillable(),
 		field.Time("created_at").Default(time.Now),
 	}
 }

@@ -207,19 +207,19 @@ func init() {
 	// unsavedpostattachment.UUIDValidator is a validator for the "uuid" field. It is called by the builders before save.
 	unsavedpostattachment.UUIDValidator = unsavedpostattachmentDescUUID.Validators[0].(func(string) error)
 	// unsavedpostattachmentDescName is the schema descriptor for name field.
-	unsavedpostattachmentDescName := unsavedpostattachmentFields[2].Descriptor()
+	unsavedpostattachmentDescName := unsavedpostattachmentFields[3].Descriptor()
 	// unsavedpostattachment.NameValidator is a validator for the "name" field. It is called by the builders before save.
 	unsavedpostattachment.NameValidator = unsavedpostattachmentDescName.Validators[0].(func(string) error)
 	// unsavedpostattachmentDescMime is the schema descriptor for mime field.
-	unsavedpostattachmentDescMime := unsavedpostattachmentFields[3].Descriptor()
+	unsavedpostattachmentDescMime := unsavedpostattachmentFields[4].Descriptor()
 	// unsavedpostattachment.MimeValidator is a validator for the "mime" field. It is called by the builders before save.
 	unsavedpostattachment.MimeValidator = unsavedpostattachmentDescMime.Validators[0].(func(string) error)
 	// unsavedpostattachmentDescURL is the schema descriptor for url field.
-	unsavedpostattachmentDescURL := unsavedpostattachmentFields[4].Descriptor()
+	unsavedpostattachmentDescURL := unsavedpostattachmentFields[5].Descriptor()
 	// unsavedpostattachment.URLValidator is a validator for the "url" field. It is called by the builders before save.
 	unsavedpostattachment.URLValidator = unsavedpostattachmentDescURL.Validators[0].(func(string) error)
 	// unsavedpostattachmentDescCreatedAt is the schema descriptor for created_at field.
-	unsavedpostattachmentDescCreatedAt := unsavedpostattachmentFields[5].Descriptor()
+	unsavedpostattachmentDescCreatedAt := unsavedpostattachmentFields[6].Descriptor()
 	// unsavedpostattachment.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unsavedpostattachment.DefaultCreatedAt = unsavedpostattachmentDescCreatedAt.Default.(func() time.Time)
 	unsavedpostimageFields := schema.UnsavedPostImage{}.Fields()
@@ -229,33 +229,33 @@ func init() {
 	// unsavedpostimage.UUIDValidator is a validator for the "uuid" field. It is called by the builders before save.
 	unsavedpostimage.UUIDValidator = unsavedpostimageDescUUID.Validators[0].(func(string) error)
 	// unsavedpostimageDescHash is the schema descriptor for hash field.
-	unsavedpostimageDescHash := unsavedpostimageFields[3].Descriptor()
+	unsavedpostimageDescHash := unsavedpostimageFields[4].Descriptor()
 	// unsavedpostimage.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	unsavedpostimage.HashValidator = unsavedpostimageDescHash.Validators[0].(func(string) error)
 	// unsavedpostimageDescTitle is the schema descriptor for title field.
-	unsavedpostimageDescTitle := unsavedpostimageFields[4].Descriptor()
+	unsavedpostimageDescTitle := unsavedpostimageFields[5].Descriptor()
 	// unsavedpostimage.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	unsavedpostimage.TitleValidator = unsavedpostimageDescTitle.Validators[0].(func(string) error)
 	// unsavedpostimageDescURL is the schema descriptor for url field.
-	unsavedpostimageDescURL := unsavedpostimageFields[5].Descriptor()
+	unsavedpostimageDescURL := unsavedpostimageFields[6].Descriptor()
 	// unsavedpostimage.URLValidator is a validator for the "url" field. It is called by the builders before save.
 	unsavedpostimage.URLValidator = unsavedpostimageDescURL.Validators[0].(func(string) error)
 	// unsavedpostimageDescCreatedAt is the schema descriptor for created_at field.
-	unsavedpostimageDescCreatedAt := unsavedpostimageFields[6].Descriptor()
+	unsavedpostimageDescCreatedAt := unsavedpostimageFields[7].Descriptor()
 	// unsavedpostimage.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unsavedpostimage.DefaultCreatedAt = unsavedpostimageDescCreatedAt.Default.(func() time.Time)
 	unsavedpostthumbnailFields := schema.UnsavedPostThumbnail{}.Fields()
 	_ = unsavedpostthumbnailFields
 	// unsavedpostthumbnailDescHash is the schema descriptor for hash field.
-	unsavedpostthumbnailDescHash := unsavedpostthumbnailFields[2].Descriptor()
+	unsavedpostthumbnailDescHash := unsavedpostthumbnailFields[3].Descriptor()
 	// unsavedpostthumbnail.HashValidator is a validator for the "hash" field. It is called by the builders before save.
 	unsavedpostthumbnail.HashValidator = unsavedpostthumbnailDescHash.Validators[0].(func(string) error)
 	// unsavedpostthumbnailDescURL is the schema descriptor for url field.
-	unsavedpostthumbnailDescURL := unsavedpostthumbnailFields[3].Descriptor()
+	unsavedpostthumbnailDescURL := unsavedpostthumbnailFields[4].Descriptor()
 	// unsavedpostthumbnail.URLValidator is a validator for the "url" field. It is called by the builders before save.
 	unsavedpostthumbnail.URLValidator = unsavedpostthumbnailDescURL.Validators[0].(func(string) error)
 	// unsavedpostthumbnailDescCreatedAt is the schema descriptor for created_at field.
-	unsavedpostthumbnailDescCreatedAt := unsavedpostthumbnailFields[4].Descriptor()
+	unsavedpostthumbnailDescCreatedAt := unsavedpostthumbnailFields[5].Descriptor()
 	// unsavedpostthumbnail.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unsavedpostthumbnail.DefaultCreatedAt = unsavedpostthumbnailDescCreatedAt.Default.(func() time.Time)
 	unsavedpostvideoFields := schema.UnsavedPostVideo{}.Fields()
@@ -265,15 +265,15 @@ func init() {
 	// unsavedpostvideo.UUIDValidator is a validator for the "uuid" field. It is called by the builders before save.
 	unsavedpostvideo.UUIDValidator = unsavedpostvideoDescUUID.Validators[0].(func(string) error)
 	// unsavedpostvideoDescTitle is the schema descriptor for title field.
-	unsavedpostvideoDescTitle := unsavedpostvideoFields[1].Descriptor()
+	unsavedpostvideoDescTitle := unsavedpostvideoFields[2].Descriptor()
 	// unsavedpostvideo.TitleValidator is a validator for the "title" field. It is called by the builders before save.
 	unsavedpostvideo.TitleValidator = unsavedpostvideoDescTitle.Validators[0].(func(string) error)
 	// unsavedpostvideoDescURL is the schema descriptor for url field.
-	unsavedpostvideoDescURL := unsavedpostvideoFields[2].Descriptor()
+	unsavedpostvideoDescURL := unsavedpostvideoFields[3].Descriptor()
 	// unsavedpostvideo.URLValidator is a validator for the "url" field. It is called by the builders before save.
 	unsavedpostvideo.URLValidator = unsavedpostvideoDescURL.Validators[0].(func(string) error)
 	// unsavedpostvideoDescCreatedAt is the schema descriptor for created_at field.
-	unsavedpostvideoDescCreatedAt := unsavedpostvideoFields[3].Descriptor()
+	unsavedpostvideoDescCreatedAt := unsavedpostvideoFields[4].Descriptor()
 	// unsavedpostvideo.DefaultCreatedAt holds the default value on creation for the created_at field.
 	unsavedpostvideo.DefaultCreatedAt = unsavedpostvideoDescCreatedAt.Default.(func() time.Time)
 }

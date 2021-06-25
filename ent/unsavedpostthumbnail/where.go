@@ -128,6 +128,54 @@ func CreatedAt(v time.Time) predicate.UnsavedPostThumbnail {
 	})
 }
 
+// ValidityEQ applies the EQ predicate on the "validity" field.
+func ValidityEQ(v Validity) predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldValidity), v))
+	})
+}
+
+// ValidityNEQ applies the NEQ predicate on the "validity" field.
+func ValidityNEQ(v Validity) predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldValidity), v))
+	})
+}
+
+// ValidityIn applies the In predicate on the "validity" field.
+func ValidityIn(vs ...Validity) predicate.UnsavedPostThumbnail {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldValidity), v...))
+	})
+}
+
+// ValidityNotIn applies the NotIn predicate on the "validity" field.
+func ValidityNotIn(vs ...Validity) predicate.UnsavedPostThumbnail {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldValidity), v...))
+	})
+}
+
 // WidthEQ applies the EQ predicate on the "width" field.
 func WidthEQ(v uint32) predicate.UnsavedPostThumbnail {
 	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
@@ -204,6 +252,20 @@ func WidthLTE(v uint32) predicate.UnsavedPostThumbnail {
 	})
 }
 
+// WidthIsNil applies the IsNil predicate on the "width" field.
+func WidthIsNil() predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldWidth)))
+	})
+}
+
+// WidthNotNil applies the NotNil predicate on the "width" field.
+func WidthNotNil() predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldWidth)))
+	})
+}
+
 // HeightEQ applies the EQ predicate on the "height" field.
 func HeightEQ(v uint32) predicate.UnsavedPostThumbnail {
 	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
@@ -277,6 +339,20 @@ func HeightLT(v uint32) predicate.UnsavedPostThumbnail {
 func HeightLTE(v uint32) predicate.UnsavedPostThumbnail {
 	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
 		s.Where(sql.LTE(s.C(FieldHeight), v))
+	})
+}
+
+// HeightIsNil applies the IsNil predicate on the "height" field.
+func HeightIsNil() predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldHeight)))
+	})
+}
+
+// HeightNotNil applies the NotNil predicate on the "height" field.
+func HeightNotNil() predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldHeight)))
 	})
 }
 
@@ -374,6 +450,20 @@ func HashHasPrefix(v string) predicate.UnsavedPostThumbnail {
 func HashHasSuffix(v string) predicate.UnsavedPostThumbnail {
 	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
 		s.Where(sql.HasSuffix(s.C(FieldHash), v))
+	})
+}
+
+// HashIsNil applies the IsNil predicate on the "hash" field.
+func HashIsNil() predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldHash)))
+	})
+}
+
+// HashNotNil applies the NotNil predicate on the "hash" field.
+func HashNotNil() predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldHash)))
 	})
 }
 
@@ -485,6 +575,20 @@ func URLHasPrefix(v string) predicate.UnsavedPostThumbnail {
 func URLHasSuffix(v string) predicate.UnsavedPostThumbnail {
 	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
 		s.Where(sql.HasSuffix(s.C(FieldURL), v))
+	})
+}
+
+// URLIsNil applies the IsNil predicate on the "url" field.
+func URLIsNil() predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.IsNull(s.C(FieldURL)))
+	})
+}
+
+// URLNotNil applies the NotNil predicate on the "url" field.
+func URLNotNil() predicate.UnsavedPostThumbnail {
+	return predicate.UnsavedPostThumbnail(func(s *sql.Selector) {
+		s.Where(sql.NotNull(s.C(FieldURL)))
 	})
 }
 

@@ -29,6 +29,20 @@ func (uptu *UnsavedPostThumbnailUpdate) Where(ps ...predicate.UnsavedPostThumbna
 	return uptu
 }
 
+// SetValidity sets the "validity" field.
+func (uptu *UnsavedPostThumbnailUpdate) SetValidity(u unsavedpostthumbnail.Validity) *UnsavedPostThumbnailUpdate {
+	uptu.mutation.SetValidity(u)
+	return uptu
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (uptu *UnsavedPostThumbnailUpdate) SetNillableValidity(u *unsavedpostthumbnail.Validity) *UnsavedPostThumbnailUpdate {
+	if u != nil {
+		uptu.SetValidity(*u)
+	}
+	return uptu
+}
+
 // SetWidth sets the "width" field.
 func (uptu *UnsavedPostThumbnailUpdate) SetWidth(u uint32) *UnsavedPostThumbnailUpdate {
 	uptu.mutation.ResetWidth()
@@ -36,9 +50,23 @@ func (uptu *UnsavedPostThumbnailUpdate) SetWidth(u uint32) *UnsavedPostThumbnail
 	return uptu
 }
 
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (uptu *UnsavedPostThumbnailUpdate) SetNillableWidth(u *uint32) *UnsavedPostThumbnailUpdate {
+	if u != nil {
+		uptu.SetWidth(*u)
+	}
+	return uptu
+}
+
 // AddWidth adds u to the "width" field.
 func (uptu *UnsavedPostThumbnailUpdate) AddWidth(u uint32) *UnsavedPostThumbnailUpdate {
 	uptu.mutation.AddWidth(u)
+	return uptu
+}
+
+// ClearWidth clears the value of the "width" field.
+func (uptu *UnsavedPostThumbnailUpdate) ClearWidth() *UnsavedPostThumbnailUpdate {
+	uptu.mutation.ClearWidth()
 	return uptu
 }
 
@@ -49,9 +77,23 @@ func (uptu *UnsavedPostThumbnailUpdate) SetHeight(u uint32) *UnsavedPostThumbnai
 	return uptu
 }
 
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (uptu *UnsavedPostThumbnailUpdate) SetNillableHeight(u *uint32) *UnsavedPostThumbnailUpdate {
+	if u != nil {
+		uptu.SetHeight(*u)
+	}
+	return uptu
+}
+
 // AddHeight adds u to the "height" field.
 func (uptu *UnsavedPostThumbnailUpdate) AddHeight(u uint32) *UnsavedPostThumbnailUpdate {
 	uptu.mutation.AddHeight(u)
+	return uptu
+}
+
+// ClearHeight clears the value of the "height" field.
+func (uptu *UnsavedPostThumbnailUpdate) ClearHeight() *UnsavedPostThumbnailUpdate {
+	uptu.mutation.ClearHeight()
 	return uptu
 }
 
@@ -61,9 +103,37 @@ func (uptu *UnsavedPostThumbnailUpdate) SetHash(s string) *UnsavedPostThumbnailU
 	return uptu
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (uptu *UnsavedPostThumbnailUpdate) SetNillableHash(s *string) *UnsavedPostThumbnailUpdate {
+	if s != nil {
+		uptu.SetHash(*s)
+	}
+	return uptu
+}
+
+// ClearHash clears the value of the "hash" field.
+func (uptu *UnsavedPostThumbnailUpdate) ClearHash() *UnsavedPostThumbnailUpdate {
+	uptu.mutation.ClearHash()
+	return uptu
+}
+
 // SetURL sets the "url" field.
 func (uptu *UnsavedPostThumbnailUpdate) SetURL(s string) *UnsavedPostThumbnailUpdate {
 	uptu.mutation.SetURL(s)
+	return uptu
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (uptu *UnsavedPostThumbnailUpdate) SetNillableURL(s *string) *UnsavedPostThumbnailUpdate {
+	if s != nil {
+		uptu.SetURL(*s)
+	}
+	return uptu
+}
+
+// ClearURL clears the value of the "url" field.
+func (uptu *UnsavedPostThumbnailUpdate) ClearURL() *UnsavedPostThumbnailUpdate {
+	uptu.mutation.ClearURL()
 	return uptu
 }
 
@@ -162,6 +232,11 @@ func (uptu *UnsavedPostThumbnailUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (uptu *UnsavedPostThumbnailUpdate) check() error {
+	if v, ok := uptu.mutation.Validity(); ok {
+		if err := unsavedpostthumbnail.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
+	}
 	if v, ok := uptu.mutation.Hash(); ok {
 		if err := unsavedpostthumbnail.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
@@ -196,6 +271,13 @@ func (uptu *UnsavedPostThumbnailUpdate) sqlSave(ctx context.Context) (n int, err
 			}
 		}
 	}
+	if value, ok := uptu.mutation.Validity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostthumbnail.FieldValidity,
+		})
+	}
 	if value, ok := uptu.mutation.Width(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -207,6 +289,12 @@ func (uptu *UnsavedPostThumbnailUpdate) sqlSave(ctx context.Context) (n int, err
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
 			Value:  value,
+			Column: unsavedpostthumbnail.FieldWidth,
+		})
+	}
+	if uptu.mutation.WidthCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
 			Column: unsavedpostthumbnail.FieldWidth,
 		})
 	}
@@ -224,6 +312,12 @@ func (uptu *UnsavedPostThumbnailUpdate) sqlSave(ctx context.Context) (n int, err
 			Column: unsavedpostthumbnail.FieldHeight,
 		})
 	}
+	if uptu.mutation.HeightCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Column: unsavedpostthumbnail.FieldHeight,
+		})
+	}
 	if value, ok := uptu.mutation.Hash(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -231,10 +325,22 @@ func (uptu *UnsavedPostThumbnailUpdate) sqlSave(ctx context.Context) (n int, err
 			Column: unsavedpostthumbnail.FieldHash,
 		})
 	}
+	if uptu.mutation.HashCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: unsavedpostthumbnail.FieldHash,
+		})
+	}
 	if value, ok := uptu.mutation.URL(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostthumbnail.FieldURL,
+		})
+	}
+	if uptu.mutation.URLCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostthumbnail.FieldURL,
 		})
 	}
@@ -299,6 +405,20 @@ type UnsavedPostThumbnailUpdateOne struct {
 	mutation *UnsavedPostThumbnailMutation
 }
 
+// SetValidity sets the "validity" field.
+func (uptuo *UnsavedPostThumbnailUpdateOne) SetValidity(u unsavedpostthumbnail.Validity) *UnsavedPostThumbnailUpdateOne {
+	uptuo.mutation.SetValidity(u)
+	return uptuo
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (uptuo *UnsavedPostThumbnailUpdateOne) SetNillableValidity(u *unsavedpostthumbnail.Validity) *UnsavedPostThumbnailUpdateOne {
+	if u != nil {
+		uptuo.SetValidity(*u)
+	}
+	return uptuo
+}
+
 // SetWidth sets the "width" field.
 func (uptuo *UnsavedPostThumbnailUpdateOne) SetWidth(u uint32) *UnsavedPostThumbnailUpdateOne {
 	uptuo.mutation.ResetWidth()
@@ -306,9 +426,23 @@ func (uptuo *UnsavedPostThumbnailUpdateOne) SetWidth(u uint32) *UnsavedPostThumb
 	return uptuo
 }
 
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (uptuo *UnsavedPostThumbnailUpdateOne) SetNillableWidth(u *uint32) *UnsavedPostThumbnailUpdateOne {
+	if u != nil {
+		uptuo.SetWidth(*u)
+	}
+	return uptuo
+}
+
 // AddWidth adds u to the "width" field.
 func (uptuo *UnsavedPostThumbnailUpdateOne) AddWidth(u uint32) *UnsavedPostThumbnailUpdateOne {
 	uptuo.mutation.AddWidth(u)
+	return uptuo
+}
+
+// ClearWidth clears the value of the "width" field.
+func (uptuo *UnsavedPostThumbnailUpdateOne) ClearWidth() *UnsavedPostThumbnailUpdateOne {
+	uptuo.mutation.ClearWidth()
 	return uptuo
 }
 
@@ -319,9 +453,23 @@ func (uptuo *UnsavedPostThumbnailUpdateOne) SetHeight(u uint32) *UnsavedPostThum
 	return uptuo
 }
 
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (uptuo *UnsavedPostThumbnailUpdateOne) SetNillableHeight(u *uint32) *UnsavedPostThumbnailUpdateOne {
+	if u != nil {
+		uptuo.SetHeight(*u)
+	}
+	return uptuo
+}
+
 // AddHeight adds u to the "height" field.
 func (uptuo *UnsavedPostThumbnailUpdateOne) AddHeight(u uint32) *UnsavedPostThumbnailUpdateOne {
 	uptuo.mutation.AddHeight(u)
+	return uptuo
+}
+
+// ClearHeight clears the value of the "height" field.
+func (uptuo *UnsavedPostThumbnailUpdateOne) ClearHeight() *UnsavedPostThumbnailUpdateOne {
+	uptuo.mutation.ClearHeight()
 	return uptuo
 }
 
@@ -331,9 +479,37 @@ func (uptuo *UnsavedPostThumbnailUpdateOne) SetHash(s string) *UnsavedPostThumbn
 	return uptuo
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (uptuo *UnsavedPostThumbnailUpdateOne) SetNillableHash(s *string) *UnsavedPostThumbnailUpdateOne {
+	if s != nil {
+		uptuo.SetHash(*s)
+	}
+	return uptuo
+}
+
+// ClearHash clears the value of the "hash" field.
+func (uptuo *UnsavedPostThumbnailUpdateOne) ClearHash() *UnsavedPostThumbnailUpdateOne {
+	uptuo.mutation.ClearHash()
+	return uptuo
+}
+
 // SetURL sets the "url" field.
 func (uptuo *UnsavedPostThumbnailUpdateOne) SetURL(s string) *UnsavedPostThumbnailUpdateOne {
 	uptuo.mutation.SetURL(s)
+	return uptuo
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (uptuo *UnsavedPostThumbnailUpdateOne) SetNillableURL(s *string) *UnsavedPostThumbnailUpdateOne {
+	if s != nil {
+		uptuo.SetURL(*s)
+	}
+	return uptuo
+}
+
+// ClearURL clears the value of the "url" field.
+func (uptuo *UnsavedPostThumbnailUpdateOne) ClearURL() *UnsavedPostThumbnailUpdateOne {
+	uptuo.mutation.ClearURL()
 	return uptuo
 }
 
@@ -439,6 +615,11 @@ func (uptuo *UnsavedPostThumbnailUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (uptuo *UnsavedPostThumbnailUpdateOne) check() error {
+	if v, ok := uptuo.mutation.Validity(); ok {
+		if err := unsavedpostthumbnail.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
+	}
 	if v, ok := uptuo.mutation.Hash(); ok {
 		if err := unsavedpostthumbnail.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
@@ -490,6 +671,13 @@ func (uptuo *UnsavedPostThumbnailUpdateOne) sqlSave(ctx context.Context) (_node 
 			}
 		}
 	}
+	if value, ok := uptuo.mutation.Validity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostthumbnail.FieldValidity,
+		})
+	}
 	if value, ok := uptuo.mutation.Width(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -501,6 +689,12 @@ func (uptuo *UnsavedPostThumbnailUpdateOne) sqlSave(ctx context.Context) (_node 
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
 			Value:  value,
+			Column: unsavedpostthumbnail.FieldWidth,
+		})
+	}
+	if uptuo.mutation.WidthCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
 			Column: unsavedpostthumbnail.FieldWidth,
 		})
 	}
@@ -518,6 +712,12 @@ func (uptuo *UnsavedPostThumbnailUpdateOne) sqlSave(ctx context.Context) (_node 
 			Column: unsavedpostthumbnail.FieldHeight,
 		})
 	}
+	if uptuo.mutation.HeightCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Column: unsavedpostthumbnail.FieldHeight,
+		})
+	}
 	if value, ok := uptuo.mutation.Hash(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -525,10 +725,22 @@ func (uptuo *UnsavedPostThumbnailUpdateOne) sqlSave(ctx context.Context) (_node 
 			Column: unsavedpostthumbnail.FieldHash,
 		})
 	}
+	if uptuo.mutation.HashCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: unsavedpostthumbnail.FieldHash,
+		})
+	}
 	if value, ok := uptuo.mutation.URL(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostthumbnail.FieldURL,
+		})
+	}
+	if uptuo.mutation.URLCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostthumbnail.FieldURL,
 		})
 	}

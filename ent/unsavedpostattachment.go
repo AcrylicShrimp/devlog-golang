@@ -19,14 +19,16 @@ type UnsavedPostAttachment struct {
 	ID int `json:"id,omitempty"`
 	// UUID holds the value of the "uuid" field.
 	UUID string `json:"uuid,omitempty"`
+	// Validity holds the value of the "validity" field.
+	Validity unsavedpostattachment.Validity `json:"validity,omitempty"`
 	// Size holds the value of the "size" field.
-	Size uint64 `json:"size,omitempty"`
+	Size *uint64 `json:"size,omitempty"`
 	// Name holds the value of the "name" field.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 	// Mime holds the value of the "mime" field.
-	Mime string `json:"mime,omitempty"`
+	Mime *string `json:"mime,omitempty"`
 	// URL holds the value of the "url" field.
-	URL string `json:"url,omitempty"`
+	URL *string `json:"url,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -65,7 +67,7 @@ func (*UnsavedPostAttachment) scanValues(columns []string) ([]interface{}, error
 		switch columns[i] {
 		case unsavedpostattachment.FieldID, unsavedpostattachment.FieldSize:
 			values[i] = new(sql.NullInt64)
-		case unsavedpostattachment.FieldUUID, unsavedpostattachment.FieldName, unsavedpostattachment.FieldMime, unsavedpostattachment.FieldURL:
+		case unsavedpostattachment.FieldUUID, unsavedpostattachment.FieldValidity, unsavedpostattachment.FieldName, unsavedpostattachment.FieldMime, unsavedpostattachment.FieldURL:
 			values[i] = new(sql.NullString)
 		case unsavedpostattachment.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -98,29 +100,39 @@ func (upa *UnsavedPostAttachment) assignValues(columns []string, values []interf
 			} else if value.Valid {
 				upa.UUID = value.String
 			}
+		case unsavedpostattachment.FieldValidity:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field validity", values[i])
+			} else if value.Valid {
+				upa.Validity = unsavedpostattachment.Validity(value.String)
+			}
 		case unsavedpostattachment.FieldSize:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
 				return fmt.Errorf("unexpected type %T for field size", values[i])
 			} else if value.Valid {
-				upa.Size = uint64(value.Int64)
+				upa.Size = new(uint64)
+				*upa.Size = uint64(value.Int64)
 			}
 		case unsavedpostattachment.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				upa.Name = value.String
+				upa.Name = new(string)
+				*upa.Name = value.String
 			}
 		case unsavedpostattachment.FieldMime:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field mime", values[i])
 			} else if value.Valid {
-				upa.Mime = value.String
+				upa.Mime = new(string)
+				*upa.Mime = value.String
 			}
 		case unsavedpostattachment.FieldURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field url", values[i])
 			} else if value.Valid {
-				upa.URL = value.String
+				upa.URL = new(string)
+				*upa.URL = value.String
 			}
 		case unsavedpostattachment.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -170,14 +182,24 @@ func (upa *UnsavedPostAttachment) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", upa.ID))
 	builder.WriteString(", uuid=")
 	builder.WriteString(upa.UUID)
-	builder.WriteString(", size=")
-	builder.WriteString(fmt.Sprintf("%v", upa.Size))
-	builder.WriteString(", name=")
-	builder.WriteString(upa.Name)
-	builder.WriteString(", mime=")
-	builder.WriteString(upa.Mime)
-	builder.WriteString(", url=")
-	builder.WriteString(upa.URL)
+	builder.WriteString(", validity=")
+	builder.WriteString(fmt.Sprintf("%v", upa.Validity))
+	if v := upa.Size; v != nil {
+		builder.WriteString(", size=")
+		builder.WriteString(fmt.Sprintf("%v", *v))
+	}
+	if v := upa.Name; v != nil {
+		builder.WriteString(", name=")
+		builder.WriteString(*v)
+	}
+	if v := upa.Mime; v != nil {
+		builder.WriteString(", mime=")
+		builder.WriteString(*v)
+	}
+	if v := upa.URL; v != nil {
+		builder.WriteString(", url=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", created_at=")
 	builder.WriteString(upa.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')

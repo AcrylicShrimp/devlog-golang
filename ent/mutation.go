@@ -6715,6 +6715,7 @@ type UnsavedPostAttachmentMutation struct {
 	typ                 string
 	id                  *int
 	uuid                *string
+	validity            *unsavedpostattachment.Validity
 	size                *uint64
 	addsize             *uint64
 	name                *string
@@ -6844,6 +6845,42 @@ func (m *UnsavedPostAttachmentMutation) ResetUUID() {
 	m.uuid = nil
 }
 
+// SetValidity sets the "validity" field.
+func (m *UnsavedPostAttachmentMutation) SetValidity(u unsavedpostattachment.Validity) {
+	m.validity = &u
+}
+
+// Validity returns the value of the "validity" field in the mutation.
+func (m *UnsavedPostAttachmentMutation) Validity() (r unsavedpostattachment.Validity, exists bool) {
+	v := m.validity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidity returns the old "validity" field's value of the UnsavedPostAttachment entity.
+// If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostAttachmentMutation) OldValidity(ctx context.Context) (v unsavedpostattachment.Validity, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldValidity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldValidity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidity: %w", err)
+	}
+	return oldValue.Validity, nil
+}
+
+// ResetValidity resets all changes to the "validity" field.
+func (m *UnsavedPostAttachmentMutation) ResetValidity() {
+	m.validity = nil
+}
+
 // SetSize sets the "size" field.
 func (m *UnsavedPostAttachmentMutation) SetSize(u uint64) {
 	m.size = &u
@@ -6862,7 +6899,7 @@ func (m *UnsavedPostAttachmentMutation) Size() (r uint64, exists bool) {
 // OldSize returns the old "size" field's value of the UnsavedPostAttachment entity.
 // If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostAttachmentMutation) OldSize(ctx context.Context) (v uint64, err error) {
+func (m *UnsavedPostAttachmentMutation) OldSize(ctx context.Context) (v *uint64, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldSize is only allowed on UpdateOne operations")
 	}
@@ -6894,10 +6931,24 @@ func (m *UnsavedPostAttachmentMutation) AddedSize() (r uint64, exists bool) {
 	return *v, true
 }
 
+// ClearSize clears the value of the "size" field.
+func (m *UnsavedPostAttachmentMutation) ClearSize() {
+	m.size = nil
+	m.addsize = nil
+	m.clearedFields[unsavedpostattachment.FieldSize] = struct{}{}
+}
+
+// SizeCleared returns if the "size" field was cleared in this mutation.
+func (m *UnsavedPostAttachmentMutation) SizeCleared() bool {
+	_, ok := m.clearedFields[unsavedpostattachment.FieldSize]
+	return ok
+}
+
 // ResetSize resets all changes to the "size" field.
 func (m *UnsavedPostAttachmentMutation) ResetSize() {
 	m.size = nil
 	m.addsize = nil
+	delete(m.clearedFields, unsavedpostattachment.FieldSize)
 }
 
 // SetName sets the "name" field.
@@ -6917,7 +6968,7 @@ func (m *UnsavedPostAttachmentMutation) Name() (r string, exists bool) {
 // OldName returns the old "name" field's value of the UnsavedPostAttachment entity.
 // If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostAttachmentMutation) OldName(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostAttachmentMutation) OldName(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldName is only allowed on UpdateOne operations")
 	}
@@ -6931,9 +6982,22 @@ func (m *UnsavedPostAttachmentMutation) OldName(ctx context.Context) (v string, 
 	return oldValue.Name, nil
 }
 
+// ClearName clears the value of the "name" field.
+func (m *UnsavedPostAttachmentMutation) ClearName() {
+	m.name = nil
+	m.clearedFields[unsavedpostattachment.FieldName] = struct{}{}
+}
+
+// NameCleared returns if the "name" field was cleared in this mutation.
+func (m *UnsavedPostAttachmentMutation) NameCleared() bool {
+	_, ok := m.clearedFields[unsavedpostattachment.FieldName]
+	return ok
+}
+
 // ResetName resets all changes to the "name" field.
 func (m *UnsavedPostAttachmentMutation) ResetName() {
 	m.name = nil
+	delete(m.clearedFields, unsavedpostattachment.FieldName)
 }
 
 // SetMime sets the "mime" field.
@@ -6953,7 +7017,7 @@ func (m *UnsavedPostAttachmentMutation) Mime() (r string, exists bool) {
 // OldMime returns the old "mime" field's value of the UnsavedPostAttachment entity.
 // If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostAttachmentMutation) OldMime(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostAttachmentMutation) OldMime(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldMime is only allowed on UpdateOne operations")
 	}
@@ -6967,9 +7031,22 @@ func (m *UnsavedPostAttachmentMutation) OldMime(ctx context.Context) (v string, 
 	return oldValue.Mime, nil
 }
 
+// ClearMime clears the value of the "mime" field.
+func (m *UnsavedPostAttachmentMutation) ClearMime() {
+	m.mime = nil
+	m.clearedFields[unsavedpostattachment.FieldMime] = struct{}{}
+}
+
+// MimeCleared returns if the "mime" field was cleared in this mutation.
+func (m *UnsavedPostAttachmentMutation) MimeCleared() bool {
+	_, ok := m.clearedFields[unsavedpostattachment.FieldMime]
+	return ok
+}
+
 // ResetMime resets all changes to the "mime" field.
 func (m *UnsavedPostAttachmentMutation) ResetMime() {
 	m.mime = nil
+	delete(m.clearedFields, unsavedpostattachment.FieldMime)
 }
 
 // SetURL sets the "url" field.
@@ -6989,7 +7066,7 @@ func (m *UnsavedPostAttachmentMutation) URL() (r string, exists bool) {
 // OldURL returns the old "url" field's value of the UnsavedPostAttachment entity.
 // If the UnsavedPostAttachment object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostAttachmentMutation) OldURL(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostAttachmentMutation) OldURL(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
 	}
@@ -7003,9 +7080,22 @@ func (m *UnsavedPostAttachmentMutation) OldURL(ctx context.Context) (v string, e
 	return oldValue.URL, nil
 }
 
+// ClearURL clears the value of the "url" field.
+func (m *UnsavedPostAttachmentMutation) ClearURL() {
+	m.url = nil
+	m.clearedFields[unsavedpostattachment.FieldURL] = struct{}{}
+}
+
+// URLCleared returns if the "url" field was cleared in this mutation.
+func (m *UnsavedPostAttachmentMutation) URLCleared() bool {
+	_, ok := m.clearedFields[unsavedpostattachment.FieldURL]
+	return ok
+}
+
 // ResetURL resets all changes to the "url" field.
 func (m *UnsavedPostAttachmentMutation) ResetURL() {
 	m.url = nil
+	delete(m.clearedFields, unsavedpostattachment.FieldURL)
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -7097,9 +7187,12 @@ func (m *UnsavedPostAttachmentMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnsavedPostAttachmentMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.uuid != nil {
 		fields = append(fields, unsavedpostattachment.FieldUUID)
+	}
+	if m.validity != nil {
+		fields = append(fields, unsavedpostattachment.FieldValidity)
 	}
 	if m.size != nil {
 		fields = append(fields, unsavedpostattachment.FieldSize)
@@ -7126,6 +7219,8 @@ func (m *UnsavedPostAttachmentMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case unsavedpostattachment.FieldUUID:
 		return m.UUID()
+	case unsavedpostattachment.FieldValidity:
+		return m.Validity()
 	case unsavedpostattachment.FieldSize:
 		return m.Size()
 	case unsavedpostattachment.FieldName:
@@ -7147,6 +7242,8 @@ func (m *UnsavedPostAttachmentMutation) OldField(ctx context.Context, name strin
 	switch name {
 	case unsavedpostattachment.FieldUUID:
 		return m.OldUUID(ctx)
+	case unsavedpostattachment.FieldValidity:
+		return m.OldValidity(ctx)
 	case unsavedpostattachment.FieldSize:
 		return m.OldSize(ctx)
 	case unsavedpostattachment.FieldName:
@@ -7172,6 +7269,13 @@ func (m *UnsavedPostAttachmentMutation) SetField(name string, value ent.Value) e
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUUID(v)
+		return nil
+	case unsavedpostattachment.FieldValidity:
+		v, ok := value.(unsavedpostattachment.Validity)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidity(v)
 		return nil
 	case unsavedpostattachment.FieldSize:
 		v, ok := value.(uint64)
@@ -7252,7 +7356,20 @@ func (m *UnsavedPostAttachmentMutation) AddField(name string, value ent.Value) e
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UnsavedPostAttachmentMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(unsavedpostattachment.FieldSize) {
+		fields = append(fields, unsavedpostattachment.FieldSize)
+	}
+	if m.FieldCleared(unsavedpostattachment.FieldName) {
+		fields = append(fields, unsavedpostattachment.FieldName)
+	}
+	if m.FieldCleared(unsavedpostattachment.FieldMime) {
+		fields = append(fields, unsavedpostattachment.FieldMime)
+	}
+	if m.FieldCleared(unsavedpostattachment.FieldURL) {
+		fields = append(fields, unsavedpostattachment.FieldURL)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -7265,6 +7382,20 @@ func (m *UnsavedPostAttachmentMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UnsavedPostAttachmentMutation) ClearField(name string) error {
+	switch name {
+	case unsavedpostattachment.FieldSize:
+		m.ClearSize()
+		return nil
+	case unsavedpostattachment.FieldName:
+		m.ClearName()
+		return nil
+	case unsavedpostattachment.FieldMime:
+		m.ClearMime()
+		return nil
+	case unsavedpostattachment.FieldURL:
+		m.ClearURL()
+		return nil
+	}
 	return fmt.Errorf("unknown UnsavedPostAttachment nullable field %s", name)
 }
 
@@ -7274,6 +7405,9 @@ func (m *UnsavedPostAttachmentMutation) ResetField(name string) error {
 	switch name {
 	case unsavedpostattachment.FieldUUID:
 		m.ResetUUID()
+		return nil
+	case unsavedpostattachment.FieldValidity:
+		m.ResetValidity()
 		return nil
 	case unsavedpostattachment.FieldSize:
 		m.ResetSize()
@@ -7377,6 +7511,7 @@ type UnsavedPostImageMutation struct {
 	typ                 string
 	id                  *int
 	uuid                *string
+	validity            *unsavedpostimage.Validity
 	width               *uint32
 	addwidth            *uint32
 	height              *uint32
@@ -7508,6 +7643,42 @@ func (m *UnsavedPostImageMutation) ResetUUID() {
 	m.uuid = nil
 }
 
+// SetValidity sets the "validity" field.
+func (m *UnsavedPostImageMutation) SetValidity(u unsavedpostimage.Validity) {
+	m.validity = &u
+}
+
+// Validity returns the value of the "validity" field in the mutation.
+func (m *UnsavedPostImageMutation) Validity() (r unsavedpostimage.Validity, exists bool) {
+	v := m.validity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidity returns the old "validity" field's value of the UnsavedPostImage entity.
+// If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostImageMutation) OldValidity(ctx context.Context) (v unsavedpostimage.Validity, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldValidity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldValidity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidity: %w", err)
+	}
+	return oldValue.Validity, nil
+}
+
+// ResetValidity resets all changes to the "validity" field.
+func (m *UnsavedPostImageMutation) ResetValidity() {
+	m.validity = nil
+}
+
 // SetWidth sets the "width" field.
 func (m *UnsavedPostImageMutation) SetWidth(u uint32) {
 	m.width = &u
@@ -7526,7 +7697,7 @@ func (m *UnsavedPostImageMutation) Width() (r uint32, exists bool) {
 // OldWidth returns the old "width" field's value of the UnsavedPostImage entity.
 // If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostImageMutation) OldWidth(ctx context.Context) (v uint32, err error) {
+func (m *UnsavedPostImageMutation) OldWidth(ctx context.Context) (v *uint32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldWidth is only allowed on UpdateOne operations")
 	}
@@ -7558,10 +7729,24 @@ func (m *UnsavedPostImageMutation) AddedWidth() (r uint32, exists bool) {
 	return *v, true
 }
 
+// ClearWidth clears the value of the "width" field.
+func (m *UnsavedPostImageMutation) ClearWidth() {
+	m.width = nil
+	m.addwidth = nil
+	m.clearedFields[unsavedpostimage.FieldWidth] = struct{}{}
+}
+
+// WidthCleared returns if the "width" field was cleared in this mutation.
+func (m *UnsavedPostImageMutation) WidthCleared() bool {
+	_, ok := m.clearedFields[unsavedpostimage.FieldWidth]
+	return ok
+}
+
 // ResetWidth resets all changes to the "width" field.
 func (m *UnsavedPostImageMutation) ResetWidth() {
 	m.width = nil
 	m.addwidth = nil
+	delete(m.clearedFields, unsavedpostimage.FieldWidth)
 }
 
 // SetHeight sets the "height" field.
@@ -7582,7 +7767,7 @@ func (m *UnsavedPostImageMutation) Height() (r uint32, exists bool) {
 // OldHeight returns the old "height" field's value of the UnsavedPostImage entity.
 // If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostImageMutation) OldHeight(ctx context.Context) (v uint32, err error) {
+func (m *UnsavedPostImageMutation) OldHeight(ctx context.Context) (v *uint32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldHeight is only allowed on UpdateOne operations")
 	}
@@ -7614,10 +7799,24 @@ func (m *UnsavedPostImageMutation) AddedHeight() (r uint32, exists bool) {
 	return *v, true
 }
 
+// ClearHeight clears the value of the "height" field.
+func (m *UnsavedPostImageMutation) ClearHeight() {
+	m.height = nil
+	m.addheight = nil
+	m.clearedFields[unsavedpostimage.FieldHeight] = struct{}{}
+}
+
+// HeightCleared returns if the "height" field was cleared in this mutation.
+func (m *UnsavedPostImageMutation) HeightCleared() bool {
+	_, ok := m.clearedFields[unsavedpostimage.FieldHeight]
+	return ok
+}
+
 // ResetHeight resets all changes to the "height" field.
 func (m *UnsavedPostImageMutation) ResetHeight() {
 	m.height = nil
 	m.addheight = nil
+	delete(m.clearedFields, unsavedpostimage.FieldHeight)
 }
 
 // SetHash sets the "hash" field.
@@ -7637,7 +7836,7 @@ func (m *UnsavedPostImageMutation) Hash() (r string, exists bool) {
 // OldHash returns the old "hash" field's value of the UnsavedPostImage entity.
 // If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostImageMutation) OldHash(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostImageMutation) OldHash(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldHash is only allowed on UpdateOne operations")
 	}
@@ -7651,9 +7850,22 @@ func (m *UnsavedPostImageMutation) OldHash(ctx context.Context) (v string, err e
 	return oldValue.Hash, nil
 }
 
+// ClearHash clears the value of the "hash" field.
+func (m *UnsavedPostImageMutation) ClearHash() {
+	m.hash = nil
+	m.clearedFields[unsavedpostimage.FieldHash] = struct{}{}
+}
+
+// HashCleared returns if the "hash" field was cleared in this mutation.
+func (m *UnsavedPostImageMutation) HashCleared() bool {
+	_, ok := m.clearedFields[unsavedpostimage.FieldHash]
+	return ok
+}
+
 // ResetHash resets all changes to the "hash" field.
 func (m *UnsavedPostImageMutation) ResetHash() {
 	m.hash = nil
+	delete(m.clearedFields, unsavedpostimage.FieldHash)
 }
 
 // SetTitle sets the "title" field.
@@ -7673,7 +7885,7 @@ func (m *UnsavedPostImageMutation) Title() (r string, exists bool) {
 // OldTitle returns the old "title" field's value of the UnsavedPostImage entity.
 // If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostImageMutation) OldTitle(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostImageMutation) OldTitle(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
 	}
@@ -7687,9 +7899,22 @@ func (m *UnsavedPostImageMutation) OldTitle(ctx context.Context) (v string, err 
 	return oldValue.Title, nil
 }
 
+// ClearTitle clears the value of the "title" field.
+func (m *UnsavedPostImageMutation) ClearTitle() {
+	m.title = nil
+	m.clearedFields[unsavedpostimage.FieldTitle] = struct{}{}
+}
+
+// TitleCleared returns if the "title" field was cleared in this mutation.
+func (m *UnsavedPostImageMutation) TitleCleared() bool {
+	_, ok := m.clearedFields[unsavedpostimage.FieldTitle]
+	return ok
+}
+
 // ResetTitle resets all changes to the "title" field.
 func (m *UnsavedPostImageMutation) ResetTitle() {
 	m.title = nil
+	delete(m.clearedFields, unsavedpostimage.FieldTitle)
 }
 
 // SetURL sets the "url" field.
@@ -7709,7 +7934,7 @@ func (m *UnsavedPostImageMutation) URL() (r string, exists bool) {
 // OldURL returns the old "url" field's value of the UnsavedPostImage entity.
 // If the UnsavedPostImage object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostImageMutation) OldURL(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostImageMutation) OldURL(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
 	}
@@ -7723,9 +7948,22 @@ func (m *UnsavedPostImageMutation) OldURL(ctx context.Context) (v string, err er
 	return oldValue.URL, nil
 }
 
+// ClearURL clears the value of the "url" field.
+func (m *UnsavedPostImageMutation) ClearURL() {
+	m.url = nil
+	m.clearedFields[unsavedpostimage.FieldURL] = struct{}{}
+}
+
+// URLCleared returns if the "url" field was cleared in this mutation.
+func (m *UnsavedPostImageMutation) URLCleared() bool {
+	_, ok := m.clearedFields[unsavedpostimage.FieldURL]
+	return ok
+}
+
 // ResetURL resets all changes to the "url" field.
 func (m *UnsavedPostImageMutation) ResetURL() {
 	m.url = nil
+	delete(m.clearedFields, unsavedpostimage.FieldURL)
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -7817,9 +8055,12 @@ func (m *UnsavedPostImageMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnsavedPostImageMutation) Fields() []string {
-	fields := make([]string, 0, 7)
+	fields := make([]string, 0, 8)
 	if m.uuid != nil {
 		fields = append(fields, unsavedpostimage.FieldUUID)
+	}
+	if m.validity != nil {
+		fields = append(fields, unsavedpostimage.FieldValidity)
 	}
 	if m.width != nil {
 		fields = append(fields, unsavedpostimage.FieldWidth)
@@ -7849,6 +8090,8 @@ func (m *UnsavedPostImageMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case unsavedpostimage.FieldUUID:
 		return m.UUID()
+	case unsavedpostimage.FieldValidity:
+		return m.Validity()
 	case unsavedpostimage.FieldWidth:
 		return m.Width()
 	case unsavedpostimage.FieldHeight:
@@ -7872,6 +8115,8 @@ func (m *UnsavedPostImageMutation) OldField(ctx context.Context, name string) (e
 	switch name {
 	case unsavedpostimage.FieldUUID:
 		return m.OldUUID(ctx)
+	case unsavedpostimage.FieldValidity:
+		return m.OldValidity(ctx)
 	case unsavedpostimage.FieldWidth:
 		return m.OldWidth(ctx)
 	case unsavedpostimage.FieldHeight:
@@ -7899,6 +8144,13 @@ func (m *UnsavedPostImageMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUUID(v)
+		return nil
+	case unsavedpostimage.FieldValidity:
+		v, ok := value.(unsavedpostimage.Validity)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidity(v)
 		return nil
 	case unsavedpostimage.FieldWidth:
 		v, ok := value.(uint32)
@@ -7998,7 +8250,23 @@ func (m *UnsavedPostImageMutation) AddField(name string, value ent.Value) error 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UnsavedPostImageMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(unsavedpostimage.FieldWidth) {
+		fields = append(fields, unsavedpostimage.FieldWidth)
+	}
+	if m.FieldCleared(unsavedpostimage.FieldHeight) {
+		fields = append(fields, unsavedpostimage.FieldHeight)
+	}
+	if m.FieldCleared(unsavedpostimage.FieldHash) {
+		fields = append(fields, unsavedpostimage.FieldHash)
+	}
+	if m.FieldCleared(unsavedpostimage.FieldTitle) {
+		fields = append(fields, unsavedpostimage.FieldTitle)
+	}
+	if m.FieldCleared(unsavedpostimage.FieldURL) {
+		fields = append(fields, unsavedpostimage.FieldURL)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -8011,6 +8279,23 @@ func (m *UnsavedPostImageMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UnsavedPostImageMutation) ClearField(name string) error {
+	switch name {
+	case unsavedpostimage.FieldWidth:
+		m.ClearWidth()
+		return nil
+	case unsavedpostimage.FieldHeight:
+		m.ClearHeight()
+		return nil
+	case unsavedpostimage.FieldHash:
+		m.ClearHash()
+		return nil
+	case unsavedpostimage.FieldTitle:
+		m.ClearTitle()
+		return nil
+	case unsavedpostimage.FieldURL:
+		m.ClearURL()
+		return nil
+	}
 	return fmt.Errorf("unknown UnsavedPostImage nullable field %s", name)
 }
 
@@ -8020,6 +8305,9 @@ func (m *UnsavedPostImageMutation) ResetField(name string) error {
 	switch name {
 	case unsavedpostimage.FieldUUID:
 		m.ResetUUID()
+		return nil
+	case unsavedpostimage.FieldValidity:
+		m.ResetValidity()
 		return nil
 	case unsavedpostimage.FieldWidth:
 		m.ResetWidth()
@@ -8125,6 +8413,7 @@ type UnsavedPostThumbnailMutation struct {
 	op                  Op
 	typ                 string
 	id                  *int
+	validity            *unsavedpostthumbnail.Validity
 	width               *uint32
 	addwidth            *uint32
 	height              *uint32
@@ -8219,6 +8508,42 @@ func (m *UnsavedPostThumbnailMutation) ID() (id int, exists bool) {
 	return *m.id, true
 }
 
+// SetValidity sets the "validity" field.
+func (m *UnsavedPostThumbnailMutation) SetValidity(u unsavedpostthumbnail.Validity) {
+	m.validity = &u
+}
+
+// Validity returns the value of the "validity" field in the mutation.
+func (m *UnsavedPostThumbnailMutation) Validity() (r unsavedpostthumbnail.Validity, exists bool) {
+	v := m.validity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidity returns the old "validity" field's value of the UnsavedPostThumbnail entity.
+// If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostThumbnailMutation) OldValidity(ctx context.Context) (v unsavedpostthumbnail.Validity, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldValidity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldValidity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidity: %w", err)
+	}
+	return oldValue.Validity, nil
+}
+
+// ResetValidity resets all changes to the "validity" field.
+func (m *UnsavedPostThumbnailMutation) ResetValidity() {
+	m.validity = nil
+}
+
 // SetWidth sets the "width" field.
 func (m *UnsavedPostThumbnailMutation) SetWidth(u uint32) {
 	m.width = &u
@@ -8237,7 +8562,7 @@ func (m *UnsavedPostThumbnailMutation) Width() (r uint32, exists bool) {
 // OldWidth returns the old "width" field's value of the UnsavedPostThumbnail entity.
 // If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostThumbnailMutation) OldWidth(ctx context.Context) (v uint32, err error) {
+func (m *UnsavedPostThumbnailMutation) OldWidth(ctx context.Context) (v *uint32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldWidth is only allowed on UpdateOne operations")
 	}
@@ -8269,10 +8594,24 @@ func (m *UnsavedPostThumbnailMutation) AddedWidth() (r uint32, exists bool) {
 	return *v, true
 }
 
+// ClearWidth clears the value of the "width" field.
+func (m *UnsavedPostThumbnailMutation) ClearWidth() {
+	m.width = nil
+	m.addwidth = nil
+	m.clearedFields[unsavedpostthumbnail.FieldWidth] = struct{}{}
+}
+
+// WidthCleared returns if the "width" field was cleared in this mutation.
+func (m *UnsavedPostThumbnailMutation) WidthCleared() bool {
+	_, ok := m.clearedFields[unsavedpostthumbnail.FieldWidth]
+	return ok
+}
+
 // ResetWidth resets all changes to the "width" field.
 func (m *UnsavedPostThumbnailMutation) ResetWidth() {
 	m.width = nil
 	m.addwidth = nil
+	delete(m.clearedFields, unsavedpostthumbnail.FieldWidth)
 }
 
 // SetHeight sets the "height" field.
@@ -8293,7 +8632,7 @@ func (m *UnsavedPostThumbnailMutation) Height() (r uint32, exists bool) {
 // OldHeight returns the old "height" field's value of the UnsavedPostThumbnail entity.
 // If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostThumbnailMutation) OldHeight(ctx context.Context) (v uint32, err error) {
+func (m *UnsavedPostThumbnailMutation) OldHeight(ctx context.Context) (v *uint32, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldHeight is only allowed on UpdateOne operations")
 	}
@@ -8325,10 +8664,24 @@ func (m *UnsavedPostThumbnailMutation) AddedHeight() (r uint32, exists bool) {
 	return *v, true
 }
 
+// ClearHeight clears the value of the "height" field.
+func (m *UnsavedPostThumbnailMutation) ClearHeight() {
+	m.height = nil
+	m.addheight = nil
+	m.clearedFields[unsavedpostthumbnail.FieldHeight] = struct{}{}
+}
+
+// HeightCleared returns if the "height" field was cleared in this mutation.
+func (m *UnsavedPostThumbnailMutation) HeightCleared() bool {
+	_, ok := m.clearedFields[unsavedpostthumbnail.FieldHeight]
+	return ok
+}
+
 // ResetHeight resets all changes to the "height" field.
 func (m *UnsavedPostThumbnailMutation) ResetHeight() {
 	m.height = nil
 	m.addheight = nil
+	delete(m.clearedFields, unsavedpostthumbnail.FieldHeight)
 }
 
 // SetHash sets the "hash" field.
@@ -8348,7 +8701,7 @@ func (m *UnsavedPostThumbnailMutation) Hash() (r string, exists bool) {
 // OldHash returns the old "hash" field's value of the UnsavedPostThumbnail entity.
 // If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostThumbnailMutation) OldHash(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostThumbnailMutation) OldHash(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldHash is only allowed on UpdateOne operations")
 	}
@@ -8362,9 +8715,22 @@ func (m *UnsavedPostThumbnailMutation) OldHash(ctx context.Context) (v string, e
 	return oldValue.Hash, nil
 }
 
+// ClearHash clears the value of the "hash" field.
+func (m *UnsavedPostThumbnailMutation) ClearHash() {
+	m.hash = nil
+	m.clearedFields[unsavedpostthumbnail.FieldHash] = struct{}{}
+}
+
+// HashCleared returns if the "hash" field was cleared in this mutation.
+func (m *UnsavedPostThumbnailMutation) HashCleared() bool {
+	_, ok := m.clearedFields[unsavedpostthumbnail.FieldHash]
+	return ok
+}
+
 // ResetHash resets all changes to the "hash" field.
 func (m *UnsavedPostThumbnailMutation) ResetHash() {
 	m.hash = nil
+	delete(m.clearedFields, unsavedpostthumbnail.FieldHash)
 }
 
 // SetURL sets the "url" field.
@@ -8384,7 +8750,7 @@ func (m *UnsavedPostThumbnailMutation) URL() (r string, exists bool) {
 // OldURL returns the old "url" field's value of the UnsavedPostThumbnail entity.
 // If the UnsavedPostThumbnail object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostThumbnailMutation) OldURL(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostThumbnailMutation) OldURL(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
 	}
@@ -8398,9 +8764,22 @@ func (m *UnsavedPostThumbnailMutation) OldURL(ctx context.Context) (v string, er
 	return oldValue.URL, nil
 }
 
+// ClearURL clears the value of the "url" field.
+func (m *UnsavedPostThumbnailMutation) ClearURL() {
+	m.url = nil
+	m.clearedFields[unsavedpostthumbnail.FieldURL] = struct{}{}
+}
+
+// URLCleared returns if the "url" field was cleared in this mutation.
+func (m *UnsavedPostThumbnailMutation) URLCleared() bool {
+	_, ok := m.clearedFields[unsavedpostthumbnail.FieldURL]
+	return ok
+}
+
 // ResetURL resets all changes to the "url" field.
 func (m *UnsavedPostThumbnailMutation) ResetURL() {
 	m.url = nil
+	delete(m.clearedFields, unsavedpostthumbnail.FieldURL)
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -8492,7 +8871,10 @@ func (m *UnsavedPostThumbnailMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnsavedPostThumbnailMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 6)
+	if m.validity != nil {
+		fields = append(fields, unsavedpostthumbnail.FieldValidity)
+	}
 	if m.width != nil {
 		fields = append(fields, unsavedpostthumbnail.FieldWidth)
 	}
@@ -8516,6 +8898,8 @@ func (m *UnsavedPostThumbnailMutation) Fields() []string {
 // schema.
 func (m *UnsavedPostThumbnailMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case unsavedpostthumbnail.FieldValidity:
+		return m.Validity()
 	case unsavedpostthumbnail.FieldWidth:
 		return m.Width()
 	case unsavedpostthumbnail.FieldHeight:
@@ -8535,6 +8919,8 @@ func (m *UnsavedPostThumbnailMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *UnsavedPostThumbnailMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case unsavedpostthumbnail.FieldValidity:
+		return m.OldValidity(ctx)
 	case unsavedpostthumbnail.FieldWidth:
 		return m.OldWidth(ctx)
 	case unsavedpostthumbnail.FieldHeight:
@@ -8554,6 +8940,13 @@ func (m *UnsavedPostThumbnailMutation) OldField(ctx context.Context, name string
 // type.
 func (m *UnsavedPostThumbnailMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case unsavedpostthumbnail.FieldValidity:
+		v, ok := value.(unsavedpostthumbnail.Validity)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidity(v)
+		return nil
 	case unsavedpostthumbnail.FieldWidth:
 		v, ok := value.(uint32)
 		if !ok {
@@ -8645,7 +9038,20 @@ func (m *UnsavedPostThumbnailMutation) AddField(name string, value ent.Value) er
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UnsavedPostThumbnailMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(unsavedpostthumbnail.FieldWidth) {
+		fields = append(fields, unsavedpostthumbnail.FieldWidth)
+	}
+	if m.FieldCleared(unsavedpostthumbnail.FieldHeight) {
+		fields = append(fields, unsavedpostthumbnail.FieldHeight)
+	}
+	if m.FieldCleared(unsavedpostthumbnail.FieldHash) {
+		fields = append(fields, unsavedpostthumbnail.FieldHash)
+	}
+	if m.FieldCleared(unsavedpostthumbnail.FieldURL) {
+		fields = append(fields, unsavedpostthumbnail.FieldURL)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -8658,6 +9064,20 @@ func (m *UnsavedPostThumbnailMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UnsavedPostThumbnailMutation) ClearField(name string) error {
+	switch name {
+	case unsavedpostthumbnail.FieldWidth:
+		m.ClearWidth()
+		return nil
+	case unsavedpostthumbnail.FieldHeight:
+		m.ClearHeight()
+		return nil
+	case unsavedpostthumbnail.FieldHash:
+		m.ClearHash()
+		return nil
+	case unsavedpostthumbnail.FieldURL:
+		m.ClearURL()
+		return nil
+	}
 	return fmt.Errorf("unknown UnsavedPostThumbnail nullable field %s", name)
 }
 
@@ -8665,6 +9085,9 @@ func (m *UnsavedPostThumbnailMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *UnsavedPostThumbnailMutation) ResetField(name string) error {
 	switch name {
+	case unsavedpostthumbnail.FieldValidity:
+		m.ResetValidity()
+		return nil
 	case unsavedpostthumbnail.FieldWidth:
 		m.ResetWidth()
 		return nil
@@ -8767,6 +9190,7 @@ type UnsavedPostVideoMutation struct {
 	typ                 string
 	id                  *int
 	uuid                *string
+	validity            *unsavedpostvideo.Validity
 	title               *string
 	url                 *string
 	created_at          *time.Time
@@ -8893,6 +9317,42 @@ func (m *UnsavedPostVideoMutation) ResetUUID() {
 	m.uuid = nil
 }
 
+// SetValidity sets the "validity" field.
+func (m *UnsavedPostVideoMutation) SetValidity(u unsavedpostvideo.Validity) {
+	m.validity = &u
+}
+
+// Validity returns the value of the "validity" field in the mutation.
+func (m *UnsavedPostVideoMutation) Validity() (r unsavedpostvideo.Validity, exists bool) {
+	v := m.validity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldValidity returns the old "validity" field's value of the UnsavedPostVideo entity.
+// If the UnsavedPostVideo object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UnsavedPostVideoMutation) OldValidity(ctx context.Context) (v unsavedpostvideo.Validity, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldValidity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldValidity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldValidity: %w", err)
+	}
+	return oldValue.Validity, nil
+}
+
+// ResetValidity resets all changes to the "validity" field.
+func (m *UnsavedPostVideoMutation) ResetValidity() {
+	m.validity = nil
+}
+
 // SetTitle sets the "title" field.
 func (m *UnsavedPostVideoMutation) SetTitle(s string) {
 	m.title = &s
@@ -8910,7 +9370,7 @@ func (m *UnsavedPostVideoMutation) Title() (r string, exists bool) {
 // OldTitle returns the old "title" field's value of the UnsavedPostVideo entity.
 // If the UnsavedPostVideo object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostVideoMutation) OldTitle(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostVideoMutation) OldTitle(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldTitle is only allowed on UpdateOne operations")
 	}
@@ -8924,9 +9384,22 @@ func (m *UnsavedPostVideoMutation) OldTitle(ctx context.Context) (v string, err 
 	return oldValue.Title, nil
 }
 
+// ClearTitle clears the value of the "title" field.
+func (m *UnsavedPostVideoMutation) ClearTitle() {
+	m.title = nil
+	m.clearedFields[unsavedpostvideo.FieldTitle] = struct{}{}
+}
+
+// TitleCleared returns if the "title" field was cleared in this mutation.
+func (m *UnsavedPostVideoMutation) TitleCleared() bool {
+	_, ok := m.clearedFields[unsavedpostvideo.FieldTitle]
+	return ok
+}
+
 // ResetTitle resets all changes to the "title" field.
 func (m *UnsavedPostVideoMutation) ResetTitle() {
 	m.title = nil
+	delete(m.clearedFields, unsavedpostvideo.FieldTitle)
 }
 
 // SetURL sets the "url" field.
@@ -8946,7 +9419,7 @@ func (m *UnsavedPostVideoMutation) URL() (r string, exists bool) {
 // OldURL returns the old "url" field's value of the UnsavedPostVideo entity.
 // If the UnsavedPostVideo object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UnsavedPostVideoMutation) OldURL(ctx context.Context) (v string, err error) {
+func (m *UnsavedPostVideoMutation) OldURL(ctx context.Context) (v *string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, fmt.Errorf("OldURL is only allowed on UpdateOne operations")
 	}
@@ -8960,9 +9433,22 @@ func (m *UnsavedPostVideoMutation) OldURL(ctx context.Context) (v string, err er
 	return oldValue.URL, nil
 }
 
+// ClearURL clears the value of the "url" field.
+func (m *UnsavedPostVideoMutation) ClearURL() {
+	m.url = nil
+	m.clearedFields[unsavedpostvideo.FieldURL] = struct{}{}
+}
+
+// URLCleared returns if the "url" field was cleared in this mutation.
+func (m *UnsavedPostVideoMutation) URLCleared() bool {
+	_, ok := m.clearedFields[unsavedpostvideo.FieldURL]
+	return ok
+}
+
 // ResetURL resets all changes to the "url" field.
 func (m *UnsavedPostVideoMutation) ResetURL() {
 	m.url = nil
+	delete(m.clearedFields, unsavedpostvideo.FieldURL)
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -9054,9 +9540,12 @@ func (m *UnsavedPostVideoMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UnsavedPostVideoMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.uuid != nil {
 		fields = append(fields, unsavedpostvideo.FieldUUID)
+	}
+	if m.validity != nil {
+		fields = append(fields, unsavedpostvideo.FieldValidity)
 	}
 	if m.title != nil {
 		fields = append(fields, unsavedpostvideo.FieldTitle)
@@ -9077,6 +9566,8 @@ func (m *UnsavedPostVideoMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case unsavedpostvideo.FieldUUID:
 		return m.UUID()
+	case unsavedpostvideo.FieldValidity:
+		return m.Validity()
 	case unsavedpostvideo.FieldTitle:
 		return m.Title()
 	case unsavedpostvideo.FieldURL:
@@ -9094,6 +9585,8 @@ func (m *UnsavedPostVideoMutation) OldField(ctx context.Context, name string) (e
 	switch name {
 	case unsavedpostvideo.FieldUUID:
 		return m.OldUUID(ctx)
+	case unsavedpostvideo.FieldValidity:
+		return m.OldValidity(ctx)
 	case unsavedpostvideo.FieldTitle:
 		return m.OldTitle(ctx)
 	case unsavedpostvideo.FieldURL:
@@ -9115,6 +9608,13 @@ func (m *UnsavedPostVideoMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUUID(v)
+		return nil
+	case unsavedpostvideo.FieldValidity:
+		v, ok := value.(unsavedpostvideo.Validity)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetValidity(v)
 		return nil
 	case unsavedpostvideo.FieldTitle:
 		v, ok := value.(string)
@@ -9166,7 +9666,14 @@ func (m *UnsavedPostVideoMutation) AddField(name string, value ent.Value) error 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *UnsavedPostVideoMutation) ClearedFields() []string {
-	return nil
+	var fields []string
+	if m.FieldCleared(unsavedpostvideo.FieldTitle) {
+		fields = append(fields, unsavedpostvideo.FieldTitle)
+	}
+	if m.FieldCleared(unsavedpostvideo.FieldURL) {
+		fields = append(fields, unsavedpostvideo.FieldURL)
+	}
+	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -9179,6 +9686,14 @@ func (m *UnsavedPostVideoMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *UnsavedPostVideoMutation) ClearField(name string) error {
+	switch name {
+	case unsavedpostvideo.FieldTitle:
+		m.ClearTitle()
+		return nil
+	case unsavedpostvideo.FieldURL:
+		m.ClearURL()
+		return nil
+	}
 	return fmt.Errorf("unknown UnsavedPostVideo nullable field %s", name)
 }
 
@@ -9188,6 +9703,9 @@ func (m *UnsavedPostVideoMutation) ResetField(name string) error {
 	switch name {
 	case unsavedpostvideo.FieldUUID:
 		m.ResetUUID()
+		return nil
+	case unsavedpostvideo.FieldValidity:
+		m.ResetValidity()
 		return nil
 	case unsavedpostvideo.FieldTitle:
 		m.ResetTitle()

@@ -27,15 +27,45 @@ func (upvc *UnsavedPostVideoCreate) SetUUID(s string) *UnsavedPostVideoCreate {
 	return upvc
 }
 
+// SetValidity sets the "validity" field.
+func (upvc *UnsavedPostVideoCreate) SetValidity(u unsavedpostvideo.Validity) *UnsavedPostVideoCreate {
+	upvc.mutation.SetValidity(u)
+	return upvc
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (upvc *UnsavedPostVideoCreate) SetNillableValidity(u *unsavedpostvideo.Validity) *UnsavedPostVideoCreate {
+	if u != nil {
+		upvc.SetValidity(*u)
+	}
+	return upvc
+}
+
 // SetTitle sets the "title" field.
 func (upvc *UnsavedPostVideoCreate) SetTitle(s string) *UnsavedPostVideoCreate {
 	upvc.mutation.SetTitle(s)
 	return upvc
 }
 
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (upvc *UnsavedPostVideoCreate) SetNillableTitle(s *string) *UnsavedPostVideoCreate {
+	if s != nil {
+		upvc.SetTitle(*s)
+	}
+	return upvc
+}
+
 // SetURL sets the "url" field.
 func (upvc *UnsavedPostVideoCreate) SetURL(s string) *UnsavedPostVideoCreate {
 	upvc.mutation.SetURL(s)
+	return upvc
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (upvc *UnsavedPostVideoCreate) SetNillableURL(s *string) *UnsavedPostVideoCreate {
+	if s != nil {
+		upvc.SetURL(*s)
+	}
 	return upvc
 }
 
@@ -116,6 +146,10 @@ func (upvc *UnsavedPostVideoCreate) SaveX(ctx context.Context) *UnsavedPostVideo
 
 // defaults sets the default values of the builder before save.
 func (upvc *UnsavedPostVideoCreate) defaults() {
+	if _, ok := upvc.mutation.Validity(); !ok {
+		v := unsavedpostvideo.DefaultValidity
+		upvc.mutation.SetValidity(v)
+	}
 	if _, ok := upvc.mutation.CreatedAt(); !ok {
 		v := unsavedpostvideo.DefaultCreatedAt()
 		upvc.mutation.SetCreatedAt(v)
@@ -132,16 +166,18 @@ func (upvc *UnsavedPostVideoCreate) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
-	if _, ok := upvc.mutation.Title(); !ok {
-		return &ValidationError{Name: "title", err: errors.New("ent: missing required field \"title\"")}
+	if _, ok := upvc.mutation.Validity(); !ok {
+		return &ValidationError{Name: "validity", err: errors.New("ent: missing required field \"validity\"")}
+	}
+	if v, ok := upvc.mutation.Validity(); ok {
+		if err := unsavedpostvideo.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
 	}
 	if v, ok := upvc.mutation.Title(); ok {
 		if err := unsavedpostvideo.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
 		}
-	}
-	if _, ok := upvc.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
 	}
 	if v, ok := upvc.mutation.URL(); ok {
 		if err := unsavedpostvideo.URLValidator(v); err != nil {
@@ -189,13 +225,21 @@ func (upvc *UnsavedPostVideoCreate) createSpec() (*UnsavedPostVideo, *sqlgraph.C
 		})
 		_node.UUID = value
 	}
+	if value, ok := upvc.mutation.Validity(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostvideo.FieldValidity,
+		})
+		_node.Validity = value
+	}
 	if value, ok := upvc.mutation.Title(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
 			Column: unsavedpostvideo.FieldTitle,
 		})
-		_node.Title = value
+		_node.Title = &value
 	}
 	if value, ok := upvc.mutation.URL(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -203,7 +247,7 @@ func (upvc *UnsavedPostVideoCreate) createSpec() (*UnsavedPostVideo, *sqlgraph.C
 			Value:  value,
 			Column: unsavedpostvideo.FieldURL,
 		})
-		_node.URL = value
+		_node.URL = &value
 	}
 	if value, ok := upvc.mutation.CreatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

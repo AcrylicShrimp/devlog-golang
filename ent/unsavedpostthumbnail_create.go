@@ -21,9 +21,31 @@ type UnsavedPostThumbnailCreate struct {
 	hooks    []Hook
 }
 
+// SetValidity sets the "validity" field.
+func (uptc *UnsavedPostThumbnailCreate) SetValidity(u unsavedpostthumbnail.Validity) *UnsavedPostThumbnailCreate {
+	uptc.mutation.SetValidity(u)
+	return uptc
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (uptc *UnsavedPostThumbnailCreate) SetNillableValidity(u *unsavedpostthumbnail.Validity) *UnsavedPostThumbnailCreate {
+	if u != nil {
+		uptc.SetValidity(*u)
+	}
+	return uptc
+}
+
 // SetWidth sets the "width" field.
 func (uptc *UnsavedPostThumbnailCreate) SetWidth(u uint32) *UnsavedPostThumbnailCreate {
 	uptc.mutation.SetWidth(u)
+	return uptc
+}
+
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (uptc *UnsavedPostThumbnailCreate) SetNillableWidth(u *uint32) *UnsavedPostThumbnailCreate {
+	if u != nil {
+		uptc.SetWidth(*u)
+	}
 	return uptc
 }
 
@@ -33,15 +55,39 @@ func (uptc *UnsavedPostThumbnailCreate) SetHeight(u uint32) *UnsavedPostThumbnai
 	return uptc
 }
 
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (uptc *UnsavedPostThumbnailCreate) SetNillableHeight(u *uint32) *UnsavedPostThumbnailCreate {
+	if u != nil {
+		uptc.SetHeight(*u)
+	}
+	return uptc
+}
+
 // SetHash sets the "hash" field.
 func (uptc *UnsavedPostThumbnailCreate) SetHash(s string) *UnsavedPostThumbnailCreate {
 	uptc.mutation.SetHash(s)
 	return uptc
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (uptc *UnsavedPostThumbnailCreate) SetNillableHash(s *string) *UnsavedPostThumbnailCreate {
+	if s != nil {
+		uptc.SetHash(*s)
+	}
+	return uptc
+}
+
 // SetURL sets the "url" field.
 func (uptc *UnsavedPostThumbnailCreate) SetURL(s string) *UnsavedPostThumbnailCreate {
 	uptc.mutation.SetURL(s)
+	return uptc
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (uptc *UnsavedPostThumbnailCreate) SetNillableURL(s *string) *UnsavedPostThumbnailCreate {
+	if s != nil {
+		uptc.SetURL(*s)
+	}
 	return uptc
 }
 
@@ -122,6 +168,10 @@ func (uptc *UnsavedPostThumbnailCreate) SaveX(ctx context.Context) *UnsavedPostT
 
 // defaults sets the default values of the builder before save.
 func (uptc *UnsavedPostThumbnailCreate) defaults() {
+	if _, ok := uptc.mutation.Validity(); !ok {
+		v := unsavedpostthumbnail.DefaultValidity
+		uptc.mutation.SetValidity(v)
+	}
 	if _, ok := uptc.mutation.CreatedAt(); !ok {
 		v := unsavedpostthumbnail.DefaultCreatedAt()
 		uptc.mutation.SetCreatedAt(v)
@@ -130,22 +180,18 @@ func (uptc *UnsavedPostThumbnailCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (uptc *UnsavedPostThumbnailCreate) check() error {
-	if _, ok := uptc.mutation.Width(); !ok {
-		return &ValidationError{Name: "width", err: errors.New("ent: missing required field \"width\"")}
+	if _, ok := uptc.mutation.Validity(); !ok {
+		return &ValidationError{Name: "validity", err: errors.New("ent: missing required field \"validity\"")}
 	}
-	if _, ok := uptc.mutation.Height(); !ok {
-		return &ValidationError{Name: "height", err: errors.New("ent: missing required field \"height\"")}
-	}
-	if _, ok := uptc.mutation.Hash(); !ok {
-		return &ValidationError{Name: "hash", err: errors.New("ent: missing required field \"hash\"")}
+	if v, ok := uptc.mutation.Validity(); ok {
+		if err := unsavedpostthumbnail.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
 	}
 	if v, ok := uptc.mutation.Hash(); ok {
 		if err := unsavedpostthumbnail.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
 		}
-	}
-	if _, ok := uptc.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
 	}
 	if v, ok := uptc.mutation.URL(); ok {
 		if err := unsavedpostthumbnail.URLValidator(v); err != nil {
@@ -185,13 +231,21 @@ func (uptc *UnsavedPostThumbnailCreate) createSpec() (*UnsavedPostThumbnail, *sq
 			},
 		}
 	)
+	if value, ok := uptc.mutation.Validity(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostthumbnail.FieldValidity,
+		})
+		_node.Validity = value
+	}
 	if value, ok := uptc.mutation.Width(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
 			Value:  value,
 			Column: unsavedpostthumbnail.FieldWidth,
 		})
-		_node.Width = value
+		_node.Width = &value
 	}
 	if value, ok := uptc.mutation.Height(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -199,7 +253,7 @@ func (uptc *UnsavedPostThumbnailCreate) createSpec() (*UnsavedPostThumbnail, *sq
 			Value:  value,
 			Column: unsavedpostthumbnail.FieldHeight,
 		})
-		_node.Height = value
+		_node.Height = &value
 	}
 	if value, ok := uptc.mutation.Hash(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -207,7 +261,7 @@ func (uptc *UnsavedPostThumbnailCreate) createSpec() (*UnsavedPostThumbnail, *sq
 			Value:  value,
 			Column: unsavedpostthumbnail.FieldHash,
 		})
-		_node.Hash = value
+		_node.Hash = &value
 	}
 	if value, ok := uptc.mutation.URL(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -215,7 +269,7 @@ func (uptc *UnsavedPostThumbnailCreate) createSpec() (*UnsavedPostThumbnail, *sq
 			Value:  value,
 			Column: unsavedpostthumbnail.FieldURL,
 		})
-		_node.URL = value
+		_node.URL = &value
 	}
 	if value, ok := uptc.mutation.CreatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

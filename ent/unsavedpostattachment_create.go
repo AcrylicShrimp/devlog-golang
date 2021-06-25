@@ -27,9 +27,31 @@ func (upac *UnsavedPostAttachmentCreate) SetUUID(s string) *UnsavedPostAttachmen
 	return upac
 }
 
+// SetValidity sets the "validity" field.
+func (upac *UnsavedPostAttachmentCreate) SetValidity(u unsavedpostattachment.Validity) *UnsavedPostAttachmentCreate {
+	upac.mutation.SetValidity(u)
+	return upac
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (upac *UnsavedPostAttachmentCreate) SetNillableValidity(u *unsavedpostattachment.Validity) *UnsavedPostAttachmentCreate {
+	if u != nil {
+		upac.SetValidity(*u)
+	}
+	return upac
+}
+
 // SetSize sets the "size" field.
 func (upac *UnsavedPostAttachmentCreate) SetSize(u uint64) *UnsavedPostAttachmentCreate {
 	upac.mutation.SetSize(u)
+	return upac
+}
+
+// SetNillableSize sets the "size" field if the given value is not nil.
+func (upac *UnsavedPostAttachmentCreate) SetNillableSize(u *uint64) *UnsavedPostAttachmentCreate {
+	if u != nil {
+		upac.SetSize(*u)
+	}
 	return upac
 }
 
@@ -39,15 +61,39 @@ func (upac *UnsavedPostAttachmentCreate) SetName(s string) *UnsavedPostAttachmen
 	return upac
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (upac *UnsavedPostAttachmentCreate) SetNillableName(s *string) *UnsavedPostAttachmentCreate {
+	if s != nil {
+		upac.SetName(*s)
+	}
+	return upac
+}
+
 // SetMime sets the "mime" field.
 func (upac *UnsavedPostAttachmentCreate) SetMime(s string) *UnsavedPostAttachmentCreate {
 	upac.mutation.SetMime(s)
 	return upac
 }
 
+// SetNillableMime sets the "mime" field if the given value is not nil.
+func (upac *UnsavedPostAttachmentCreate) SetNillableMime(s *string) *UnsavedPostAttachmentCreate {
+	if s != nil {
+		upac.SetMime(*s)
+	}
+	return upac
+}
+
 // SetURL sets the "url" field.
 func (upac *UnsavedPostAttachmentCreate) SetURL(s string) *UnsavedPostAttachmentCreate {
 	upac.mutation.SetURL(s)
+	return upac
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (upac *UnsavedPostAttachmentCreate) SetNillableURL(s *string) *UnsavedPostAttachmentCreate {
+	if s != nil {
+		upac.SetURL(*s)
+	}
 	return upac
 }
 
@@ -128,6 +174,10 @@ func (upac *UnsavedPostAttachmentCreate) SaveX(ctx context.Context) *UnsavedPost
 
 // defaults sets the default values of the builder before save.
 func (upac *UnsavedPostAttachmentCreate) defaults() {
+	if _, ok := upac.mutation.Validity(); !ok {
+		v := unsavedpostattachment.DefaultValidity
+		upac.mutation.SetValidity(v)
+	}
 	if _, ok := upac.mutation.CreatedAt(); !ok {
 		v := unsavedpostattachment.DefaultCreatedAt()
 		upac.mutation.SetCreatedAt(v)
@@ -144,27 +194,23 @@ func (upac *UnsavedPostAttachmentCreate) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
-	if _, ok := upac.mutation.Size(); !ok {
-		return &ValidationError{Name: "size", err: errors.New("ent: missing required field \"size\"")}
+	if _, ok := upac.mutation.Validity(); !ok {
+		return &ValidationError{Name: "validity", err: errors.New("ent: missing required field \"validity\"")}
 	}
-	if _, ok := upac.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
+	if v, ok := upac.mutation.Validity(); ok {
+		if err := unsavedpostattachment.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
 	}
 	if v, ok := upac.mutation.Name(); ok {
 		if err := unsavedpostattachment.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
 		}
 	}
-	if _, ok := upac.mutation.Mime(); !ok {
-		return &ValidationError{Name: "mime", err: errors.New("ent: missing required field \"mime\"")}
-	}
 	if v, ok := upac.mutation.Mime(); ok {
 		if err := unsavedpostattachment.MimeValidator(v); err != nil {
 			return &ValidationError{Name: "mime", err: fmt.Errorf("ent: validator failed for field \"mime\": %w", err)}
 		}
-	}
-	if _, ok := upac.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
 	}
 	if v, ok := upac.mutation.URL(); ok {
 		if err := unsavedpostattachment.URLValidator(v); err != nil {
@@ -212,13 +258,21 @@ func (upac *UnsavedPostAttachmentCreate) createSpec() (*UnsavedPostAttachment, *
 		})
 		_node.UUID = value
 	}
+	if value, ok := upac.mutation.Validity(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostattachment.FieldValidity,
+		})
+		_node.Validity = value
+	}
 	if value, ok := upac.mutation.Size(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint64,
 			Value:  value,
 			Column: unsavedpostattachment.FieldSize,
 		})
-		_node.Size = value
+		_node.Size = &value
 	}
 	if value, ok := upac.mutation.Name(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -226,7 +280,7 @@ func (upac *UnsavedPostAttachmentCreate) createSpec() (*UnsavedPostAttachment, *
 			Value:  value,
 			Column: unsavedpostattachment.FieldName,
 		})
-		_node.Name = value
+		_node.Name = &value
 	}
 	if value, ok := upac.mutation.Mime(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -234,7 +288,7 @@ func (upac *UnsavedPostAttachmentCreate) createSpec() (*UnsavedPostAttachment, *
 			Value:  value,
 			Column: unsavedpostattachment.FieldMime,
 		})
-		_node.Mime = value
+		_node.Mime = &value
 	}
 	if value, ok := upac.mutation.URL(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
@@ -242,7 +296,7 @@ func (upac *UnsavedPostAttachmentCreate) createSpec() (*UnsavedPostAttachment, *
 			Value:  value,
 			Column: unsavedpostattachment.FieldURL,
 		})
-		_node.URL = value
+		_node.URL = &value
 	}
 	if value, ok := upac.mutation.CreatedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{

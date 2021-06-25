@@ -230,10 +230,11 @@ var (
 	UnsavedPostAttachmentsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "uuid", Type: field.TypeString, Size: 64},
-		{Name: "size", Type: field.TypeUint64},
-		{Name: "name", Type: field.TypeString, Size: 255},
-		{Name: "mime", Type: field.TypeString, Size: 64},
-		{Name: "url", Type: field.TypeString, Unique: true, Size: 512},
+		{Name: "validity", Type: field.TypeEnum, Enums: []string{"pending", "valid", "invalid"}, Default: "pending"},
+		{Name: "size", Type: field.TypeUint64, Nullable: true},
+		{Name: "name", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "mime", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "url", Type: field.TypeString, Nullable: true, Size: 512},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "unsaved_post_attachments", Type: field.TypeInt, Nullable: true},
 	}
@@ -245,7 +246,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "unsaved_post_attachments_unsaved_posts_attachments",
-				Columns:    []*schema.Column{UnsavedPostAttachmentsColumns[7]},
+				Columns:    []*schema.Column{UnsavedPostAttachmentsColumns[8]},
 				RefColumns: []*schema.Column{UnsavedPostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -254,12 +255,13 @@ var (
 	// UnsavedPostImagesColumns holds the columns for the "unsaved_post_images" table.
 	UnsavedPostImagesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "uuid", Type: field.TypeString, Unique: true, Size: 64},
-		{Name: "width", Type: field.TypeUint32},
-		{Name: "height", Type: field.TypeUint32},
-		{Name: "hash", Type: field.TypeString, Size: 64},
-		{Name: "title", Type: field.TypeString, Size: 255},
-		{Name: "url", Type: field.TypeString, Size: 512},
+		{Name: "uuid", Type: field.TypeString, Size: 64},
+		{Name: "validity", Type: field.TypeEnum, Enums: []string{"pending", "valid", "invalid"}, Default: "pending"},
+		{Name: "width", Type: field.TypeUint32, Nullable: true},
+		{Name: "height", Type: field.TypeUint32, Nullable: true},
+		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "title", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "url", Type: field.TypeString, Nullable: true, Size: 512},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "unsaved_post_images", Type: field.TypeInt, Nullable: true},
 	}
@@ -271,7 +273,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "unsaved_post_images_unsaved_posts_images",
-				Columns:    []*schema.Column{UnsavedPostImagesColumns[8]},
+				Columns:    []*schema.Column{UnsavedPostImagesColumns[9]},
 				RefColumns: []*schema.Column{UnsavedPostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -280,10 +282,11 @@ var (
 	// UnsavedPostThumbnailsColumns holds the columns for the "unsaved_post_thumbnails" table.
 	UnsavedPostThumbnailsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "width", Type: field.TypeUint32},
-		{Name: "height", Type: field.TypeUint32},
-		{Name: "hash", Type: field.TypeString, Size: 64},
-		{Name: "url", Type: field.TypeString, Size: 512},
+		{Name: "validity", Type: field.TypeEnum, Enums: []string{"pending", "valid", "invalid"}, Default: "pending"},
+		{Name: "width", Type: field.TypeUint32, Nullable: true},
+		{Name: "height", Type: field.TypeUint32, Nullable: true},
+		{Name: "hash", Type: field.TypeString, Nullable: true, Size: 64},
+		{Name: "url", Type: field.TypeString, Nullable: true, Size: 512},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "unsaved_post_thumbnail", Type: field.TypeInt, Unique: true, Nullable: true},
 	}
@@ -295,7 +298,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "unsaved_post_thumbnails_unsaved_posts_thumbnail",
-				Columns:    []*schema.Column{UnsavedPostThumbnailsColumns[6]},
+				Columns:    []*schema.Column{UnsavedPostThumbnailsColumns[7]},
 				RefColumns: []*schema.Column{UnsavedPostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -304,9 +307,10 @@ var (
 	// UnsavedPostVideosColumns holds the columns for the "unsaved_post_videos" table.
 	UnsavedPostVideosColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "uuid", Type: field.TypeString, Unique: true, Size: 64},
-		{Name: "title", Type: field.TypeString, Size: 255},
-		{Name: "url", Type: field.TypeString, Size: 512},
+		{Name: "uuid", Type: field.TypeString, Size: 64},
+		{Name: "validity", Type: field.TypeEnum, Enums: []string{"pending", "valid", "invalid"}, Default: "pending"},
+		{Name: "title", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "url", Type: field.TypeString, Nullable: true, Size: 512},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "unsaved_post_videos", Type: field.TypeInt, Nullable: true},
 	}
@@ -318,7 +322,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "unsaved_post_videos_unsaved_posts_videos",
-				Columns:    []*schema.Column{UnsavedPostVideosColumns[5]},
+				Columns:    []*schema.Column{UnsavedPostVideosColumns[6]},
 				RefColumns: []*schema.Column{UnsavedPostsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},

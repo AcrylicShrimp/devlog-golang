@@ -35,6 +35,20 @@ func (upiu *UnsavedPostImageUpdate) SetUUID(s string) *UnsavedPostImageUpdate {
 	return upiu
 }
 
+// SetValidity sets the "validity" field.
+func (upiu *UnsavedPostImageUpdate) SetValidity(u unsavedpostimage.Validity) *UnsavedPostImageUpdate {
+	upiu.mutation.SetValidity(u)
+	return upiu
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (upiu *UnsavedPostImageUpdate) SetNillableValidity(u *unsavedpostimage.Validity) *UnsavedPostImageUpdate {
+	if u != nil {
+		upiu.SetValidity(*u)
+	}
+	return upiu
+}
+
 // SetWidth sets the "width" field.
 func (upiu *UnsavedPostImageUpdate) SetWidth(u uint32) *UnsavedPostImageUpdate {
 	upiu.mutation.ResetWidth()
@@ -42,9 +56,23 @@ func (upiu *UnsavedPostImageUpdate) SetWidth(u uint32) *UnsavedPostImageUpdate {
 	return upiu
 }
 
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (upiu *UnsavedPostImageUpdate) SetNillableWidth(u *uint32) *UnsavedPostImageUpdate {
+	if u != nil {
+		upiu.SetWidth(*u)
+	}
+	return upiu
+}
+
 // AddWidth adds u to the "width" field.
 func (upiu *UnsavedPostImageUpdate) AddWidth(u uint32) *UnsavedPostImageUpdate {
 	upiu.mutation.AddWidth(u)
+	return upiu
+}
+
+// ClearWidth clears the value of the "width" field.
+func (upiu *UnsavedPostImageUpdate) ClearWidth() *UnsavedPostImageUpdate {
+	upiu.mutation.ClearWidth()
 	return upiu
 }
 
@@ -55,9 +83,23 @@ func (upiu *UnsavedPostImageUpdate) SetHeight(u uint32) *UnsavedPostImageUpdate 
 	return upiu
 }
 
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (upiu *UnsavedPostImageUpdate) SetNillableHeight(u *uint32) *UnsavedPostImageUpdate {
+	if u != nil {
+		upiu.SetHeight(*u)
+	}
+	return upiu
+}
+
 // AddHeight adds u to the "height" field.
 func (upiu *UnsavedPostImageUpdate) AddHeight(u uint32) *UnsavedPostImageUpdate {
 	upiu.mutation.AddHeight(u)
+	return upiu
+}
+
+// ClearHeight clears the value of the "height" field.
+func (upiu *UnsavedPostImageUpdate) ClearHeight() *UnsavedPostImageUpdate {
+	upiu.mutation.ClearHeight()
 	return upiu
 }
 
@@ -67,15 +109,57 @@ func (upiu *UnsavedPostImageUpdate) SetHash(s string) *UnsavedPostImageUpdate {
 	return upiu
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (upiu *UnsavedPostImageUpdate) SetNillableHash(s *string) *UnsavedPostImageUpdate {
+	if s != nil {
+		upiu.SetHash(*s)
+	}
+	return upiu
+}
+
+// ClearHash clears the value of the "hash" field.
+func (upiu *UnsavedPostImageUpdate) ClearHash() *UnsavedPostImageUpdate {
+	upiu.mutation.ClearHash()
+	return upiu
+}
+
 // SetTitle sets the "title" field.
 func (upiu *UnsavedPostImageUpdate) SetTitle(s string) *UnsavedPostImageUpdate {
 	upiu.mutation.SetTitle(s)
 	return upiu
 }
 
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (upiu *UnsavedPostImageUpdate) SetNillableTitle(s *string) *UnsavedPostImageUpdate {
+	if s != nil {
+		upiu.SetTitle(*s)
+	}
+	return upiu
+}
+
+// ClearTitle clears the value of the "title" field.
+func (upiu *UnsavedPostImageUpdate) ClearTitle() *UnsavedPostImageUpdate {
+	upiu.mutation.ClearTitle()
+	return upiu
+}
+
 // SetURL sets the "url" field.
 func (upiu *UnsavedPostImageUpdate) SetURL(s string) *UnsavedPostImageUpdate {
 	upiu.mutation.SetURL(s)
+	return upiu
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (upiu *UnsavedPostImageUpdate) SetNillableURL(s *string) *UnsavedPostImageUpdate {
+	if s != nil {
+		upiu.SetURL(*s)
+	}
+	return upiu
+}
+
+// ClearURL clears the value of the "url" field.
+func (upiu *UnsavedPostImageUpdate) ClearURL() *UnsavedPostImageUpdate {
+	upiu.mutation.ClearURL()
 	return upiu
 }
 
@@ -179,6 +263,11 @@ func (upiu *UnsavedPostImageUpdate) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
+	if v, ok := upiu.mutation.Validity(); ok {
+		if err := unsavedpostimage.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
+	}
 	if v, ok := upiu.mutation.Hash(); ok {
 		if err := unsavedpostimage.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
@@ -225,6 +314,13 @@ func (upiu *UnsavedPostImageUpdate) sqlSave(ctx context.Context) (n int, err err
 			Column: unsavedpostimage.FieldUUID,
 		})
 	}
+	if value, ok := upiu.mutation.Validity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostimage.FieldValidity,
+		})
+	}
 	if value, ok := upiu.mutation.Width(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -236,6 +332,12 @@ func (upiu *UnsavedPostImageUpdate) sqlSave(ctx context.Context) (n int, err err
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
 			Value:  value,
+			Column: unsavedpostimage.FieldWidth,
+		})
+	}
+	if upiu.mutation.WidthCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
 			Column: unsavedpostimage.FieldWidth,
 		})
 	}
@@ -253,10 +355,22 @@ func (upiu *UnsavedPostImageUpdate) sqlSave(ctx context.Context) (n int, err err
 			Column: unsavedpostimage.FieldHeight,
 		})
 	}
+	if upiu.mutation.HeightCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Column: unsavedpostimage.FieldHeight,
+		})
+	}
 	if value, ok := upiu.mutation.Hash(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostimage.FieldHash,
+		})
+	}
+	if upiu.mutation.HashCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostimage.FieldHash,
 		})
 	}
@@ -267,10 +381,22 @@ func (upiu *UnsavedPostImageUpdate) sqlSave(ctx context.Context) (n int, err err
 			Column: unsavedpostimage.FieldTitle,
 		})
 	}
+	if upiu.mutation.TitleCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: unsavedpostimage.FieldTitle,
+		})
+	}
 	if value, ok := upiu.mutation.URL(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostimage.FieldURL,
+		})
+	}
+	if upiu.mutation.URLCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostimage.FieldURL,
 		})
 	}
@@ -341,6 +467,20 @@ func (upiuo *UnsavedPostImageUpdateOne) SetUUID(s string) *UnsavedPostImageUpdat
 	return upiuo
 }
 
+// SetValidity sets the "validity" field.
+func (upiuo *UnsavedPostImageUpdateOne) SetValidity(u unsavedpostimage.Validity) *UnsavedPostImageUpdateOne {
+	upiuo.mutation.SetValidity(u)
+	return upiuo
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (upiuo *UnsavedPostImageUpdateOne) SetNillableValidity(u *unsavedpostimage.Validity) *UnsavedPostImageUpdateOne {
+	if u != nil {
+		upiuo.SetValidity(*u)
+	}
+	return upiuo
+}
+
 // SetWidth sets the "width" field.
 func (upiuo *UnsavedPostImageUpdateOne) SetWidth(u uint32) *UnsavedPostImageUpdateOne {
 	upiuo.mutation.ResetWidth()
@@ -348,9 +488,23 @@ func (upiuo *UnsavedPostImageUpdateOne) SetWidth(u uint32) *UnsavedPostImageUpda
 	return upiuo
 }
 
+// SetNillableWidth sets the "width" field if the given value is not nil.
+func (upiuo *UnsavedPostImageUpdateOne) SetNillableWidth(u *uint32) *UnsavedPostImageUpdateOne {
+	if u != nil {
+		upiuo.SetWidth(*u)
+	}
+	return upiuo
+}
+
 // AddWidth adds u to the "width" field.
 func (upiuo *UnsavedPostImageUpdateOne) AddWidth(u uint32) *UnsavedPostImageUpdateOne {
 	upiuo.mutation.AddWidth(u)
+	return upiuo
+}
+
+// ClearWidth clears the value of the "width" field.
+func (upiuo *UnsavedPostImageUpdateOne) ClearWidth() *UnsavedPostImageUpdateOne {
+	upiuo.mutation.ClearWidth()
 	return upiuo
 }
 
@@ -361,9 +515,23 @@ func (upiuo *UnsavedPostImageUpdateOne) SetHeight(u uint32) *UnsavedPostImageUpd
 	return upiuo
 }
 
+// SetNillableHeight sets the "height" field if the given value is not nil.
+func (upiuo *UnsavedPostImageUpdateOne) SetNillableHeight(u *uint32) *UnsavedPostImageUpdateOne {
+	if u != nil {
+		upiuo.SetHeight(*u)
+	}
+	return upiuo
+}
+
 // AddHeight adds u to the "height" field.
 func (upiuo *UnsavedPostImageUpdateOne) AddHeight(u uint32) *UnsavedPostImageUpdateOne {
 	upiuo.mutation.AddHeight(u)
+	return upiuo
+}
+
+// ClearHeight clears the value of the "height" field.
+func (upiuo *UnsavedPostImageUpdateOne) ClearHeight() *UnsavedPostImageUpdateOne {
+	upiuo.mutation.ClearHeight()
 	return upiuo
 }
 
@@ -373,15 +541,57 @@ func (upiuo *UnsavedPostImageUpdateOne) SetHash(s string) *UnsavedPostImageUpdat
 	return upiuo
 }
 
+// SetNillableHash sets the "hash" field if the given value is not nil.
+func (upiuo *UnsavedPostImageUpdateOne) SetNillableHash(s *string) *UnsavedPostImageUpdateOne {
+	if s != nil {
+		upiuo.SetHash(*s)
+	}
+	return upiuo
+}
+
+// ClearHash clears the value of the "hash" field.
+func (upiuo *UnsavedPostImageUpdateOne) ClearHash() *UnsavedPostImageUpdateOne {
+	upiuo.mutation.ClearHash()
+	return upiuo
+}
+
 // SetTitle sets the "title" field.
 func (upiuo *UnsavedPostImageUpdateOne) SetTitle(s string) *UnsavedPostImageUpdateOne {
 	upiuo.mutation.SetTitle(s)
 	return upiuo
 }
 
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (upiuo *UnsavedPostImageUpdateOne) SetNillableTitle(s *string) *UnsavedPostImageUpdateOne {
+	if s != nil {
+		upiuo.SetTitle(*s)
+	}
+	return upiuo
+}
+
+// ClearTitle clears the value of the "title" field.
+func (upiuo *UnsavedPostImageUpdateOne) ClearTitle() *UnsavedPostImageUpdateOne {
+	upiuo.mutation.ClearTitle()
+	return upiuo
+}
+
 // SetURL sets the "url" field.
 func (upiuo *UnsavedPostImageUpdateOne) SetURL(s string) *UnsavedPostImageUpdateOne {
 	upiuo.mutation.SetURL(s)
+	return upiuo
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (upiuo *UnsavedPostImageUpdateOne) SetNillableURL(s *string) *UnsavedPostImageUpdateOne {
+	if s != nil {
+		upiuo.SetURL(*s)
+	}
+	return upiuo
+}
+
+// ClearURL clears the value of the "url" field.
+func (upiuo *UnsavedPostImageUpdateOne) ClearURL() *UnsavedPostImageUpdateOne {
+	upiuo.mutation.ClearURL()
 	return upiuo
 }
 
@@ -492,6 +702,11 @@ func (upiuo *UnsavedPostImageUpdateOne) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
+	if v, ok := upiuo.mutation.Validity(); ok {
+		if err := unsavedpostimage.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
+	}
 	if v, ok := upiuo.mutation.Hash(); ok {
 		if err := unsavedpostimage.HashValidator(v); err != nil {
 			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
@@ -555,6 +770,13 @@ func (upiuo *UnsavedPostImageUpdateOne) sqlSave(ctx context.Context) (_node *Uns
 			Column: unsavedpostimage.FieldUUID,
 		})
 	}
+	if value, ok := upiuo.mutation.Validity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostimage.FieldValidity,
+		})
+	}
 	if value, ok := upiuo.mutation.Width(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
@@ -566,6 +788,12 @@ func (upiuo *UnsavedPostImageUpdateOne) sqlSave(ctx context.Context) (_node *Uns
 		_spec.Fields.Add = append(_spec.Fields.Add, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint32,
 			Value:  value,
+			Column: unsavedpostimage.FieldWidth,
+		})
+	}
+	if upiuo.mutation.WidthCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
 			Column: unsavedpostimage.FieldWidth,
 		})
 	}
@@ -583,10 +811,22 @@ func (upiuo *UnsavedPostImageUpdateOne) sqlSave(ctx context.Context) (_node *Uns
 			Column: unsavedpostimage.FieldHeight,
 		})
 	}
+	if upiuo.mutation.HeightCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint32,
+			Column: unsavedpostimage.FieldHeight,
+		})
+	}
 	if value, ok := upiuo.mutation.Hash(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostimage.FieldHash,
+		})
+	}
+	if upiuo.mutation.HashCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostimage.FieldHash,
 		})
 	}
@@ -597,10 +837,22 @@ func (upiuo *UnsavedPostImageUpdateOne) sqlSave(ctx context.Context) (_node *Uns
 			Column: unsavedpostimage.FieldTitle,
 		})
 	}
+	if upiuo.mutation.TitleCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: unsavedpostimage.FieldTitle,
+		})
+	}
 	if value, ok := upiuo.mutation.URL(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostimage.FieldURL,
+		})
+	}
+	if upiuo.mutation.URLCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostimage.FieldURL,
 		})
 	}

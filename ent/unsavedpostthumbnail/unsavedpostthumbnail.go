@@ -3,6 +3,7 @@
 package unsavedpostthumbnail
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -11,6 +12,8 @@ const (
 	Label = "unsaved_post_thumbnail"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldValidity holds the string denoting the validity field in the database.
+	FieldValidity = "validity"
 	// FieldWidth holds the string denoting the width field in the database.
 	FieldWidth = "width"
 	// FieldHeight holds the string denoting the height field in the database.
@@ -37,6 +40,7 @@ const (
 // Columns holds all SQL columns for unsavedpostthumbnail fields.
 var Columns = []string{
 	FieldID,
+	FieldValidity,
 	FieldWidth,
 	FieldHeight,
 	FieldHash,
@@ -73,3 +77,30 @@ var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )
+
+// Validity defines the type for the "validity" enum field.
+type Validity string
+
+// ValidityPending is the default value of the Validity enum.
+const DefaultValidity = ValidityPending
+
+// Validity values.
+const (
+	ValidityPending Validity = "pending"
+	ValidityValid   Validity = "valid"
+	ValidityInvalid Validity = "invalid"
+)
+
+func (v Validity) String() string {
+	return string(v)
+}
+
+// ValidityValidator is a validator for the "validity" field enum values. It is called by the builders before save.
+func ValidityValidator(v Validity) error {
+	switch v {
+	case ValidityPending, ValidityValid, ValidityInvalid:
+		return nil
+	default:
+		return fmt.Errorf("unsavedpostthumbnail: invalid enum value for validity field: %q", v)
+	}
+}

@@ -17,10 +17,11 @@ type UnsavedPostAttachment struct {
 func (UnsavedPostAttachment) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("uuid").MaxLen(64),
-		field.Uint64("size"),
-		field.String("name").MaxLen(255),
-		field.String("mime").MaxLen(64),
-		field.String("url").MaxLen(512).Unique(),
+		field.Enum("validity").Values("pending", "valid", "invalid").Default("pending"),
+		field.Uint64("size").Optional().Nillable(),
+		field.String("name").MaxLen(255).Optional().Nillable(),
+		field.String("mime").MaxLen(64).Optional().Nillable(),
+		field.String("url").MaxLen(512).Optional().Nillable(),
 		field.Time("created_at").Default(time.Now),
 	}
 }

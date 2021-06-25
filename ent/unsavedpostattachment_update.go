@@ -35,10 +35,32 @@ func (upau *UnsavedPostAttachmentUpdate) SetUUID(s string) *UnsavedPostAttachmen
 	return upau
 }
 
+// SetValidity sets the "validity" field.
+func (upau *UnsavedPostAttachmentUpdate) SetValidity(u unsavedpostattachment.Validity) *UnsavedPostAttachmentUpdate {
+	upau.mutation.SetValidity(u)
+	return upau
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (upau *UnsavedPostAttachmentUpdate) SetNillableValidity(u *unsavedpostattachment.Validity) *UnsavedPostAttachmentUpdate {
+	if u != nil {
+		upau.SetValidity(*u)
+	}
+	return upau
+}
+
 // SetSize sets the "size" field.
 func (upau *UnsavedPostAttachmentUpdate) SetSize(u uint64) *UnsavedPostAttachmentUpdate {
 	upau.mutation.ResetSize()
 	upau.mutation.SetSize(u)
+	return upau
+}
+
+// SetNillableSize sets the "size" field if the given value is not nil.
+func (upau *UnsavedPostAttachmentUpdate) SetNillableSize(u *uint64) *UnsavedPostAttachmentUpdate {
+	if u != nil {
+		upau.SetSize(*u)
+	}
 	return upau
 }
 
@@ -48,9 +70,29 @@ func (upau *UnsavedPostAttachmentUpdate) AddSize(u uint64) *UnsavedPostAttachmen
 	return upau
 }
 
+// ClearSize clears the value of the "size" field.
+func (upau *UnsavedPostAttachmentUpdate) ClearSize() *UnsavedPostAttachmentUpdate {
+	upau.mutation.ClearSize()
+	return upau
+}
+
 // SetName sets the "name" field.
 func (upau *UnsavedPostAttachmentUpdate) SetName(s string) *UnsavedPostAttachmentUpdate {
 	upau.mutation.SetName(s)
+	return upau
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (upau *UnsavedPostAttachmentUpdate) SetNillableName(s *string) *UnsavedPostAttachmentUpdate {
+	if s != nil {
+		upau.SetName(*s)
+	}
+	return upau
+}
+
+// ClearName clears the value of the "name" field.
+func (upau *UnsavedPostAttachmentUpdate) ClearName() *UnsavedPostAttachmentUpdate {
+	upau.mutation.ClearName()
 	return upau
 }
 
@@ -60,9 +102,37 @@ func (upau *UnsavedPostAttachmentUpdate) SetMime(s string) *UnsavedPostAttachmen
 	return upau
 }
 
+// SetNillableMime sets the "mime" field if the given value is not nil.
+func (upau *UnsavedPostAttachmentUpdate) SetNillableMime(s *string) *UnsavedPostAttachmentUpdate {
+	if s != nil {
+		upau.SetMime(*s)
+	}
+	return upau
+}
+
+// ClearMime clears the value of the "mime" field.
+func (upau *UnsavedPostAttachmentUpdate) ClearMime() *UnsavedPostAttachmentUpdate {
+	upau.mutation.ClearMime()
+	return upau
+}
+
 // SetURL sets the "url" field.
 func (upau *UnsavedPostAttachmentUpdate) SetURL(s string) *UnsavedPostAttachmentUpdate {
 	upau.mutation.SetURL(s)
+	return upau
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (upau *UnsavedPostAttachmentUpdate) SetNillableURL(s *string) *UnsavedPostAttachmentUpdate {
+	if s != nil {
+		upau.SetURL(*s)
+	}
+	return upau
+}
+
+// ClearURL clears the value of the "url" field.
+func (upau *UnsavedPostAttachmentUpdate) ClearURL() *UnsavedPostAttachmentUpdate {
+	upau.mutation.ClearURL()
 	return upau
 }
 
@@ -166,6 +236,11 @@ func (upau *UnsavedPostAttachmentUpdate) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
+	if v, ok := upau.mutation.Validity(); ok {
+		if err := unsavedpostattachment.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
+	}
 	if v, ok := upau.mutation.Name(); ok {
 		if err := unsavedpostattachment.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
@@ -212,6 +287,13 @@ func (upau *UnsavedPostAttachmentUpdate) sqlSave(ctx context.Context) (n int, er
 			Column: unsavedpostattachment.FieldUUID,
 		})
 	}
+	if value, ok := upau.mutation.Validity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostattachment.FieldValidity,
+		})
+	}
 	if value, ok := upau.mutation.Size(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint64,
@@ -226,10 +308,22 @@ func (upau *UnsavedPostAttachmentUpdate) sqlSave(ctx context.Context) (n int, er
 			Column: unsavedpostattachment.FieldSize,
 		})
 	}
+	if upau.mutation.SizeCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint64,
+			Column: unsavedpostattachment.FieldSize,
+		})
+	}
 	if value, ok := upau.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostattachment.FieldName,
+		})
+	}
+	if upau.mutation.NameCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostattachment.FieldName,
 		})
 	}
@@ -240,10 +334,22 @@ func (upau *UnsavedPostAttachmentUpdate) sqlSave(ctx context.Context) (n int, er
 			Column: unsavedpostattachment.FieldMime,
 		})
 	}
+	if upau.mutation.MimeCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: unsavedpostattachment.FieldMime,
+		})
+	}
 	if value, ok := upau.mutation.URL(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostattachment.FieldURL,
+		})
+	}
+	if upau.mutation.URLCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostattachment.FieldURL,
 		})
 	}
@@ -314,10 +420,32 @@ func (upauo *UnsavedPostAttachmentUpdateOne) SetUUID(s string) *UnsavedPostAttac
 	return upauo
 }
 
+// SetValidity sets the "validity" field.
+func (upauo *UnsavedPostAttachmentUpdateOne) SetValidity(u unsavedpostattachment.Validity) *UnsavedPostAttachmentUpdateOne {
+	upauo.mutation.SetValidity(u)
+	return upauo
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (upauo *UnsavedPostAttachmentUpdateOne) SetNillableValidity(u *unsavedpostattachment.Validity) *UnsavedPostAttachmentUpdateOne {
+	if u != nil {
+		upauo.SetValidity(*u)
+	}
+	return upauo
+}
+
 // SetSize sets the "size" field.
 func (upauo *UnsavedPostAttachmentUpdateOne) SetSize(u uint64) *UnsavedPostAttachmentUpdateOne {
 	upauo.mutation.ResetSize()
 	upauo.mutation.SetSize(u)
+	return upauo
+}
+
+// SetNillableSize sets the "size" field if the given value is not nil.
+func (upauo *UnsavedPostAttachmentUpdateOne) SetNillableSize(u *uint64) *UnsavedPostAttachmentUpdateOne {
+	if u != nil {
+		upauo.SetSize(*u)
+	}
 	return upauo
 }
 
@@ -327,9 +455,29 @@ func (upauo *UnsavedPostAttachmentUpdateOne) AddSize(u uint64) *UnsavedPostAttac
 	return upauo
 }
 
+// ClearSize clears the value of the "size" field.
+func (upauo *UnsavedPostAttachmentUpdateOne) ClearSize() *UnsavedPostAttachmentUpdateOne {
+	upauo.mutation.ClearSize()
+	return upauo
+}
+
 // SetName sets the "name" field.
 func (upauo *UnsavedPostAttachmentUpdateOne) SetName(s string) *UnsavedPostAttachmentUpdateOne {
 	upauo.mutation.SetName(s)
+	return upauo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (upauo *UnsavedPostAttachmentUpdateOne) SetNillableName(s *string) *UnsavedPostAttachmentUpdateOne {
+	if s != nil {
+		upauo.SetName(*s)
+	}
+	return upauo
+}
+
+// ClearName clears the value of the "name" field.
+func (upauo *UnsavedPostAttachmentUpdateOne) ClearName() *UnsavedPostAttachmentUpdateOne {
+	upauo.mutation.ClearName()
 	return upauo
 }
 
@@ -339,9 +487,37 @@ func (upauo *UnsavedPostAttachmentUpdateOne) SetMime(s string) *UnsavedPostAttac
 	return upauo
 }
 
+// SetNillableMime sets the "mime" field if the given value is not nil.
+func (upauo *UnsavedPostAttachmentUpdateOne) SetNillableMime(s *string) *UnsavedPostAttachmentUpdateOne {
+	if s != nil {
+		upauo.SetMime(*s)
+	}
+	return upauo
+}
+
+// ClearMime clears the value of the "mime" field.
+func (upauo *UnsavedPostAttachmentUpdateOne) ClearMime() *UnsavedPostAttachmentUpdateOne {
+	upauo.mutation.ClearMime()
+	return upauo
+}
+
 // SetURL sets the "url" field.
 func (upauo *UnsavedPostAttachmentUpdateOne) SetURL(s string) *UnsavedPostAttachmentUpdateOne {
 	upauo.mutation.SetURL(s)
+	return upauo
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (upauo *UnsavedPostAttachmentUpdateOne) SetNillableURL(s *string) *UnsavedPostAttachmentUpdateOne {
+	if s != nil {
+		upauo.SetURL(*s)
+	}
+	return upauo
+}
+
+// ClearURL clears the value of the "url" field.
+func (upauo *UnsavedPostAttachmentUpdateOne) ClearURL() *UnsavedPostAttachmentUpdateOne {
+	upauo.mutation.ClearURL()
 	return upauo
 }
 
@@ -452,6 +628,11 @@ func (upauo *UnsavedPostAttachmentUpdateOne) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
+	if v, ok := upauo.mutation.Validity(); ok {
+		if err := unsavedpostattachment.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
+	}
 	if v, ok := upauo.mutation.Name(); ok {
 		if err := unsavedpostattachment.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
@@ -515,6 +696,13 @@ func (upauo *UnsavedPostAttachmentUpdateOne) sqlSave(ctx context.Context) (_node
 			Column: unsavedpostattachment.FieldUUID,
 		})
 	}
+	if value, ok := upauo.mutation.Validity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostattachment.FieldValidity,
+		})
+	}
 	if value, ok := upauo.mutation.Size(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeUint64,
@@ -529,10 +717,22 @@ func (upauo *UnsavedPostAttachmentUpdateOne) sqlSave(ctx context.Context) (_node
 			Column: unsavedpostattachment.FieldSize,
 		})
 	}
+	if upauo.mutation.SizeCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeUint64,
+			Column: unsavedpostattachment.FieldSize,
+		})
+	}
 	if value, ok := upauo.mutation.Name(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostattachment.FieldName,
+		})
+	}
+	if upauo.mutation.NameCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostattachment.FieldName,
 		})
 	}
@@ -543,10 +743,22 @@ func (upauo *UnsavedPostAttachmentUpdateOne) sqlSave(ctx context.Context) (_node
 			Column: unsavedpostattachment.FieldMime,
 		})
 	}
+	if upauo.mutation.MimeCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: unsavedpostattachment.FieldMime,
+		})
+	}
 	if value, ok := upauo.mutation.URL(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostattachment.FieldURL,
+		})
+	}
+	if upauo.mutation.URLCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostattachment.FieldURL,
 		})
 	}

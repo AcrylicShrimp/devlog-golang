@@ -291,12 +291,12 @@ func (uptq *UnsavedPostThumbnailQuery) WithUnsavedPost(opts ...func(*UnsavedPost
 // Example:
 //
 //	var v []struct {
-//		Width uint32 `json:"width,omitempty"`
+//		Validity unsavedpostthumbnail.Validity `json:"validity,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.UnsavedPostThumbnail.Query().
-//		GroupBy(unsavedpostthumbnail.FieldWidth).
+//		GroupBy(unsavedpostthumbnail.FieldValidity).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 //
@@ -318,11 +318,11 @@ func (uptq *UnsavedPostThumbnailQuery) GroupBy(field string, fields ...string) *
 // Example:
 //
 //	var v []struct {
-//		Width uint32 `json:"width,omitempty"`
+//		Validity unsavedpostthumbnail.Validity `json:"validity,omitempty"`
 //	}
 //
 //	client.UnsavedPostThumbnail.Query().
-//		Select(unsavedpostthumbnail.FieldWidth).
+//		Select(unsavedpostthumbnail.FieldValidity).
 //		Scan(ctx, &v)
 //
 func (uptq *UnsavedPostThumbnailQuery) Select(field string, fields ...string) *UnsavedPostThumbnailSelect {

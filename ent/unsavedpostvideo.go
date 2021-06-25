@@ -19,10 +19,12 @@ type UnsavedPostVideo struct {
 	ID int `json:"id,omitempty"`
 	// UUID holds the value of the "uuid" field.
 	UUID string `json:"uuid,omitempty"`
+	// Validity holds the value of the "validity" field.
+	Validity unsavedpostvideo.Validity `json:"validity,omitempty"`
 	// Title holds the value of the "title" field.
-	Title string `json:"title,omitempty"`
+	Title *string `json:"title,omitempty"`
 	// URL holds the value of the "url" field.
-	URL string `json:"url,omitempty"`
+	URL *string `json:"url,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -61,7 +63,7 @@ func (*UnsavedPostVideo) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case unsavedpostvideo.FieldID:
 			values[i] = new(sql.NullInt64)
-		case unsavedpostvideo.FieldUUID, unsavedpostvideo.FieldTitle, unsavedpostvideo.FieldURL:
+		case unsavedpostvideo.FieldUUID, unsavedpostvideo.FieldValidity, unsavedpostvideo.FieldTitle, unsavedpostvideo.FieldURL:
 			values[i] = new(sql.NullString)
 		case unsavedpostvideo.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
@@ -94,17 +96,25 @@ func (upv *UnsavedPostVideo) assignValues(columns []string, values []interface{}
 			} else if value.Valid {
 				upv.UUID = value.String
 			}
+		case unsavedpostvideo.FieldValidity:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field validity", values[i])
+			} else if value.Valid {
+				upv.Validity = unsavedpostvideo.Validity(value.String)
+			}
 		case unsavedpostvideo.FieldTitle:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field title", values[i])
 			} else if value.Valid {
-				upv.Title = value.String
+				upv.Title = new(string)
+				*upv.Title = value.String
 			}
 		case unsavedpostvideo.FieldURL:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field url", values[i])
 			} else if value.Valid {
-				upv.URL = value.String
+				upv.URL = new(string)
+				*upv.URL = value.String
 			}
 		case unsavedpostvideo.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -154,10 +164,16 @@ func (upv *UnsavedPostVideo) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v", upv.ID))
 	builder.WriteString(", uuid=")
 	builder.WriteString(upv.UUID)
-	builder.WriteString(", title=")
-	builder.WriteString(upv.Title)
-	builder.WriteString(", url=")
-	builder.WriteString(upv.URL)
+	builder.WriteString(", validity=")
+	builder.WriteString(fmt.Sprintf("%v", upv.Validity))
+	if v := upv.Title; v != nil {
+		builder.WriteString(", title=")
+		builder.WriteString(*v)
+	}
+	if v := upv.URL; v != nil {
+		builder.WriteString(", url=")
+		builder.WriteString(*v)
+	}
 	builder.WriteString(", created_at=")
 	builder.WriteString(upv.CreatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')

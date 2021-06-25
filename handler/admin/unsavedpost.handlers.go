@@ -24,7 +24,8 @@ func AttachUnsavedPost(group *echo.Group) {
 	group.PUT("/:uuid", UpdateUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.DELETE("/:uuid", DeleteUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.PUT("/:uuid/thumbnail", SetUnsavedPostThumbnail)
-	group.POST("/:uuid/images", NewUnsavedPostImage)
+	group.POST("/:post/images", NewUnsavedPostImage)
+	group.POST("/:post/images/:image", SetUnsavedPostImage)
 }
 
 func ListUnsavedPosts(c echo.Context) error {
@@ -359,17 +360,68 @@ func SetUnsavedPostThumbnail(c echo.Context) error {
 }
 
 func NewUnsavedPostImage(c echo.Context) error {
+	type UUIDInfo struct {
+		UUID string `param:"post" validate:"required,hexadecimal,len=64"`
+	}
+
+	uuidInfo := new(UUIDInfo)
+
+	if err := c.Bind(uuidInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(uuidInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	image, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
+		unsavedPost, err := tx.UnsavedPost.Query().
+			Where(dbUnsavedPost.UUIDEQ(uuidInfo.UUID)).
+			Select(dbUnsavedPost.FieldID).
+			First(context.Background())
+
+		if err != nil {
+			if _, ok := err.(*ent.NotFoundError); ok {
+				return nil, echo.NewHTTPError(http.StatusNotFound)
+			}
+			return nil, err
+		}
+
+		uuid, err := util.GenerateToken64()
+
+		if err != nil {
+			return nil, err
+		}
+
+		return tx.UnsavedPostImage.Create().
+			SetUUID(uuid).
+			SetUnsavedPost(unsavedPost).
+			Save(context.Background())
+	})
+
+	if err != nil {
+		return err
+	}
+
+	type ImageUUIDInfo struct {
+		UUID string `json:"uuid"`
+	}
+
+	return c.JSON(http.StatusCreated, ImageUUIDInfo{UUID: image.(*ent.UnsavedPostImage).UUID})
+}
+
+func SetUnsavedPostImage(c echo.Context) error {
 	type ImageInfo struct {
-		PostUUID    string `param:"uuid" validate:"required,hexadecimal,len=64"`
-		ImageUUID   string `json:"uuid" validate:"required,hexadecimal,len=64"`
-		ImageWidth  uint32 `json:"width" validate:"required"`
-		ImageHeight uint32 `json:"height" validate:"required"`
-		ImageHash   string `json:"hash" validate:"required,min=1"`
-		ImageTitle  string `json:"title" validate:"required,min=1"`
-		ImageURL    string `json:"url" validate:"required,min=1"`
+		PostUUID    string  `param:"post" validate:"required,hexadecimal,len=64"`
+		ImageUUID   string  `param:"image" validate:"required,hexadecimal,len=64"`
+		ImageWidth  *uint32 `json:"width" validate:"required"`
+		ImageHeight *uint32 `json:"height" validate:"required"`
+		ImageHash   *string `json:"hash" validate:"required,min=1"`
+		ImageTitle  *string `json:"title" validate:"required,min=1"`
+		ImageURL    *string `json:"url" validate:"required,min=1"`
 	}
 
 	imageInfo := new(ImageInfo)
+
 	if err := c.Bind(imageInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
@@ -382,13 +434,30 @@ func NewUnsavedPostImage(c echo.Context) error {
 			Where(dbUnsavedPost.UUIDEQ(imageInfo.PostUUID)).
 			Select(dbUnsavedPost.FieldID).
 			First(context.Background())
+
 		if err != nil {
 			if _, ok := err.(*ent.NotFoundError); ok {
 				return nil, echo.NewHTTPError(http.StatusNotFound)
 			}
-
 			return nil, err
 		}
+
+		unsavedPostImage, err := tx.UnsavedPostImage.Query().
+			Where(dbUnsavedPostImage.UUIDEQ(imageInfo.ImageUUID)).
+			Select(dbUnsavedPostImage.FieldID).
+			First(context.Background())
+
+		if err != nil {
+			return nil, err
+		}
+
+		unsavedPostImage.Update().
+			ClearWidth().
+			ClearHeight().
+			ClearHash().
+			ClearTitle().
+			ClearURL().
+			Save(context.Background())
 
 		return tx.UnsavedPostImage.Create().
 			SetUUID(imageInfo.ImageUUID).
@@ -400,6 +469,7 @@ func NewUnsavedPostImage(c echo.Context) error {
 			SetUnsavedPost(unsavedPost).
 			Save(context.Background())
 	})
+
 	if err != nil {
 		return err
 	}

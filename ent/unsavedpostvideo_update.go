@@ -35,15 +35,57 @@ func (upvu *UnsavedPostVideoUpdate) SetUUID(s string) *UnsavedPostVideoUpdate {
 	return upvu
 }
 
+// SetValidity sets the "validity" field.
+func (upvu *UnsavedPostVideoUpdate) SetValidity(u unsavedpostvideo.Validity) *UnsavedPostVideoUpdate {
+	upvu.mutation.SetValidity(u)
+	return upvu
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (upvu *UnsavedPostVideoUpdate) SetNillableValidity(u *unsavedpostvideo.Validity) *UnsavedPostVideoUpdate {
+	if u != nil {
+		upvu.SetValidity(*u)
+	}
+	return upvu
+}
+
 // SetTitle sets the "title" field.
 func (upvu *UnsavedPostVideoUpdate) SetTitle(s string) *UnsavedPostVideoUpdate {
 	upvu.mutation.SetTitle(s)
 	return upvu
 }
 
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (upvu *UnsavedPostVideoUpdate) SetNillableTitle(s *string) *UnsavedPostVideoUpdate {
+	if s != nil {
+		upvu.SetTitle(*s)
+	}
+	return upvu
+}
+
+// ClearTitle clears the value of the "title" field.
+func (upvu *UnsavedPostVideoUpdate) ClearTitle() *UnsavedPostVideoUpdate {
+	upvu.mutation.ClearTitle()
+	return upvu
+}
+
 // SetURL sets the "url" field.
 func (upvu *UnsavedPostVideoUpdate) SetURL(s string) *UnsavedPostVideoUpdate {
 	upvu.mutation.SetURL(s)
+	return upvu
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (upvu *UnsavedPostVideoUpdate) SetNillableURL(s *string) *UnsavedPostVideoUpdate {
+	if s != nil {
+		upvu.SetURL(*s)
+	}
+	return upvu
+}
+
+// ClearURL clears the value of the "url" field.
+func (upvu *UnsavedPostVideoUpdate) ClearURL() *UnsavedPostVideoUpdate {
+	upvu.mutation.ClearURL()
 	return upvu
 }
 
@@ -147,6 +189,11 @@ func (upvu *UnsavedPostVideoUpdate) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
+	if v, ok := upvu.mutation.Validity(); ok {
+		if err := unsavedpostvideo.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
+	}
 	if v, ok := upvu.mutation.Title(); ok {
 		if err := unsavedpostvideo.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
@@ -188,6 +235,13 @@ func (upvu *UnsavedPostVideoUpdate) sqlSave(ctx context.Context) (n int, err err
 			Column: unsavedpostvideo.FieldUUID,
 		})
 	}
+	if value, ok := upvu.mutation.Validity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostvideo.FieldValidity,
+		})
+	}
 	if value, ok := upvu.mutation.Title(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -195,10 +249,22 @@ func (upvu *UnsavedPostVideoUpdate) sqlSave(ctx context.Context) (n int, err err
 			Column: unsavedpostvideo.FieldTitle,
 		})
 	}
+	if upvu.mutation.TitleCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: unsavedpostvideo.FieldTitle,
+		})
+	}
 	if value, ok := upvu.mutation.URL(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostvideo.FieldURL,
+		})
+	}
+	if upvu.mutation.URLCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostvideo.FieldURL,
 		})
 	}
@@ -269,15 +335,57 @@ func (upvuo *UnsavedPostVideoUpdateOne) SetUUID(s string) *UnsavedPostVideoUpdat
 	return upvuo
 }
 
+// SetValidity sets the "validity" field.
+func (upvuo *UnsavedPostVideoUpdateOne) SetValidity(u unsavedpostvideo.Validity) *UnsavedPostVideoUpdateOne {
+	upvuo.mutation.SetValidity(u)
+	return upvuo
+}
+
+// SetNillableValidity sets the "validity" field if the given value is not nil.
+func (upvuo *UnsavedPostVideoUpdateOne) SetNillableValidity(u *unsavedpostvideo.Validity) *UnsavedPostVideoUpdateOne {
+	if u != nil {
+		upvuo.SetValidity(*u)
+	}
+	return upvuo
+}
+
 // SetTitle sets the "title" field.
 func (upvuo *UnsavedPostVideoUpdateOne) SetTitle(s string) *UnsavedPostVideoUpdateOne {
 	upvuo.mutation.SetTitle(s)
 	return upvuo
 }
 
+// SetNillableTitle sets the "title" field if the given value is not nil.
+func (upvuo *UnsavedPostVideoUpdateOne) SetNillableTitle(s *string) *UnsavedPostVideoUpdateOne {
+	if s != nil {
+		upvuo.SetTitle(*s)
+	}
+	return upvuo
+}
+
+// ClearTitle clears the value of the "title" field.
+func (upvuo *UnsavedPostVideoUpdateOne) ClearTitle() *UnsavedPostVideoUpdateOne {
+	upvuo.mutation.ClearTitle()
+	return upvuo
+}
+
 // SetURL sets the "url" field.
 func (upvuo *UnsavedPostVideoUpdateOne) SetURL(s string) *UnsavedPostVideoUpdateOne {
 	upvuo.mutation.SetURL(s)
+	return upvuo
+}
+
+// SetNillableURL sets the "url" field if the given value is not nil.
+func (upvuo *UnsavedPostVideoUpdateOne) SetNillableURL(s *string) *UnsavedPostVideoUpdateOne {
+	if s != nil {
+		upvuo.SetURL(*s)
+	}
+	return upvuo
+}
+
+// ClearURL clears the value of the "url" field.
+func (upvuo *UnsavedPostVideoUpdateOne) ClearURL() *UnsavedPostVideoUpdateOne {
+	upvuo.mutation.ClearURL()
 	return upvuo
 }
 
@@ -388,6 +496,11 @@ func (upvuo *UnsavedPostVideoUpdateOne) check() error {
 			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
 		}
 	}
+	if v, ok := upvuo.mutation.Validity(); ok {
+		if err := unsavedpostvideo.ValidityValidator(v); err != nil {
+			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+		}
+	}
 	if v, ok := upvuo.mutation.Title(); ok {
 		if err := unsavedpostvideo.TitleValidator(v); err != nil {
 			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
@@ -446,6 +559,13 @@ func (upvuo *UnsavedPostVideoUpdateOne) sqlSave(ctx context.Context) (_node *Uns
 			Column: unsavedpostvideo.FieldUUID,
 		})
 	}
+	if value, ok := upvuo.mutation.Validity(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeEnum,
+			Value:  value,
+			Column: unsavedpostvideo.FieldValidity,
+		})
+	}
 	if value, ok := upvuo.mutation.Title(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
@@ -453,10 +573,22 @@ func (upvuo *UnsavedPostVideoUpdateOne) sqlSave(ctx context.Context) (_node *Uns
 			Column: unsavedpostvideo.FieldTitle,
 		})
 	}
+	if upvuo.mutation.TitleCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Column: unsavedpostvideo.FieldTitle,
+		})
+	}
 	if value, ok := upvuo.mutation.URL(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeString,
 			Value:  value,
+			Column: unsavedpostvideo.FieldURL,
+		})
+	}
+	if upvuo.mutation.URLCleared() {
+		_spec.Fields.Clear = append(_spec.Fields.Clear, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
 			Column: unsavedpostvideo.FieldURL,
 		})
 	}

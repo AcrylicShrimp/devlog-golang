@@ -3,6 +3,7 @@
 package unsavedpostvideo
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -13,6 +14,8 @@ const (
 	FieldID = "id"
 	// FieldUUID holds the string denoting the uuid field in the database.
 	FieldUUID = "uuid"
+	// FieldValidity holds the string denoting the validity field in the database.
+	FieldValidity = "validity"
 	// FieldTitle holds the string denoting the title field in the database.
 	FieldTitle = "title"
 	// FieldURL holds the string denoting the url field in the database.
@@ -36,6 +39,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldUUID,
+	FieldValidity,
 	FieldTitle,
 	FieldURL,
 	FieldCreatedAt,
@@ -72,3 +76,30 @@ var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )
+
+// Validity defines the type for the "validity" enum field.
+type Validity string
+
+// ValidityPending is the default value of the Validity enum.
+const DefaultValidity = ValidityPending
+
+// Validity values.
+const (
+	ValidityPending Validity = "pending"
+	ValidityValid   Validity = "valid"
+	ValidityInvalid Validity = "invalid"
+)
+
+func (v Validity) String() string {
+	return string(v)
+}
+
+// ValidityValidator is a validator for the "validity" field enum values. It is called by the builders before save.
+func ValidityValidator(v Validity) error {
+	switch v {
+	case ValidityPending, ValidityValid, ValidityInvalid:
+		return nil
+	default:
+		return fmt.Errorf("unsavedpostvideo: invalid enum value for validity field: %q", v)
+	}
+}
