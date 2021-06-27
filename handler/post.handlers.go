@@ -82,19 +82,19 @@ func ListPosts(c echo.Context) error {
 }
 
 func GetPost(c echo.Context) error {
-	type SlugInfo struct {
+	type PostInfo struct {
 		Slug string `param:"slug" validate:"required,min=1,max=255"`
 	}
 
-	slugInfo := new(SlugInfo)
-	if err := c.Bind(slugInfo); err != nil {
+	postInfo := new(PostInfo)
+	if err := c.Bind(postInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(slugInfo); err != nil {
+	if err := c.Validate(postInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
-	if !regex.Slug.MatchString(slugInfo.Slug) {
+	if !regex.Slug.MatchString(postInfo.Slug) {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 

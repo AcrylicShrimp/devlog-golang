@@ -23,9 +23,12 @@ func AttachUnsavedPost(group *echo.Group) {
 	group.POST("", NewUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.PUT("/:uuid", UpdateUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.DELETE("/:uuid", DeleteUnsavedPost, middleware.WithSession, middleware.RequireSession)
-	group.PUT("/:uuid/thumbnail", SetUnsavedPostThumbnail)
+	group.POST("/:post/thumbnail", NewUnsavedPostThumbnail)
+	group.GET("/:post/thumbnail", GetUnsavedPostThumbnail)
+	group.PUT("/:post/thumbnail", SetUnsavedPostThumbnail)
 	group.POST("/:post/images", NewUnsavedPostImage)
-	group.POST("/:post/images/:image", SetUnsavedPostImage)
+	group.GET("/:post/images/:image", GetUnsavedPostImage)
+	group.PUT("/:post/images/:image", SetUnsavedPostImage)
 }
 
 func ListUnsavedPosts(c echo.Context) error {
@@ -314,16 +317,108 @@ func DeleteUnsavedPost(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
-func SetUnsavedPostThumbnail(c echo.Context) error {
+func NewUnsavedPostThumbnail(c echo.Context) error {
+	type PostInfo struct {
+		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
+	}
+
+	postInfo := new(PostInfo)
+
+	if err := c.Bind(postInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(postInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
+		post, err := tx.UnsavedPost.Query().
+			Where(dbUnsavedPost.UUIDEQ(postInfo.PostUUID)).
+			Select(dbUnsavedPost.FieldID).
+			First(context.Background())
+
+		if err != nil {
+			if _, ok := err.(*ent.NotFoundError); ok {
+				return nil, echo.NewHTTPError(http.StatusNotFound)
+			}
+			return nil, err
+		}
+
+		return tx.UnsavedPostThumbnail.Create().
+			SetUnsavedPost(post).
+			Save(context.Background())
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusCreated)
+}
+
+func GetUnsavedPostThumbnail(c echo.Context) error {
 	type ThumbnailInfo struct {
-		PostUUID        string `param:"uuid" validate:"required,hexadecimal,len=64"`
-		ThumbnailWidth  uint32 `json:"width" validate:"required"`
-		ThumbnailHeight uint32 `json:"height" validate:"required"`
-		ThumbnailHash   string `json:"hash" validate:"required,min=1"`
-		ThumbnailURL    string `json:"url" validate:"required,min=1"`
+		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
 	}
 
 	thumbnailInfo := new(ThumbnailInfo)
+
+	if err := c.Bind(thumbnailInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(thumbnailInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	client := c.(*common.Context).Client()
+
+	thumbnail, err := client.UnsavedPostThumbnail.Query().
+		Where(dbUnsavedPostThumbnail.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(thumbnailInfo.PostUUID))).
+		Select(
+			dbUnsavedPostThumbnail.FieldValidity,
+			dbUnsavedPostThumbnail.FieldWidth,
+			dbUnsavedPostThumbnail.FieldHeight,
+			dbUnsavedPostThumbnail.FieldHash,
+			dbUnsavedPostThumbnail.FieldURL,
+			dbUnsavedPostThumbnail.FieldCreatedAt).
+		First(context.Background())
+
+	if err != nil {
+		if _, ok := err.(*ent.NotFoundError); ok {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	type ThumbnailJSON struct {
+		Validity string  `json:"validity"`
+		Width    *uint32 `json:"width"`
+		Height   *uint32 `json:"height"`
+		Hash     *string `json:"hash"`
+		URL      *string `json:"url"`
+	}
+
+	return c.JSON(http.StatusCreated, ThumbnailJSON{
+		Validity: string(thumbnail.Validity),
+		Width:    thumbnail.Width,
+		Height:   thumbnail.Height,
+		Hash:     thumbnail.Hash,
+		URL:      thumbnail.URL,
+	})
+}
+
+func SetUnsavedPostThumbnail(c echo.Context) error {
+	type ThumbnailInfo struct {
+		PostUUID string  `param:"post" validate:"required,hexadecimal,len=64"`
+		Validity string  `json:"validity" validate:"required,oneof=valid invalid"`
+		Width    *uint32 `json:"width" validate:"required"`
+		Height   *uint32 `json:"height" validate:"required"`
+		Hash     *string `json:"hash" validate:"required,min=1"`
+		URL      *string `json:"url" validate:"required,min=1"`
+	}
+
+	thumbnailInfo := new(ThumbnailInfo)
+
 	if err := c.Bind(thumbnailInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
@@ -332,26 +427,50 @@ func SetUnsavedPostThumbnail(c echo.Context) error {
 	}
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
-		unsavedPost, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.UUIDEQ(thumbnailInfo.PostUUID)).
-			Select(dbUnsavedPost.FieldID).
+		thumbnail, err := tx.UnsavedPostThumbnail.Query().
+			Where(dbUnsavedPostThumbnail.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(thumbnailInfo.PostUUID))).
+			Select(dbUnsavedPostThumbnail.FieldID, dbUnsavedPostThumbnail.FieldValidity).
 			First(context.Background())
+
 		if err != nil {
 			if _, ok := err.(*ent.NotFoundError); ok {
 				return nil, echo.NewHTTPError(http.StatusNotFound)
 			}
-
 			return nil, err
 		}
 
-		return tx.UnsavedPostThumbnail.Create().
-			SetWidth(thumbnailInfo.ThumbnailWidth).
-			SetHeight(thumbnailInfo.ThumbnailHeight).
-			SetHash(thumbnailInfo.ThumbnailHash).
-			SetURL(thumbnailInfo.ThumbnailURL).
-			SetUnsavedPost(unsavedPost).
-			Save(context.Background())
+		if thumbnail.Validity != dbUnsavedPostThumbnail.ValidityPending {
+			return nil, echo.NewHTTPError(http.StatusBadRequest)
+		}
+
+		query := thumbnail.Update()
+
+		if thumbnailInfo.Validity == "valid" {
+			if thumbnailInfo.Width == nil ||
+				thumbnailInfo.Height == nil ||
+				thumbnailInfo.Hash == nil ||
+				thumbnailInfo.URL == nil {
+				return nil, echo.NewHTTPError(http.StatusBadRequest)
+			}
+
+			query.SetValidity(dbUnsavedPostThumbnail.ValidityValid).
+				SetWidth(*thumbnailInfo.Width).
+				SetHeight(*thumbnailInfo.Height).
+				SetHash(*thumbnailInfo.Hash).
+				SetURL(*thumbnailInfo.URL)
+		} else {
+			query.SetValidity(dbUnsavedPostThumbnail.ValidityInvalid)
+		}
+
+		_, err = query.Save(context.Background())
+
+		if err != nil {
+			return nil, err
+		}
+
+		return nil, nil
 	})
+
 	if err != nil {
 		return err
 	}
@@ -360,22 +479,22 @@ func SetUnsavedPostThumbnail(c echo.Context) error {
 }
 
 func NewUnsavedPostImage(c echo.Context) error {
-	type UUIDInfo struct {
-		UUID string `param:"post" validate:"required,hexadecimal,len=64"`
+	type PostInfo struct {
+		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
 	}
 
-	uuidInfo := new(UUIDInfo)
+	postInfo := new(PostInfo)
 
-	if err := c.Bind(uuidInfo); err != nil {
+	if err := c.Bind(postInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(uuidInfo); err != nil {
+	if err := c.Validate(postInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	image, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		unsavedPost, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.UUIDEQ(uuidInfo.UUID)).
+			Where(dbUnsavedPost.UUIDEQ(postInfo.PostUUID)).
 			Select(dbUnsavedPost.FieldID).
 			First(context.Background())
 
@@ -409,15 +528,70 @@ func NewUnsavedPostImage(c echo.Context) error {
 	return c.JSON(http.StatusCreated, ImageUUIDInfo{UUID: image.(*ent.UnsavedPostImage).UUID})
 }
 
+func GetUnsavedPostImage(c echo.Context) error {
+	type ImageInfo struct {
+		PostUUID  string `param:"post" validate:"required,hexadecimal,len=64"`
+		ImageUUID string `param:"image" validate:"required,hexadecimal,len=64"`
+	}
+
+	imageInfo := new(ImageInfo)
+
+	if err := c.Bind(imageInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(imageInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	client := c.(*common.Context).Client()
+
+	image, err := client.UnsavedPostImage.Query().
+		Where(dbUnsavedPostImage.And(
+			dbUnsavedPostImage.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(imageInfo.PostUUID)),
+			dbUnsavedPostImage.UUIDEQ(imageInfo.ImageUUID))).
+		Select(
+			dbUnsavedPostImage.FieldValidity,
+			dbUnsavedPostImage.FieldWidth,
+			dbUnsavedPostImage.FieldHeight,
+			dbUnsavedPostImage.FieldHash,
+			dbUnsavedPostImage.FieldURL,
+			dbUnsavedPostImage.FieldCreatedAt).
+		First(context.Background())
+
+	if err != nil {
+		if _, ok := err.(*ent.NotFoundError); ok {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	type ImageJSON struct {
+		Validity string  `json:"validity"`
+		Width    *uint32 `json:"width"`
+		Height   *uint32 `json:"height"`
+		Hash     *string `json:"hash"`
+		URL      *string `json:"url"`
+	}
+
+	return c.JSON(http.StatusCreated, ImageJSON{
+		Validity: string(image.Validity),
+		Width:    image.Width,
+		Height:   image.Height,
+		Hash:     image.Hash,
+		URL:      image.URL,
+	})
+}
+
 func SetUnsavedPostImage(c echo.Context) error {
 	type ImageInfo struct {
-		PostUUID    string  `param:"post" validate:"required,hexadecimal,len=64"`
-		ImageUUID   string  `param:"image" validate:"required,hexadecimal,len=64"`
-		ImageWidth  *uint32 `json:"width" validate:"required"`
-		ImageHeight *uint32 `json:"height" validate:"required"`
-		ImageHash   *string `json:"hash" validate:"required,min=1"`
-		ImageTitle  *string `json:"title" validate:"required,min=1"`
-		ImageURL    *string `json:"url" validate:"required,min=1"`
+		PostUUID  string  `param:"post" validate:"required,hexadecimal,len=64"`
+		ImageUUID string  `param:"image" validate:"required,hexadecimal,len=64"`
+		Validity  string  `json:"validity" validate:"required,oneof=valid invalid"`
+		Width     *uint32 `json:"width" validate:"required,min=1"`
+		Height    *uint32 `json:"height" validate:"required,min=1"`
+		Hash      *string `json:"hash" validate:"required,min=1"`
+		Title     *string `json:"title" validate:"required,min=1"`
+		URL       *string `json:"url" validate:"required,min=1"`
 	}
 
 	imageInfo := new(ImageInfo)
@@ -430,9 +604,11 @@ func SetUnsavedPostImage(c echo.Context) error {
 	}
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
-		unsavedPost, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.UUIDEQ(imageInfo.PostUUID)).
-			Select(dbUnsavedPost.FieldID).
+		image, err := tx.UnsavedPostImage.Query().
+			Where(dbUnsavedPostImage.And(
+				dbUnsavedPostImage.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(imageInfo.PostUUID)),
+				dbUnsavedPostImage.UUIDEQ(imageInfo.ImageUUID))).
+			Select(dbUnsavedPostImage.FieldID, dbUnsavedPostImage.FieldValidity).
 			First(context.Background())
 
 		if err != nil {
@@ -442,37 +618,43 @@ func SetUnsavedPostImage(c echo.Context) error {
 			return nil, err
 		}
 
-		unsavedPostImage, err := tx.UnsavedPostImage.Query().
-			Where(dbUnsavedPostImage.UUIDEQ(imageInfo.ImageUUID)).
-			Select(dbUnsavedPostImage.FieldID).
-			First(context.Background())
+		if image.Validity != dbUnsavedPostImage.ValidityPending {
+			return nil, echo.NewHTTPError(http.StatusBadRequest)
+		}
+
+		query := image.Update()
+
+		if imageInfo.Validity == "valid" {
+			if imageInfo.Width == nil ||
+				imageInfo.Height == nil ||
+				imageInfo.Hash == nil ||
+				imageInfo.Title == nil ||
+				imageInfo.URL == nil {
+				return nil, echo.NewHTTPError(http.StatusBadRequest)
+			}
+
+			query.SetValidity(dbUnsavedPostImage.ValidityValid).
+				SetWidth(*imageInfo.Width).
+				SetHeight(*imageInfo.Height).
+				SetHash(*imageInfo.Hash).
+				SetTitle(*imageInfo.Title).
+				SetURL(*imageInfo.URL)
+		} else {
+			query.SetValidity(dbUnsavedPostImage.ValidityInvalid)
+		}
+
+		_, err = query.Save(context.Background())
 
 		if err != nil {
 			return nil, err
 		}
 
-		unsavedPostImage.Update().
-			ClearWidth().
-			ClearHeight().
-			ClearHash().
-			ClearTitle().
-			ClearURL().
-			Save(context.Background())
-
-		return tx.UnsavedPostImage.Create().
-			SetUUID(imageInfo.ImageUUID).
-			SetWidth(imageInfo.ImageWidth).
-			SetHeight(imageInfo.ImageHeight).
-			SetHash(imageInfo.ImageHash).
-			SetTitle(imageInfo.ImageTitle).
-			SetURL(imageInfo.ImageURL).
-			SetUnsavedPost(unsavedPost).
-			Save(context.Background())
+		return nil, nil
 	})
 
 	if err != nil {
 		return err
 	}
 
-	return c.NoContent(http.StatusCreated)
+	return c.NoContent(http.StatusOK)
 }
