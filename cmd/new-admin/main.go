@@ -52,6 +52,10 @@ func main() {
 		panic(err)
 	}
 
-	admin := client.Admin.Create().SetEmail(strings.TrimSpace(email)).SetUsername(strings.TrimSpace(username)).SetPassword(string(passwordHash)).SaveX(context.Background())
+	admin := client.Admin.Create().
+		SetEmail(strings.TrimSpace(email)).
+		SetUsername(strings.TrimSpace(username)).
+		SetPassword(string(passwordHash)).
+		SaveX(context.Background())
 	fmt.Print("A new admin has been successfully created: ", admin.ID)
 }
