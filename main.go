@@ -7,12 +7,15 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"os"
 )
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-		panic(err)
+	if os.Getenv("DEVEL") == "true" {
+		err := godotenv.Load()
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	env.InitEnvVars()
