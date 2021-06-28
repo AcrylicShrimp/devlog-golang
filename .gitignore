@@ -104,3 +104,7 @@ $RECYCLE.BIN/
 
 # Env
 .env
+.env_docker
+
+# Build scripts
+build.sh
