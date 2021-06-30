@@ -171,7 +171,10 @@ func GetUnsavedPost(c echo.Context) error {
 				dbUnsavedPostImage.FieldHash,
 				dbUnsavedPostImage.FieldTitle,
 				dbUnsavedPostImage.FieldURL,
-				dbUnsavedPostImage.FieldCreatedAt)
+				dbUnsavedPostImage.FieldCreatedAt).
+				Order(
+					ent.Asc(dbUnsavedPostImage.FieldCreatedAt),
+					ent.Asc(dbUnsavedPostImage.FieldUUID))
 		}).
 		First(context.Background())
 
