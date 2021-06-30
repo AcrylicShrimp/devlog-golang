@@ -34,5 +34,6 @@ func (PostVideo) Edges() []ent.Edge {
 func (PostVideo) Indices() []ent.Index {
 	return []ent.Index{
 		index.Fields("uuid", "post").Unique(),
+		index.Fields("created_at", "uuid"),
 	}
 }

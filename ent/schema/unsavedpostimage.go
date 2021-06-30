@@ -38,5 +38,6 @@ func (UnsavedPostImage) Edges() []ent.Edge {
 func (UnsavedPostImage) Indices() []ent.Index {
 	return []ent.Index{
 		index.Fields("uuid", "unsaved_post").Unique(),
+		index.Fields("created_at", "uuid"),
 	}
 }
