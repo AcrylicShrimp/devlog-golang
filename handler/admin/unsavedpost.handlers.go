@@ -28,10 +28,10 @@ func AttachUnsavedPost(group *echo.Group) {
 	group.PUT("/:post", UpdateUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.DELETE("/:uuid", DeleteUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.POST("/:post/thumbnail", NewUnsavedPostThumbnail)
-	group.GET("/:post/thumbnail", GetUnsavedPostThumbnail)
+	group.GET("/:post/thumbnail", GetUnsavedPostThumbnail, middleware.WithSession, middleware.RequireSession)
 	group.PUT("/:post/thumbnail", SetUnsavedPostThumbnail)
 	group.POST("/:post/images", NewUnsavedPostImage)
-	group.GET("/:post/images/:image", GetUnsavedPostImage)
+	group.GET("/:post/images/:image", GetUnsavedPostImage, middleware.WithSession, middleware.RequireSession)
 	group.PUT("/:post/images/:image", SetUnsavedPostImage)
 }
 
