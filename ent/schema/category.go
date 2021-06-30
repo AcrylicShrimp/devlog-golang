@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"time"
@@ -25,7 +26,11 @@ func (Category) Fields() []ent.Field {
 // Edges of the Category.
 func (Category) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("posts", Post.Type),
-		edge.To("unsaved_posts", UnsavedPost.Type),
+		edge.To("posts", Post.Type).Annotations(entsql.Annotation{
+			OnDelete: entsql.SetNull,
+		}),
+		edge.To("unsaved_posts", UnsavedPost.Type).Annotations(entsql.Annotation{
+			OnDelete: entsql.SetNull,
+		}),
 	}
 }

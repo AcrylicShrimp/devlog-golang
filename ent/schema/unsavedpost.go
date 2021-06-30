@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"time"
@@ -30,9 +31,17 @@ func (UnsavedPost) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("author", Admin.Type).Ref("unsaved_posts").Unique().Required(),
 		edge.From("category", Category.Type).Ref("unsaved_posts").Unique(),
-		edge.To("thumbnail", UnsavedPostThumbnail.Type).Unique(),
-		edge.To("images", UnsavedPostImage.Type),
-		edge.To("videos", UnsavedPostVideo.Type),
-		edge.To("attachments", UnsavedPostAttachment.Type),
+		edge.To("thumbnail", UnsavedPostThumbnail.Type).Unique().Annotations(entsql.Annotation{
+			OnDelete: entsql.Cascade,
+		}),
+		edge.To("images", UnsavedPostImage.Type).Annotations(entsql.Annotation{
+			OnDelete: entsql.Cascade,
+		}),
+		edge.To("videos", UnsavedPostVideo.Type).Annotations(entsql.Annotation{
+			OnDelete: entsql.Cascade,
+		}),
+		edge.To("attachments", UnsavedPostAttachment.Type).Annotations(entsql.Annotation{
+			OnDelete: entsql.Cascade,
+		}),
 	}
 }

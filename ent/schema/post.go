@@ -2,6 +2,7 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"time"
@@ -32,9 +33,17 @@ func (Post) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("author", Admin.Type).Ref("posts").Unique().Required(),
 		edge.From("category", Category.Type).Ref("posts").Unique(),
-		edge.To("thumbnail", PostThumbnail.Type).Unique(),
-		edge.To("images", PostImage.Type),
-		edge.To("videos", PostVideo.Type),
-		edge.To("attachments", PostAttachment.Type),
+		edge.To("thumbnail", PostThumbnail.Type).Unique().Annotations(entsql.Annotation{
+			OnDelete: entsql.Cascade,
+		}),
+		edge.To("images", PostImage.Type).Annotations(entsql.Annotation{
+			OnDelete: entsql.Cascade,
+		}),
+		edge.To("videos", PostVideo.Type).Annotations(entsql.Annotation{
+			OnDelete: entsql.Cascade,
+		}),
+		edge.To("attachments", PostAttachment.Type).Annotations(entsql.Annotation{
+			OnDelete: entsql.Cascade,
+		}),
 	}
 }

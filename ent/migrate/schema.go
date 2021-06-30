@@ -116,7 +116,7 @@ var (
 				Symbol:     "post_attachments_posts_attachments",
 				Columns:    []*schema.Column{PostAttachmentsColumns[7]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -142,7 +142,7 @@ var (
 				Symbol:     "post_images_posts_images",
 				Columns:    []*schema.Column{PostImagesColumns[8]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -166,7 +166,7 @@ var (
 				Symbol:     "post_thumbnails_posts_thumbnail",
 				Columns:    []*schema.Column{PostThumbnailsColumns[6]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -189,7 +189,7 @@ var (
 				Symbol:     "post_videos_posts_videos",
 				Columns:    []*schema.Column{PostVideosColumns[5]},
 				RefColumns: []*schema.Column{PostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -248,7 +248,7 @@ var (
 				Symbol:     "unsaved_post_attachments_unsaved_posts_attachments",
 				Columns:    []*schema.Column{UnsavedPostAttachmentsColumns[8]},
 				RefColumns: []*schema.Column{UnsavedPostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -275,7 +275,7 @@ var (
 				Symbol:     "unsaved_post_images_unsaved_posts_images",
 				Columns:    []*schema.Column{UnsavedPostImagesColumns[9]},
 				RefColumns: []*schema.Column{UnsavedPostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -300,7 +300,7 @@ var (
 				Symbol:     "unsaved_post_thumbnails_unsaved_posts_thumbnail",
 				Columns:    []*schema.Column{UnsavedPostThumbnailsColumns[7]},
 				RefColumns: []*schema.Column{UnsavedPostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
@@ -324,7 +324,7 @@ var (
 				Symbol:     "unsaved_post_videos_unsaved_posts_videos",
 				Columns:    []*schema.Column{UnsavedPostVideosColumns[6]},
 				RefColumns: []*schema.Column{UnsavedPostsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 	}
