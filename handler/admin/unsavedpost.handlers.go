@@ -30,6 +30,7 @@ func AttachUnsavedPost(group *echo.Group) {
 	group.POST("/:post/thumbnail", NewUnsavedPostThumbnail)
 	group.GET("/:post/thumbnail", GetUnsavedPostThumbnail, middleware.WithSession, middleware.RequireSession)
 	group.PUT("/:post/thumbnail", SetUnsavedPostThumbnail)
+	group.GET("/:post/images", ListUnsavedPostImage, middleware.WithSession, middleware.RequireSession)
 	group.POST("/:post/images", NewUnsavedPostImage)
 	group.GET("/:post/images/:image", GetUnsavedPostImage, middleware.WithSession, middleware.RequireSession)
 	group.PUT("/:post/images/:image", SetUnsavedPostImage)
@@ -623,6 +624,79 @@ func SetUnsavedPostThumbnail(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusOK)
+}
+
+func ListUnsavedPostImage(c echo.Context) error {
+	type PostInfo struct {
+		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
+	}
+
+	postInfo := new(PostInfo)
+
+	if err := c.Bind(postInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(postInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	ctx := c.(*common.Context)
+
+	post, err := ctx.Client().UnsavedPost.Query().
+		Where(
+			dbUnsavedPost.And(
+				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+				dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
+		WithImages(func(query *ent.UnsavedPostImageQuery) {
+			query.Select(
+				dbUnsavedPostImage.FieldUUID,
+				dbUnsavedPostImage.FieldValidity,
+				dbUnsavedPostImage.FieldWidth,
+				dbUnsavedPostImage.FieldHeight,
+				dbUnsavedPostImage.FieldHash,
+				dbUnsavedPostImage.FieldTitle,
+				dbUnsavedPostImage.FieldURL,
+				dbUnsavedPostImage.FieldCreatedAt).
+				Order(
+					ent.Asc(dbUnsavedPostImage.FieldCreatedAt),
+					ent.Asc(dbUnsavedPostImage.FieldUUID))
+		}).
+		First(context.Background())
+
+	if err != nil {
+		if _, ok := err.(*ent.NotFoundError); ok {
+			return echo.NewHTTPError(http.StatusNotFound)
+		}
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	type ImageJSON struct {
+		UUID      string    `json:"uuid"`
+		Validity  string    `json:"validity"`
+		Width     *uint32   `json:"width"`
+		Height    *uint32   `json:"height"`
+		Hash      *string   `json:"hash"`
+		Title     *string   `json:"title"`
+		URL       *string   `json:"url"`
+		CreatedAt time.Time `json:"created-at"`
+	}
+
+	images := make([]ImageJSON, len(post.Edges.Images))
+
+	for index, image := range post.Edges.Images {
+		images[index] = ImageJSON{
+			UUID:      image.UUID,
+			Validity:  (string)(image.Validity),
+			Width:     image.Width,
+			Height:    image.Height,
+			Hash:      image.Hash,
+			Title:     image.Title,
+			URL:       image.URL,
+			CreatedAt: image.CreatedAt,
+		}
+	}
+
+	return c.JSON(http.StatusOK, images)
 }
 
 func NewUnsavedPostImage(c echo.Context) error {
