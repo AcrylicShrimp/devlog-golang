@@ -140,7 +140,10 @@ func GetUnsavedPost(c echo.Context) error {
 	ctx := c.(*common.Context)
 
 	post, err := ctx.Client().UnsavedPost.Query().
-		Where(dbUnsavedPost.And(dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)), dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
+		Where(
+			dbUnsavedPost.And(
+				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+				dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
 		Select(
 			dbUnsavedPost.FieldUUID,
 			dbUnsavedPost.FieldSlug,
