@@ -9,11 +9,15 @@ import (
 	dbUnsavedPost "devlog/ent/unsavedpost"
 	dbUnsavedPostImage "devlog/ent/unsavedpostimage"
 	dbUnsavedPostThumbnail "devlog/ent/unsavedpostthumbnail"
+	"devlog/env"
 	"devlog/middleware"
 	"devlog/regex"
 	"devlog/util"
+	"fmt"
+	awsS3 "github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/labstack/echo/v4"
 	"net/http"
+	"sync"
 	"time"
 )
 
@@ -363,34 +367,90 @@ func UpdateUnsavedPost(c echo.Context) error {
 }
 
 func DeleteUnsavedPost(c echo.Context) error {
-	// TODO: Remove associated thumbnail and images together.
-	type UUIDInfo struct {
-		UUID string `param:"uuid" validate:"required,hexadecimal,len=64"`
+	type PostInfo struct {
+		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
 	}
 
-	uuidInfo := new(UUIDInfo)
-	if err := c.Bind(uuidInfo); err != nil {
+	postInfo := new(PostInfo)
+
+	if err := c.Bind(postInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(uuidInfo); err != nil {
+	if err := c.Validate(postInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
-		unsavedPost, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.And(dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)), dbUnsavedPost.UUIDEQ(uuidInfo.UUID))).
-			Select(dbUnsavedPost.FieldID).
+		post, err := tx.UnsavedPost.Query().
+			Where(dbUnsavedPost.And(
+				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+				dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
+			Select(
+				dbUnsavedPost.FieldID,
+				dbUnsavedPost.FieldUUID).
+			WithThumbnail(func(query *ent.UnsavedPostThumbnailQuery) {
+				query.Select(
+					dbUnsavedPostThumbnail.FieldValidity)
+			}).
+			WithImages(func(query *ent.UnsavedPostImageQuery) {
+				query.Select(
+					dbUnsavedPostImage.FieldUUID,
+					dbUnsavedPostImage.FieldValidity)
+			}).
 			First(context.Background())
+
 		if err != nil {
 			if _, ok := err.(*ent.NotFoundError); ok {
 				return nil, echo.NewHTTPError(http.StatusNotFound)
 			}
-
 			return nil, err
 		}
 
-		return nil, tx.UnsavedPost.DeleteOne(unsavedPost).Exec(context.Background())
+		var deletionWaitGroup sync.WaitGroup
+
+		if post.Edges.Thumbnail != nil && post.Edges.Thumbnail.Validity == dbUnsavedPostThumbnail.ValidityValid {
+			deletionWaitGroup.Add(1)
+
+			go func() {
+				defer deletionWaitGroup.Done()
+
+				key := fmt.Sprintf("v1/%v/thumbnail", post.UUID)
+				_, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
+					Bucket: &env.AWSS3Bucket,
+					Key:    &key,
+				})
+
+				if err != nil {
+					ctx.Logger().Warnf("unable to remove the thumbnail of the post %v from the AWS S3 due to: %v", post.UUID, err)
+				}
+			}()
+		}
+
+		for _, image := range post.Edges.Images {
+			if image.Validity == dbUnsavedPostImage.ValidityValid {
+				deletionWaitGroup.Add(1)
+
+				go func(image *ent.UnsavedPostImage) {
+					defer deletionWaitGroup.Done()
+
+					key := fmt.Sprintf("v1/%v/images/%v", post.UUID, image.UUID)
+					_, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
+						Bucket: &env.AWSS3Bucket,
+						Key:    &key,
+					})
+
+					if err != nil {
+						ctx.Logger().Warnf("unable to remove the image %v of the post %v from the AWS S3 due to: %v", image.UUID, post.UUID, err)
+					}
+				}(image)
+			}
+		}
+
+		deletionWaitGroup.Wait()
+
+		return nil, tx.UnsavedPost.DeleteOne(post).Exec(context.Background())
 	})
+
 	if err != nil {
 		return err
 	}
