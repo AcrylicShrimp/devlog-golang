@@ -19,9 +19,9 @@ import (
 
 func AttachUnsavedPost(group *echo.Group) {
 	group.GET("", ListUnsavedPosts, middleware.WithSession, middleware.RequireSession)
-	group.GET("/:uuid", GetUnsavedPost, middleware.WithSession, middleware.RequireSession)
+	group.GET("/:post", GetUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.POST("", NewUnsavedPost, middleware.WithSession, middleware.RequireSession)
-	group.PUT("/:uuid", UpdateUnsavedPost, middleware.WithSession, middleware.RequireSession)
+	group.PUT("/:post", UpdateUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.DELETE("/:uuid", DeleteUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.POST("/:post/thumbnail", NewUnsavedPostThumbnail)
 	group.GET("/:post/thumbnail", GetUnsavedPostThumbnail)
@@ -34,7 +34,7 @@ func AttachUnsavedPost(group *echo.Group) {
 func ListUnsavedPosts(c echo.Context) error {
 	ctx := c.(*common.Context)
 
-	unsavedPosts, err := ctx.Client().UnsavedPost.Query().
+	posts, err := ctx.Client().UnsavedPost.Query().
 		Where(dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID))).
 		Select(
 			dbUnsavedPost.FieldUUID,
@@ -49,67 +49,94 @@ func ListUnsavedPosts(c echo.Context) error {
 		}).
 		WithThumbnail(func(query *ent.UnsavedPostThumbnailQuery) {
 			query.Select(
+				dbUnsavedPostThumbnail.FieldValidity,
 				dbUnsavedPostThumbnail.FieldWidth,
 				dbUnsavedPostThumbnail.FieldHeight,
 				dbUnsavedPostThumbnail.FieldHash,
-				dbUnsavedPostThumbnail.FieldURL)
+				dbUnsavedPostThumbnail.FieldURL,
+				dbUnsavedPostThumbnail.FieldCreatedAt)
 		}).
 		Order(ent.Asc(dbUnsavedPost.FieldCreatedAt)).
 		All(context.Background())
+
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type UnsavedPostJSON struct {
-		UUID        string                    `json:"uuid"`
-		Slug        *string                   `json:"slug"`
-		AccessLevel *string                   `json:"access-level"`
-		Title       *string                   `json:"title"`
-		CreatedAt   time.Time                 `json:"created-at"`
-		ModifiedAt  time.Time                 `json:"modified-at"`
-		Category    *string                   `json:"category"`
-		Thumbnail   *ent.UnsavedPostThumbnail `json:"thumbnail"`
+	type ThumbnailJSON struct {
+		Validity  string    `json:"validity"`
+		Width     *uint32   `json:"width"`
+		Height    *uint32   `json:"height"`
+		Hash      *string   `json:"hash"`
+		URL       *string   `json:"url"`
+		CreatedAt time.Time `json:"created-at"`
+	}
+	type PostJSON struct {
+		UUID        string         `json:"uuid"`
+		Slug        *string        `json:"slug"`
+		AccessLevel *string        `json:"access-level"`
+		Title       *string        `json:"title"`
+		CreatedAt   time.Time      `json:"created-at"`
+		ModifiedAt  time.Time      `json:"modified-at"`
+		Category    *string        `json:"category"`
+		Thumbnail   *ThumbnailJSON `json:"thumbnail"`
 	}
 
-	unsavedPostsJSON := make([]UnsavedPostJSON, len(unsavedPosts))
-	for index, unsavedPost := range unsavedPosts {
+	postJSONs := make([]PostJSON, len(posts))
+
+	for index, post := range posts {
 		var category *string
-		if unsavedPost.Edges.Category != nil {
-			category = &unsavedPost.Edges.Category.Name
+
+		if post.Edges.Category != nil {
+			category = &post.Edges.Category.Name
 		}
 
-		unsavedPostsJSON[index] = UnsavedPostJSON{
-			UUID:        unsavedPost.UUID,
-			Slug:        unsavedPost.Slug,
-			AccessLevel: (*string)(unsavedPost.AccessLevel),
-			Title:       unsavedPost.Title,
-			CreatedAt:   unsavedPost.CreatedAt,
-			ModifiedAt:  unsavedPost.ModifiedAt,
+		var thumbnail *ThumbnailJSON
+
+		if post.Edges.Thumbnail != nil {
+			thumbnail = &ThumbnailJSON{
+				Validity:  (string)(post.Edges.Thumbnail.Validity),
+				Width:     post.Edges.Thumbnail.Width,
+				Height:    post.Edges.Thumbnail.Height,
+				Hash:      post.Edges.Thumbnail.Hash,
+				URL:       post.Edges.Thumbnail.URL,
+				CreatedAt: post.Edges.Thumbnail.CreatedAt,
+			}
+		}
+
+		postJSONs[index] = PostJSON{
+			UUID:        post.UUID,
+			Slug:        post.Slug,
+			AccessLevel: (*string)(post.AccessLevel),
+			Title:       post.Title,
+			CreatedAt:   post.CreatedAt,
+			ModifiedAt:  post.ModifiedAt,
 			Category:    category,
-			Thumbnail:   unsavedPost.Edges.Thumbnail,
+			Thumbnail:   thumbnail,
 		}
 	}
 
-	return c.JSON(http.StatusOK, unsavedPostsJSON)
+	return c.JSON(http.StatusOK, postJSONs)
 }
 
 func GetUnsavedPost(c echo.Context) error {
-	type UUIDInfo struct {
-		UUID string `param:"uuid" validate:"required,hexadecimal,len=64"`
+	type PostInfo struct {
+		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
 	}
 
-	uuidInfo := new(UUIDInfo)
-	if err := c.Bind(uuidInfo); err != nil {
+	postInfo := new(PostInfo)
+
+	if err := c.Bind(postInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(uuidInfo); err != nil {
+	if err := c.Validate(postInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	ctx := c.(*common.Context)
 
-	unsavedPost, err := ctx.Client().UnsavedPost.Query().
-		Where(dbUnsavedPost.And(dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)), dbUnsavedPost.UUIDEQ(uuidInfo.UUID))).
+	post, err := ctx.Client().UnsavedPost.Query().
+		Where(dbUnsavedPost.And(dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)), dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
 		Select(
 			dbUnsavedPost.FieldUUID,
 			dbUnsavedPost.FieldSlug,
@@ -124,63 +151,115 @@ func GetUnsavedPost(c echo.Context) error {
 		}).
 		WithThumbnail(func(query *ent.UnsavedPostThumbnailQuery) {
 			query.Select(
+				dbUnsavedPostThumbnail.FieldValidity,
 				dbUnsavedPostThumbnail.FieldWidth,
 				dbUnsavedPostThumbnail.FieldHeight,
 				dbUnsavedPostThumbnail.FieldHash,
-				dbUnsavedPostThumbnail.FieldURL)
+				dbUnsavedPostThumbnail.FieldURL,
+				dbUnsavedPostThumbnail.FieldCreatedAt)
 		}).
 		WithImages(func(query *ent.UnsavedPostImageQuery) {
 			query.Select(
 				dbUnsavedPostImage.FieldUUID,
+				dbUnsavedPostImage.FieldValidity,
 				dbUnsavedPostImage.FieldWidth,
 				dbUnsavedPostImage.FieldHeight,
 				dbUnsavedPostImage.FieldHash,
 				dbUnsavedPostImage.FieldTitle,
-				dbUnsavedPostImage.FieldURL)
+				dbUnsavedPostImage.FieldURL,
+				dbUnsavedPostImage.FieldCreatedAt)
 		}).
 		First(context.Background())
+
 	if err != nil {
 		if _, ok := err.(*ent.NotFoundError); ok {
 			return echo.NewHTTPError(http.StatusNotFound)
 		}
-
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type UnsavedPostJSON struct {
-		UUID        string                    `json:"uuid"`
-		Slug        *string                   `json:"slug"`
-		AccessLevel *string                   `json:"access-level"`
-		Title       *string                   `json:"title"`
-		Content     *string                   `json:"content"`
-		CreatedAt   time.Time                 `json:"created-at"`
-		ModifiedAt  time.Time                 `json:"modified-at"`
-		Category    *string                   `json:"category"`
-		Thumbnail   *ent.UnsavedPostThumbnail `json:"thumbnail"`
-		Images      ent.UnsavedPostImages     `json:"images"`
+	type ThumbnailJSON struct {
+		Validity  string    `json:"validity"`
+		Width     *uint32   `json:"width"`
+		Height    *uint32   `json:"height"`
+		Hash      *string   `json:"hash"`
+		URL       *string   `json:"url"`
+		CreatedAt time.Time `json:"created-at"`
+	}
+	type ImageJSON struct {
+		UUID      string    `json:"uuid"`
+		Validity  string    `json:"validity"`
+		Width     *uint32   `json:"width"`
+		Height    *uint32   `json:"height"`
+		Hash      *string   `json:"hash"`
+		Title     *string   `json:"title"`
+		URL       *string   `json:"url"`
+		CreatedAt time.Time `json:"created-at"`
+	}
+	type PostJSON struct {
+		UUID        string         `json:"uuid"`
+		Slug        *string        `json:"slug"`
+		AccessLevel *string        `json:"access-level"`
+		Title       *string        `json:"title"`
+		Content     *string        `json:"content"`
+		CreatedAt   time.Time      `json:"created-at"`
+		ModifiedAt  time.Time      `json:"modified-at"`
+		Category    *string        `json:"category"`
+		Thumbnail   *ThumbnailJSON `json:"thumbnail"`
+		Images      []ImageJSON    `json:"images"`
 	}
 
 	var category *string
-	if unsavedPost.Edges.Category != nil {
-		category = &unsavedPost.Edges.Category.Name
+
+	if post.Edges.Category != nil {
+		category = &post.Edges.Category.Name
 	}
 
-	return c.JSON(http.StatusOK, UnsavedPostJSON{
-		UUID:        unsavedPost.UUID,
-		Slug:        unsavedPost.Slug,
-		AccessLevel: (*string)(unsavedPost.AccessLevel),
-		Title:       unsavedPost.Title,
-		Content:     unsavedPost.Content,
-		CreatedAt:   unsavedPost.CreatedAt,
-		ModifiedAt:  unsavedPost.ModifiedAt,
+	var thumbnail *ThumbnailJSON
+
+	if post.Edges.Thumbnail != nil {
+		thumbnail = &ThumbnailJSON{
+			Validity:  (string)(post.Edges.Thumbnail.Validity),
+			Width:     post.Edges.Thumbnail.Width,
+			Height:    post.Edges.Thumbnail.Height,
+			Hash:      post.Edges.Thumbnail.Hash,
+			URL:       post.Edges.Thumbnail.URL,
+			CreatedAt: post.Edges.Thumbnail.CreatedAt,
+		}
+	}
+
+	images := make([]ImageJSON, len(post.Edges.Images))
+
+	for index, image := range post.Edges.Images {
+		images[index] = ImageJSON{
+			UUID:      image.UUID,
+			Validity:  (string)(image.Validity),
+			Width:     image.Width,
+			Height:    image.Height,
+			Hash:      image.Hash,
+			Title:     image.Title,
+			URL:       image.URL,
+			CreatedAt: image.CreatedAt,
+		}
+	}
+
+	return c.JSON(http.StatusOK, PostJSON{
+		UUID:        post.UUID,
+		Slug:        post.Slug,
+		AccessLevel: (*string)(post.AccessLevel),
+		Title:       post.Title,
+		Content:     post.Content,
+		CreatedAt:   post.CreatedAt,
+		ModifiedAt:  post.ModifiedAt,
 		Category:    category,
-		Thumbnail:   unsavedPost.Edges.Thumbnail,
-		Images:      unsavedPost.Edges.Images,
+		Thumbnail:   thumbnail,
+		Images:      images,
 	})
 }
 
 func NewUnsavedPost(c echo.Context) error {
-	token, err := util.GenerateToken64()
+	uuid, err := util.GenerateToken64()
+
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
@@ -188,23 +267,24 @@ func NewUnsavedPost(c echo.Context) error {
 	ctx := c.(*common.Context)
 
 	_, err = ctx.Client().UnsavedPost.Create().
-		SetUUID(token).
+		SetUUID(uuid).
 		SetAuthor(ctx.Admin()).
 		Save(context.Background())
+
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type UnsavedPostInfo struct {
+	type PostJSON struct {
 		UUID string `json:"uuid"`
 	}
 
-	return c.JSON(http.StatusCreated, UnsavedPostInfo{UUID: token})
+	return c.JSON(http.StatusCreated, PostJSON{UUID: uuid})
 }
 
 func UpdateUnsavedPost(c echo.Context) error {
-	type UnsavedPostInfo struct {
-		UUID        string                     `param:"uuid" validate:"required,hexadecimal,len=64"`
+	type PostInfo struct {
+		PostUUID    string                     `param:"post" validate:"required,hexadecimal,len=64"`
 		Slug        *string                    `json:"slug" form:"slug" validate:"omitempty,min=1,max=255"`
 		AccessLevel *dbUnsavedPost.AccessLevel `json:"access-level" form:"access-level" query:"access-level" validate:"omitempty,oneof=public unlisted private"`
 		Title       *string                    `json:"title" form:"title" query:"title" validate:"omitempty,min=1,max=255"`
@@ -212,37 +292,38 @@ func UpdateUnsavedPost(c echo.Context) error {
 		Category    *string                    `json:"category" form:"category" query:"category" validate:"omitempty,min=1"`
 	}
 
-	unsavedPostInfo := new(UnsavedPostInfo)
-	if err := c.Bind(unsavedPostInfo); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
-	}
-	if err := c.Validate(unsavedPostInfo); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest)
-	}
+	postInfo := new(PostInfo)
 
-	if unsavedPostInfo.Slug != nil && !regex.Slug.MatchString(*unsavedPostInfo.Slug) {
+	if err := c.Bind(postInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(postInfo); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if postInfo.Slug != nil && !regex.Slug.MatchString(*postInfo.Slug) {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
-		unsavedPost, err := tx.UnsavedPost.Query().
+		post, err := tx.UnsavedPost.Query().
 			Where(dbUnsavedPost.And(
 				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
-				dbUnsavedPost.UUIDEQ(unsavedPostInfo.UUID))).
+				dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
 			Select(dbUnsavedPost.FieldID).
 			First(context.Background())
+
 		if err != nil {
 			if _, ok := err.(*ent.NotFoundError); ok {
 				return nil, echo.NewHTTPError(http.StatusNotFound)
 			}
-
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		var categoryID *int
-		if unsavedPostInfo.Category != nil {
+
+		if postInfo.Category != nil {
 			category, err := tx.Category.Query().
-				Where(dbCategory.NameEQ(*unsavedPostInfo.Category)).
+				Where(dbCategory.NameEQ(*postInfo.Category)).
 				Select(dbCategory.FieldID).
 				First(context.Background())
 
@@ -250,23 +331,22 @@ func UpdateUnsavedPost(c echo.Context) error {
 				if _, ok := err.(*ent.NotFoundError); ok {
 					return nil, echo.NewHTTPError(http.StatusBadRequest)
 				}
-
 				return nil, echo.NewHTTPError(http.StatusInternalServerError)
 			}
 
 			categoryID = &category.ID
 		}
 
-		if _, err := unsavedPost.Update().
+		if _, err := post.Update().
 			ClearSlug().
 			ClearAccessLevel().
 			ClearTitle().
 			ClearContent().
 			ClearCategory().
-			SetNillableSlug(unsavedPostInfo.Slug).
-			SetNillableAccessLevel(unsavedPostInfo.AccessLevel).
-			SetNillableTitle(unsavedPostInfo.Title).
-			SetNillableContent(unsavedPostInfo.Content).
+			SetNillableSlug(postInfo.Slug).
+			SetNillableAccessLevel(postInfo.AccessLevel).
+			SetNillableTitle(postInfo.Title).
+			SetNillableContent(postInfo.Content).
 			SetNillableCategoryID(categoryID).
 			Save(context.Background()); err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
@@ -274,6 +354,7 @@ func UpdateUnsavedPost(c echo.Context) error {
 
 		return nil, nil
 	})
+
 	if err != nil {
 		return err
 	}
