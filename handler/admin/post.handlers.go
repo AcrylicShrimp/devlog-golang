@@ -27,15 +27,15 @@ import (
 
 func AttachPost(group *echo.Group) {
 	group.POST("", NewPost, middleware.WithSession, middleware.RequireSession)
-	//group.POST("", NewPostHandler, WithSession, RequireSession)
 }
 
 func NewPost(c echo.Context) error {
-	type UUIDInfo struct {
-		UUID string `json:"uuid" validate:"required,hexadecimal,len=64"`
+	type PostInfo struct {
+		PostUUID string `json:"post-uuid" validate:"required,hexadecimal,len=64"`
 	}
 
-	uuidInfo := new(UUIDInfo)
+	uuidInfo := new(PostInfo)
+
 	if err := c.Bind(uuidInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
@@ -45,7 +45,9 @@ func NewPost(c echo.Context) error {
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		unsavedPost, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.And(dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)), dbUnsavedPost.UUIDEQ(uuidInfo.UUID))).
+			Where(dbUnsavedPost.And(
+				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+				dbUnsavedPost.UUIDEQ(uuidInfo.PostUUID))).
 			Select(
 				dbUnsavedPost.FieldUUID,
 				dbUnsavedPost.FieldSlug,
@@ -59,6 +61,7 @@ func NewPost(c echo.Context) error {
 			WithThumbnail(func(query *ent.UnsavedPostThumbnailQuery) {
 				query.Select(
 					dbUnsavedPostThumbnail.FieldID,
+					dbUnsavedPostThumbnail.FieldValidity,
 					dbUnsavedPostThumbnail.FieldWidth,
 					dbUnsavedPostThumbnail.FieldHeight,
 					dbUnsavedPostThumbnail.FieldHash,
@@ -67,19 +70,23 @@ func NewPost(c echo.Context) error {
 			WithImages(func(query *ent.UnsavedPostImageQuery) {
 				query.Select(
 					dbUnsavedPostImage.FieldID,
+					dbUnsavedPostImage.FieldValidity,
 					dbUnsavedPostImage.FieldUUID,
 					dbUnsavedPostImage.FieldWidth,
 					dbUnsavedPostImage.FieldHeight,
 					dbUnsavedPostImage.FieldHash,
 					dbUnsavedPostImage.FieldTitle,
-					dbUnsavedPostImage.FieldURL)
+					dbUnsavedPostImage.FieldURL).
+					Order(
+						ent.Asc(dbUnsavedPostImage.FieldCreatedAt),
+						ent.Asc(dbUnsavedPostImage.FieldUUID))
 			}).
 			First(context.Background())
+
 		if err != nil {
 			if _, ok := err.(*ent.NotFoundError); ok {
 				return nil, echo.NewHTTPError(http.StatusBadRequest)
 			}
-
 			return nil, err
 		}
 
@@ -94,6 +101,17 @@ func NewPost(c echo.Context) error {
 		}
 		if unsavedPost.Content == nil {
 			return nil, echo.NewHTTPError(http.StatusBadRequest)
+		}
+
+		if unsavedPost.Edges.Thumbnail != nil &&
+			unsavedPost.Edges.Thumbnail.Validity != dbUnsavedPostThumbnail.ValidityValid {
+			return nil, echo.NewHTTPError(http.StatusBadRequest)
+		}
+
+		for _, image := range unsavedPost.Edges.Images {
+			if image.Validity != dbUnsavedPostImage.ValidityValid {
+				return nil, echo.NewHTTPError(http.StatusBadRequest)
+			}
 		}
 
 		markdownHTML := goldmark.New(
@@ -114,28 +132,34 @@ func NewPost(c echo.Context) error {
 		)
 
 		var htmlContentBuf bytes.Buffer
+
 		if err := markdownHTML.Convert([]byte(*unsavedPost.Content), &htmlContentBuf); err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
+
 		htmlContent := htmlContentBuf.String()
 
 		var plainContentBuf bytes.Buffer
+
 		if err := markdownPlain.Convert([]byte(*unsavedPost.Content), &plainContentBuf); err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
+
 		plainContent := plainContentBuf.String()
 		plainContent = strings.TrimSpace(plainContent)
 		plainContent = regex.Whitespaces.ReplaceAllString(plainContent, " ")
+
 		if 255 < len(plainContent) {
 			plainContent = string([]rune(plainContent)[:255])
 		}
 
 		var categoryID *int
+
 		if unsavedPost.Edges.Category != nil {
 			categoryID = &unsavedPost.Edges.Category.ID
 		}
 
-		_, err = tx.Post.Create().
+		post, err := tx.Post.Create().
 			SetUUID(unsavedPost.UUID).
 			SetSlug(*unsavedPost.Slug).
 			SetAccessLevel(dbPost.AccessLevel(*unsavedPost.AccessLevel)).
@@ -146,17 +170,47 @@ func NewPost(c echo.Context) error {
 			SetAuthor(ctx.Admin()).
 			SetNillableCategoryID(categoryID).
 			Save(context.Background())
+
 		if err != nil {
 			if _, ok := err.(*ent.ConstraintError); ok {
 				return nil, echo.NewHTTPError(http.StatusConflict)
 			}
-
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
-		// TODO: Remove associated thumbnail and images together.
+		if thumbnail := unsavedPost.Edges.Thumbnail; thumbnail != nil {
+			_, err := tx.PostThumbnail.Create().
+				SetWidth(*thumbnail.Width).
+				SetHeight(*thumbnail.Height).
+				SetHash(*thumbnail.Hash).
+				SetURL(*thumbnail.URL).
+				SetPost(post).
+				Save(context.Background())
+
+			if err != nil {
+				return nil, echo.NewHTTPError(http.StatusInternalServerError)
+			}
+		}
+
+		for _, image := range unsavedPost.Edges.Images {
+			_, err := tx.PostImage.Create().
+				SetUUID(image.UUID).
+				SetWidth(*image.Width).
+				SetHeight(*image.Height).
+				SetHash(*image.Hash).
+				SetTitle(*image.Title).
+				SetURL(*image.URL).
+				SetPost(post).
+				Save(context.Background())
+
+			if err != nil {
+				return nil, echo.NewHTTPError(http.StatusInternalServerError)
+			}
+		}
+
 		return nil, tx.UnsavedPost.DeleteOne(unsavedPost).Exec(context.Background())
 	})
+
 	if err != nil {
 		return err
 	}
