@@ -11,8 +11,8 @@ COPY . .
 
 #RUN go test
 RUN mkdir out
-RUN go build -o ./out/ .
-RUN go build -o ./out/ ./cmd/new-admin
+RUN go build -ldflags '-w -s' -o ./out/ .
+RUN go build -ldflags '-w -s' -o ./out/ ./cmd/new-admin
 
 FROM alpine:latest
 
