@@ -28,4 +28,4 @@ jobs:
         with:
           file: 'nightly.Dockerfile'
           push: true
-          tags: devlog:nightly
+          tags: ${{ env.REGISTRY }}/acrylicshrimp/devlog:nightly
