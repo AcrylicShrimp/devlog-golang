@@ -1,0 +1,90 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "A markdown-based lightweight blog service.",
+        "title": "devlog",
+        "contact": {
+            "name": "Author",
+            "url": "https://github.com/AcrylicShrimp",
+            "email": "led789zxpp@naver.com"
+        },
+        "license": {
+            "name": "MIT"
+        },
+        "version": "0.0.1"
+    },
+    "basePath": "/v1",
+    "paths": {
+        "/admin/categories": {
+            "get": {
+                "description": "Lists all categories.",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "List categories",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.AdminCategory"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.AdminCategory": {
+            "type": "object",
+            "properties": {
+                "created-at": {
+                    "type": "string",
+                    "example": "2021-08-18 00:00:00Z"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "web-related things"
+                },
+                "modified-at": {
+                    "type": "string",
+                    "example": "2021-08-18 00:00:00Z"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "web"
+                }
+            }
+        },
+        "model.HTTPError": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "500 - Internal Server Error"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Api-Token",
+            "in": "header"
+        }
+    }
+}

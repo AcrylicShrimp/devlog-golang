@@ -18,6 +18,14 @@ func AttachCategory(group *echo.Group) {
 	group.DELETE("/:name", DeleteCategoryHandler, middleware.WithSession, middleware.RequireSession)
 }
 
+// ListCategories godoc
+// @router /admin/categories [get]
+// @summary List categories
+// @description Lists all categories.
+// @produce json
+// @success 200 {array} model.AdminCategory
+// @failure 401 {object} model.HTTPError
+// @failure 500 {object} model.HTTPError
 func ListCategories(c echo.Context) error {
 	ctx := c.(*common.Context)
 

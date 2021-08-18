@@ -2,6 +2,7 @@ package main
 
 import (
 	"devlog/common"
+	_ "devlog/docs"
 	"devlog/env"
 	"devlog/handler"
 	"github.com/joho/godotenv"
@@ -9,6 +10,22 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"os"
 )
+
+// @title devlog
+// @version 0.0.1
+// @description A markdown-based lightweight blog service.
+
+// @contact.name Author
+// @contact.url https://github.com/AcrylicShrimp
+// @contact.email led789zxpp@naver.com
+
+// @license.name MIT
+
+// @BasePath /v1
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Api-Token
 
 func main() {
 	if os.Getenv("DEVEL") == "true" {
