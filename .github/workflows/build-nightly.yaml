@@ -5,7 +5,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
@@ -29,4 +28,4 @@ jobs:
         with:
           file: 'nightly.Dockerfile'
           push: true
-          tags: ${{ env.IMAGE_NAME }}:nightly
+          tags: devlog:nightly
