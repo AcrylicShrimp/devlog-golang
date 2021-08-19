@@ -20,6 +20,4 @@ WORKDIR /srv/app
 
 COPY --from=build /tmp/build/out/* .
 
-EXPOSE 8000
-
 ENTRYPOINT ./devlog

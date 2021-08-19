@@ -5,6 +5,7 @@ import (
 	_ "devlog/docs"
 	"devlog/env"
 	"devlog/handler"
+	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -56,5 +57,5 @@ func main() {
 
 	handler.Attach(e.Group("/v1"))
 
-	e.Logger.Fatal(e.Start("0.0.0.0:8000"))
+	e.Logger.Fatal(e.Start(fmt.Sprintf("0.0.0.0:%v", env.Port)))
 }
