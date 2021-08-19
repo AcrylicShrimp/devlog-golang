@@ -5,6 +5,7 @@ import (
 	"devlog/ent"
 	"devlog/env"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 )
 
 func InitDB() (*ent.Client, error) {

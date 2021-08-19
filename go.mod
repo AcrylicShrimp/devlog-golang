@@ -10,6 +10,7 @@ require (
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/joho/godotenv v1.3.0
 	github.com/labstack/echo/v4 v4.5.0
+	github.com/lib/pq v1.10.2
 	github.com/swaggo/swag v1.7.1
 	github.com/yuin/goldmark v1.4.0
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5
