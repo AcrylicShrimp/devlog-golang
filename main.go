@@ -43,6 +43,7 @@ func main() {
 	e.Validator = NewValidator()
 
 	client, err := InitDB()
+
 	if err != nil {
 		panic(err)
 	}
