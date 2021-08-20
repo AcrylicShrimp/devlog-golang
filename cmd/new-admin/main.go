@@ -3,7 +3,11 @@ package main
 import (
 	"bufio"
 	"context"
+	"database/sql"
 	"devlog/ent"
+	"devlog/env"
+	"entgo.io/ent/dialect"
+	entsql "entgo.io/ent/dialect/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/jackc/pgx/v4"
@@ -13,10 +17,23 @@ import (
 )
 
 func main() {
-	client, err := ent.Open(os.Getenv("DB_DRIVER"), os.Getenv("DB_DSN"))
+	env.InitDBEnvVars()
+
+	db, err := sql.Open(env.DatabaseDriver, env.DatabaseDSN)
+
 	if err != nil {
 		panic(err)
 	}
+
+	var driver *entsql.Driver
+
+	if env.DatabaseDriver == "pgx" {
+		driver = entsql.OpenDB(dialect.Postgres, db)
+	} else {
+		driver = entsql.OpenDB(env.DatabaseDriver, db)
+	}
+
+	client := ent.NewClient(ent.Driver(driver))
 
 	scanner := bufio.NewScanner(os.Stdin)
 
