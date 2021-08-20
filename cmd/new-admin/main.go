@@ -6,6 +6,7 @@ import (
 	"devlog/ent"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v4"
 	"golang.org/x/crypto/bcrypt"
 	"os"
 	"strings"
