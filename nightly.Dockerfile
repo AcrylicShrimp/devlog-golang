@@ -20,4 +20,4 @@ WORKDIR /srv/app
 
 COPY --from=build /tmp/build/out/* .
 
-ENTRYPOINT ./devlog
+CMD ./devlog
