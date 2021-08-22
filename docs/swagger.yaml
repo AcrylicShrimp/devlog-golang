@@ -14,12 +14,69 @@ definitions:
       name:
         example: web
         type: string
+    required:
+    - created-at
+    - modified-at
+    - name
     type: object
-  model.HTTPError:
+  model.AdminNewCategory:
+    properties:
+      description:
+        example: web-related things
+        type: string
+      name:
+        example: web
+        type: string
+    required:
+    - name
+    type: object
+  model.AdminNewCategoryCreated:
+    properties:
+      name:
+        example: web
+        type: string
+    required:
+    - name
+    type: object
+  model.HTTPError400:
+    properties:
+      message:
+        example: 400 - Bad request
+        type: string
+    required:
+    - message
+    type: object
+  model.HTTPError401:
+    properties:
+      message:
+        example: 401 - Unauthorized
+        type: string
+    required:
+    - message
+    type: object
+  model.HTTPError404:
+    properties:
+      message:
+        example: 404 - Not found
+        type: string
+    required:
+    - message
+    type: object
+  model.HTTPError409:
+    properties:
+      message:
+        example: 409 - Conflict
+        type: string
+    required:
+    - message
+    type: object
+  model.HTTPError500:
     properties:
       message:
         example: 500 - Internal Server Error
         type: string
+    required:
+    - message
     type: object
 info:
   contact:
@@ -33,8 +90,44 @@ info:
   version: 0.0.1
 paths:
   /admin/categories:
+    delete:
+      consumes:
+      - application/json
+      description: Removes the given category.
+      parameters:
+      - description: A category name to be removed
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 'NoContent: when the category has been removed successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Remove category
+      tags:
+      - admin category management
     get:
-      description: Lists all categories.
+      description: |-
+        Lists all categories.
+        The categories are sorted by the 'name' field in ascending order.
       produces:
       - application/json
       responses:
@@ -47,12 +140,53 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/model.HTTPError'
+            $ref: '#/definitions/model.HTTPError401'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/model.HTTPError'
+            $ref: '#/definitions/model.HTTPError500'
       summary: List categories
+      tags:
+      - admin category management
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Creates a new category.
+        The 'name' field must be unique across all categories.
+      parameters:
+      - description: The category to be created
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/model.AdminNewCategory'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.AdminNewCategoryCreated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "409":
+          description: 'Conflict: when the name is not unique(already taken)'
+          schema:
+            $ref: '#/definitions/model.HTTPError409'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Create category
+      tags:
+      - admin category management
 securityDefinitions:
   ApiKeyAuth:
     in: header

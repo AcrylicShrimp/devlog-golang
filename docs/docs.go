@@ -32,9 +32,12 @@ var doc = `{
     "paths": {
         "/admin/categories": {
             "get": {
-                "description": "Lists all categories.",
+                "description": "Lists all categories.\nThe categories are sorted by the 'name' field in ascending order.",
                 "produces": [
                     "application/json"
+                ],
+                "tags": [
+                    "admin category management"
                 ],
                 "summary": "List categories",
                 "responses": {
@@ -50,13 +53,120 @@ var doc = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/model.HTTPError"
+                            "$ref": "#/definitions/model.HTTPError401"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/model.HTTPError"
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new category.\nThe 'name' field must be unique across all categories.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin category management"
+                ],
+                "summary": "Create category",
+                "parameters": [
+                    {
+                        "description": "The category to be created",
+                        "name": "category",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.AdminNewCategory"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.AdminNewCategoryCreated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict: when the name is not unique(already taken)",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError409"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Removes the given category.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin category management"
+                ],
+                "summary": "Remove category",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "A category name to be removed",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "NoContent: when the category has been removed successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
                         }
                     }
                 }
@@ -66,6 +176,11 @@ var doc = `{
     "definitions": {
         "model.AdminCategory": {
             "type": "object",
+            "required": [
+                "created-at",
+                "modified-at",
+                "name"
+            ],
             "properties": {
                 "created-at": {
                     "type": "string",
@@ -85,8 +200,87 @@ var doc = `{
                 }
             }
         },
-        "model.HTTPError": {
+        "model.AdminNewCategory": {
             "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "web-related things"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "web"
+                }
+            }
+        },
+        "model.AdminNewCategoryCreated": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "web"
+                }
+            }
+        },
+        "model.HTTPError400": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "400 - Bad request"
+                }
+            }
+        },
+        "model.HTTPError401": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "401 - Unauthorized"
+                }
+            }
+        },
+        "model.HTTPError404": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "404 - Not found"
+                }
+            }
+        },
+        "model.HTTPError409": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "409 - Conflict"
+                }
+            }
+        },
+        "model.HTTPError500": {
+            "type": "object",
+            "required": [
+                "message"
+            ],
             "properties": {
                 "message": {
                     "type": "string",

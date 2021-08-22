@@ -7,6 +7,7 @@ import (
 	dbCategory "devlog/ent/category"
 	dbPost "devlog/ent/post"
 	"devlog/middleware"
+	"devlog/model"
 	"devlog/util"
 	"github.com/labstack/echo/v4"
 	"net/http"
@@ -22,10 +23,12 @@ func AttachCategory(group *echo.Group) {
 // @router /admin/categories [get]
 // @summary List categories
 // @description Lists all categories.
+// @description The categories are sorted by the 'name' field in ascending order.
+// @tags admin category management
 // @produce json
 // @success 200 {array} model.AdminCategory
-// @failure 401 {object} model.HTTPError
-// @failure 500 {object} model.HTTPError
+// @failure 401 {object} model.HTTPError401
+// @failure 500 {object} model.HTTPError500
 func ListCategories(c echo.Context) error {
 	ctx := c.(*common.Context)
 
@@ -37,6 +40,7 @@ func ListCategories(c echo.Context) error {
 			dbCategory.FieldModifiedAt).
 		Order(ent.Asc(dbCategory.FieldName)).
 		All(context.Background())
+
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
@@ -44,13 +48,23 @@ func ListCategories(c echo.Context) error {
 	return c.JSON(http.StatusOK, categories)
 }
 
+// NewCategoryHandler godoc
+// @router /admin/categories [post]
+// @summary Create category
+// @description Creates a new category.
+// @description The 'name' field must be unique across all categories.
+// @tags admin category management
+// @accept json
+// @param category body model.AdminNewCategory true "The category to be created"
+// @produce json
+// @success 201 {object} model.AdminNewCategoryCreated
+// @failure 400 {object} model.HTTPError400
+// @failure 401 {object} model.HTTPError401
+// @failure 409 {object} model.HTTPError409 "Conflict: when the name is not unique(already taken)"
+// @failure 500 {object} model.HTTPError500
 func NewCategoryHandler(c echo.Context) error {
-	type CategoryInfo struct {
-		Name        string  `json:"name" form:"name" query:"name" validate:"required,max=32"`
-		Description *string `json:"description" form:"description" query:"description" validate:"required,min=1,max=255"`
-	}
+	categoryInfo := new(model.AdminNewCategory)
 
-	categoryInfo := new(CategoryInfo)
 	if err := c.Bind(categoryInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
@@ -64,27 +78,33 @@ func NewCategoryHandler(c echo.Context) error {
 		SetName(categoryInfo.Name).
 		SetNillableDescription(categoryInfo.Description).
 		Save(context.Background())
+
 	if err != nil {
 		if _, ok := err.(*ent.ConstraintError); ok {
 			return echo.NewHTTPError(http.StatusConflict)
 		}
-
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type Category struct {
-		Name string `json:"name"`
-	}
-
-	return c.JSON(http.StatusCreated, Category{Name: categoryInfo.Name})
+	return c.JSON(http.StatusCreated, model.AdminNewCategoryCreated{Name: categoryInfo.Name})
 }
 
+// DeleteCategoryHandler godoc
+// @router /admin/categories [delete]
+// @summary Remove category
+// @description Removes the given category.
+// @tags admin category management
+// @accept json
+// @param name path string true "A category name to be removed"
+// @produce json
+// @success 204 "NoContent: when the category has been removed successfully"
+// @failure 400 {object} model.HTTPError400
+// @failure 401 {object} model.HTTPError401
+// @failure 404 {object} model.HTTPError404
+// @failure 500 {object} model.HTTPError500
 func DeleteCategoryHandler(c echo.Context) error {
-	type CategoryInfo struct {
-		Name string `param:"name" validate:"required"`
-	}
+	categoryInfo := new(model.AdminDeleteCategory)
 
-	categoryInfo := new(CategoryInfo)
 	if err := c.Bind(categoryInfo); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
@@ -97,11 +117,11 @@ func DeleteCategoryHandler(c echo.Context) error {
 			Where(dbCategory.NameEQ(categoryInfo.Name)).
 			Select(dbCategory.FieldID).
 			First(context.Background())
+
 		if err != nil {
 			if _, ok := err.(*ent.NotFoundError); ok {
 				return nil, echo.NewHTTPError(http.StatusNotFound)
 			}
-
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
@@ -114,6 +134,7 @@ func DeleteCategoryHandler(c echo.Context) error {
 
 		return nil, nil
 	})
+
 	if err != nil {
 		return err
 	}
