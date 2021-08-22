@@ -38,6 +38,60 @@ definitions:
     required:
     - name
     type: object
+  model.AdminUnsavedPost:
+    properties:
+      access-level:
+        example: public
+        type: string
+      category:
+        example: web
+        type: string
+      created-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      modified-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      slug:
+        example: my-first-post
+        type: string
+      thumbnail:
+        $ref: '#/definitions/model.AdminUnsavedPostThumbnail'
+      title:
+        example: My first post
+        type: string
+      uuid:
+        example: fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b
+        type: string
+    required:
+    - created-at
+    - modified-at
+    - uuid
+    type: object
+  model.AdminUnsavedPostThumbnail:
+    properties:
+      created-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      hash:
+        example: LEHV6nWB2yk8pyo0adR*.7kCMdnj
+        type: string
+      height:
+        example: 128
+        type: integer
+      url:
+        example: https://image.example.com/example-image
+        type: string
+      validity:
+        example: pending
+        type: string
+      width:
+        example: 256
+        type: integer
+    required:
+    - created-at
+    - validity
+    type: object
   model.HTTPError400:
     properties:
       message:
@@ -187,6 +241,31 @@ paths:
       summary: Create category
       tags:
       - admin category management
+  /admin/unsaved-posts:
+    get:
+      description: |-
+        Lists all unsaved posts.
+        The unsaved posts are sorted by the 'created-at' field in ascending order.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.AdminUnsavedPost'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: List unsaved posts
+      tags:
+      - admin post management
 securityDefinitions:
   ApiKeyAuth:
     in: header

@@ -11,6 +11,7 @@ import (
 	dbUnsavedPostThumbnail "devlog/ent/unsavedpostthumbnail"
 	"devlog/env"
 	"devlog/middleware"
+	"devlog/model"
 	"devlog/regex"
 	"devlog/util"
 	"fmt"
@@ -36,6 +37,16 @@ func AttachUnsavedPost(group *echo.Group) {
 	group.PUT("/:post/images/:image", SetUnsavedPostImage)
 }
 
+// ListUnsavedPosts godoc
+// @router /admin/unsaved-posts [get]
+// @summary List unsaved posts
+// @description Lists all unsaved posts.
+// @description The unsaved posts are sorted by the 'created-at' field in ascending order.
+// @tags admin post management
+// @produce json
+// @success 200 {array} model.AdminUnsavedPost
+// @failure 401 {object} model.HTTPError401
+// @failure 500 {object} model.HTTPError500
 func ListUnsavedPosts(c echo.Context) error {
 	ctx := c.(*common.Context)
 
@@ -68,26 +79,7 @@ func ListUnsavedPosts(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type ThumbnailJSON struct {
-		Validity  string    `json:"validity"`
-		Width     *uint32   `json:"width"`
-		Height    *uint32   `json:"height"`
-		Hash      *string   `json:"hash"`
-		URL       *string   `json:"url"`
-		CreatedAt time.Time `json:"created-at"`
-	}
-	type PostJSON struct {
-		UUID        string         `json:"uuid"`
-		Slug        *string        `json:"slug"`
-		AccessLevel *string        `json:"access-level"`
-		Title       *string        `json:"title"`
-		CreatedAt   time.Time      `json:"created-at"`
-		ModifiedAt  time.Time      `json:"modified-at"`
-		Category    *string        `json:"category"`
-		Thumbnail   *ThumbnailJSON `json:"thumbnail"`
-	}
-
-	postJSONs := make([]PostJSON, len(posts))
+	postJSONs := make([]model.AdminUnsavedPost, len(posts))
 
 	for index, post := range posts {
 		var category *string
@@ -96,26 +88,26 @@ func ListUnsavedPosts(c echo.Context) error {
 			category = &post.Edges.Category.Name
 		}
 
-		var thumbnail *ThumbnailJSON
+		var thumbnail *model.AdminUnsavedPostThumbnail
 
 		if post.Edges.Thumbnail != nil {
-			thumbnail = &ThumbnailJSON{
+			thumbnail = &model.AdminUnsavedPostThumbnail{
 				Validity:  (string)(post.Edges.Thumbnail.Validity),
 				Width:     post.Edges.Thumbnail.Width,
 				Height:    post.Edges.Thumbnail.Height,
 				Hash:      post.Edges.Thumbnail.Hash,
 				URL:       post.Edges.Thumbnail.URL,
-				CreatedAt: post.Edges.Thumbnail.CreatedAt,
+				CreatedAt: post.Edges.Thumbnail.CreatedAt.UTC().Format(time.RFC3339),
 			}
 		}
 
-		postJSONs[index] = PostJSON{
+		postJSONs[index] = model.AdminUnsavedPost{
 			UUID:        post.UUID,
 			Slug:        post.Slug,
 			AccessLevel: (*string)(post.AccessLevel),
 			Title:       post.Title,
-			CreatedAt:   post.CreatedAt,
-			ModifiedAt:  post.ModifiedAt,
+			CreatedAt:   post.CreatedAt.UTC().Format(time.RFC3339),
+			ModifiedAt:  post.ModifiedAt.UTC().Format(time.RFC3339),
 			Category:    category,
 			Thumbnail:   thumbnail,
 		}

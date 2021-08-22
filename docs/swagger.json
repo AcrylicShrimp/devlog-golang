@@ -156,6 +156,41 @@
                     }
                 }
             }
+        },
+        "/admin/unsaved-posts": {
+            "get": {
+                "description": "Lists all unsaved posts.\nThe unsaved posts are sorted by the 'created-at' field in ascending order.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "List unsaved posts",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.AdminUnsavedPost"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -210,6 +245,80 @@
                 "name": {
                     "type": "string",
                     "example": "web"
+                }
+            }
+        },
+        "model.AdminUnsavedPost": {
+            "type": "object",
+            "required": [
+                "created-at",
+                "modified-at",
+                "uuid"
+            ],
+            "properties": {
+                "access-level": {
+                    "type": "string",
+                    "example": "public"
+                },
+                "category": {
+                    "type": "string",
+                    "example": "web"
+                },
+                "created-at": {
+                    "type": "string",
+                    "example": "2021-08-18 00:00:00Z"
+                },
+                "modified-at": {
+                    "type": "string",
+                    "example": "2021-08-18 00:00:00Z"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "my-first-post"
+                },
+                "thumbnail": {
+                    "$ref": "#/definitions/model.AdminUnsavedPostThumbnail"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "My first post"
+                },
+                "uuid": {
+                    "type": "string",
+                    "example": "fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"
+                }
+            }
+        },
+        "model.AdminUnsavedPostThumbnail": {
+            "type": "object",
+            "required": [
+                "created-at",
+                "validity"
+            ],
+            "properties": {
+                "created-at": {
+                    "type": "string",
+                    "example": "2021-08-18 00:00:00Z"
+                },
+                "hash": {
+                    "type": "string",
+                    "example": "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+                },
+                "height": {
+                    "type": "integer",
+                    "example": 128
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://image.example.com/example-image"
+                },
+                "validity": {
+                    "type": "string",
+                    "example": "pending"
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 256
                 }
             }
         },
