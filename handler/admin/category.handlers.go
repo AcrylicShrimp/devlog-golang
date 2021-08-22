@@ -26,7 +26,7 @@ func AttachCategory(group *echo.Group) {
 // @description The categories are sorted by the 'name' field in ascending order.
 // @tags admin category management
 // @produce json
-// @success 200 {array} model.AdminCategory
+// @success 200 {array} model.Category
 // @failure 401 {object} model.HTTPError401
 // @failure 500 {object} model.HTTPError500
 func ListCategories(c echo.Context) error {
@@ -45,7 +45,13 @@ func ListCategories(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusOK, categories)
+	categoryJSONs := make([]model.Category, len(categories))
+
+	for index, category := range categories {
+		categoryJSONs[index] = model.CategoryFromModel(category)
+	}
+
+	return c.JSON(http.StatusOK, categoryJSONs)
 }
 
 // NewCategoryHandler godoc
@@ -55,28 +61,28 @@ func ListCategories(c echo.Context) error {
 // @description The 'name' field must be unique across all categories.
 // @tags admin category management
 // @accept json
-// @param category body model.AdminNewCategory true "The category to be created"
+// @param category body model.NewCategoryParam true "The category to be created"
 // @produce json
-// @success 201 {object} model.AdminNewCategoryCreated
+// @success 201 "NoContent: when the category has been removed successfully"
 // @failure 400 {object} model.HTTPError400
 // @failure 401 {object} model.HTTPError401
 // @failure 409 {object} model.HTTPError409 "Conflict: when the name is not unique(already taken)"
 // @failure 500 {object} model.HTTPError500
 func NewCategoryHandler(c echo.Context) error {
-	categoryInfo := new(model.AdminNewCategory)
+	categoryParam := new(model.NewCategoryParam)
 
-	if err := c.Bind(categoryInfo); err != nil {
+	if err := c.Bind(categoryParam); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(categoryInfo); err != nil {
+	if err := c.Validate(categoryParam); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	ctx := c.(*common.Context)
 
 	_, err := ctx.Client().Category.Create().
-		SetName(categoryInfo.Name).
-		SetNillableDescription(categoryInfo.Description).
+		SetName(categoryParam.Name).
+		SetNillableDescription(categoryParam.Description).
 		Save(context.Background())
 
 	if err != nil {
@@ -86,7 +92,7 @@ func NewCategoryHandler(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return c.JSON(http.StatusCreated, model.AdminNewCategoryCreated{Name: categoryInfo.Name})
+	return c.NoContent(http.StatusCreated)
 }
 
 // DeleteCategoryHandler godoc
@@ -94,7 +100,6 @@ func NewCategoryHandler(c echo.Context) error {
 // @summary Remove category
 // @description Removes the given category.
 // @tags admin category management
-// @accept json
 // @param name path string true "A category name to be removed"
 // @produce json
 // @success 204 "NoContent: when the category has been removed successfully"
@@ -103,18 +108,18 @@ func NewCategoryHandler(c echo.Context) error {
 // @failure 404 {object} model.HTTPError404
 // @failure 500 {object} model.HTTPError500
 func DeleteCategoryHandler(c echo.Context) error {
-	categoryInfo := new(model.AdminDeleteCategory)
+	categoryParam := new(model.DeleteCategoryParam)
 
-	if err := c.Bind(categoryInfo); err != nil {
+	if err := c.Bind(categoryParam); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(categoryInfo); err != nil {
+	if err := c.Validate(categoryParam); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		category, err := ctx.Client().Category.Query().
-			Where(dbCategory.NameEQ(categoryInfo.Name)).
+			Where(dbCategory.NameEQ(categoryParam.Name)).
 			Select(dbCategory.FieldID).
 			First(context.Background())
 

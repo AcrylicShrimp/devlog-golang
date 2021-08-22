@@ -1,15 +1,15 @@
 basePath: /v1
 definitions:
-  model.AdminCategory:
+  model.Category:
     properties:
       created-at:
-        example: 2021-08-18 00:00:00Z
+        example: 2021-08-18T00:00:00Z00:00
         type: string
       description:
         example: web-related things
         type: string
       modified-at:
-        example: 2021-08-18 00:00:00Z
+        example: 2021-08-18T00:00:00Z00:00
         type: string
       name:
         example: web
@@ -18,79 +18,6 @@ definitions:
     - created-at
     - modified-at
     - name
-    type: object
-  model.AdminNewCategory:
-    properties:
-      description:
-        example: web-related things
-        type: string
-      name:
-        example: web
-        type: string
-    required:
-    - name
-    type: object
-  model.AdminNewCategoryCreated:
-    properties:
-      name:
-        example: web
-        type: string
-    required:
-    - name
-    type: object
-  model.AdminUnsavedPost:
-    properties:
-      access-level:
-        example: public
-        type: string
-      category:
-        example: web
-        type: string
-      created-at:
-        example: 2021-08-18 00:00:00Z
-        type: string
-      modified-at:
-        example: 2021-08-18 00:00:00Z
-        type: string
-      slug:
-        example: my-first-post
-        type: string
-      thumbnail:
-        $ref: '#/definitions/model.AdminUnsavedPostThumbnail'
-      title:
-        example: My first post
-        type: string
-      uuid:
-        example: fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b
-        type: string
-    required:
-    - created-at
-    - modified-at
-    - uuid
-    type: object
-  model.AdminUnsavedPostThumbnail:
-    properties:
-      created-at:
-        example: 2021-08-18 00:00:00Z
-        type: string
-      hash:
-        example: LEHV6nWB2yk8pyo0adR*.7kCMdnj
-        type: string
-      height:
-        example: 128
-        type: integer
-      url:
-        example: https://image.example.com/example-image
-        type: string
-      validity:
-        example: pending
-        type: string
-      width:
-        example: 256
-        type: integer
-    required:
-    - created-at
-    - validity
     type: object
   model.HTTPError400:
     properties:
@@ -132,6 +59,136 @@ definitions:
     required:
     - message
     type: object
+  model.NewCategoryParam:
+    properties:
+      description:
+        example: web-related things
+        type: string
+      name:
+        example: web
+        type: string
+    required:
+    - name
+    type: object
+  model.UnsavedPost:
+    properties:
+      access-level:
+        example: public
+        type: string
+      category:
+        example: web
+        type: string
+      created-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      images:
+        items:
+          $ref: '#/definitions/model.UnsavedPostImage'
+        type: array
+      modified-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      slug:
+        example: my-first-post
+        type: string
+      thumbnail:
+        $ref: '#/definitions/model.UnsavedPostThumbnail'
+      title:
+        example: My first post
+        type: string
+      uuid:
+        example: fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b
+        type: string
+    required:
+    - created-at
+    - modified-at
+    - uuid
+    type: object
+  model.UnsavedPostImage:
+    properties:
+      created-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      hash:
+        example: LEHV6nWB2yk8pyo0adR*.7kCMdnj
+        type: string
+      height:
+        example: 128
+        type: integer
+      title:
+        example: My image
+        type: string
+      url:
+        example: https://image.example.com/example-image
+        type: string
+      uuid:
+        example: fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b
+        type: string
+      validity:
+        example: pending
+        type: string
+      width:
+        example: 256
+        type: integer
+    required:
+    - created-at
+    - uuid
+    - validity
+    type: object
+  model.UnsavedPostThumbnail:
+    properties:
+      created-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      hash:
+        example: LEHV6nWB2yk8pyo0adR*.7kCMdnj
+        type: string
+      height:
+        example: 128
+        type: integer
+      url:
+        example: https://image.example.com/example-image
+        type: string
+      validity:
+        example: pending
+        type: string
+      width:
+        example: 256
+        type: integer
+    required:
+    - created-at
+    - validity
+    type: object
+  model.UnsavedPostWithoutImage:
+    properties:
+      access-level:
+        example: public
+        type: string
+      category:
+        example: web
+        type: string
+      created-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      modified-at:
+        example: 2021-08-18 00:00:00Z
+        type: string
+      slug:
+        example: my-first-post
+        type: string
+      thumbnail:
+        $ref: '#/definitions/model.UnsavedPostThumbnail'
+      title:
+        example: My first post
+        type: string
+      uuid:
+        example: fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b
+        type: string
+    required:
+    - created-at
+    - modified-at
+    - uuid
+    type: object
 info:
   contact:
     email: led789zxpp@naver.com
@@ -145,8 +202,6 @@ info:
 paths:
   /admin/categories:
     delete:
-      consumes:
-      - application/json
       description: Removes the given category.
       parameters:
       - description: A category name to be removed
@@ -189,7 +244,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.AdminCategory'
+              $ref: '#/definitions/model.Category'
             type: array
         "401":
           description: Unauthorized
@@ -214,14 +269,12 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/model.AdminNewCategory'
+          $ref: '#/definitions/model.NewCategoryParam'
       produces:
       - application/json
       responses:
         "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/model.AdminNewCategoryCreated'
+          description: 'NoContent: when the category has been removed successfully'
         "400":
           description: Bad Request
           schema:
@@ -244,7 +297,7 @@ paths:
   /admin/unsaved-posts:
     get:
       description: |-
-        Lists all unsaved posts.
+        Lists all unsaved posts without its images.
         The unsaved posts are sorted by the 'created-at' field in ascending order.
       produces:
       - application/json
@@ -253,7 +306,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/model.AdminUnsavedPost'
+              $ref: '#/definitions/model.UnsavedPostWithoutImage'
             type: array
         "401":
           description: Unauthorized
@@ -264,6 +317,43 @@ paths:
           schema:
             $ref: '#/definitions/model.HTTPError500'
       summary: List unsaved posts
+      tags:
+      - admin post management
+  /admin/unsaved-posts/{uuid}:
+    get:
+      description: |-
+        Gets a specified unsaved post by its UUID.
+        The unsaved post will contain images if any.
+      parameters:
+      - description: An UUID of the unsaved post to be fetched
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UnsavedPost'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Get unsaved post
       tags:
       - admin post management
 securityDefinitions:

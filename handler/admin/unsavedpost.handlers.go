@@ -40,11 +40,11 @@ func AttachUnsavedPost(group *echo.Group) {
 // ListUnsavedPosts godoc
 // @router /admin/unsaved-posts [get]
 // @summary List unsaved posts
-// @description Lists all unsaved posts.
+// @description Lists all unsaved posts without its images.
 // @description The unsaved posts are sorted by the 'created-at' field in ascending order.
 // @tags admin post management
 // @produce json
-// @success 200 {array} model.AdminUnsavedPost
+// @success 200 {array} model.UnsavedPostWithoutImage
 // @failure 401 {object} model.HTTPError401
 // @failure 500 {object} model.HTTPError500
 func ListUnsavedPosts(c echo.Context) error {
@@ -79,54 +79,35 @@ func ListUnsavedPosts(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	postJSONs := make([]model.AdminUnsavedPost, len(posts))
+	postJSONs := make([]model.UnsavedPostWithoutImage, len(posts))
 
 	for index, post := range posts {
-		var category *string
-
-		if post.Edges.Category != nil {
-			category = &post.Edges.Category.Name
-		}
-
-		var thumbnail *model.AdminUnsavedPostThumbnail
-
-		if post.Edges.Thumbnail != nil {
-			thumbnail = &model.AdminUnsavedPostThumbnail{
-				Validity:  (string)(post.Edges.Thumbnail.Validity),
-				Width:     post.Edges.Thumbnail.Width,
-				Height:    post.Edges.Thumbnail.Height,
-				Hash:      post.Edges.Thumbnail.Hash,
-				URL:       post.Edges.Thumbnail.URL,
-				CreatedAt: post.Edges.Thumbnail.CreatedAt.UTC().Format(time.RFC3339),
-			}
-		}
-
-		postJSONs[index] = model.AdminUnsavedPost{
-			UUID:        post.UUID,
-			Slug:        post.Slug,
-			AccessLevel: (*string)(post.AccessLevel),
-			Title:       post.Title,
-			CreatedAt:   post.CreatedAt.UTC().Format(time.RFC3339),
-			ModifiedAt:  post.ModifiedAt.UTC().Format(time.RFC3339),
-			Category:    category,
-			Thumbnail:   thumbnail,
-		}
+		postJSONs[index] = model.UnsavedPostWithoutImageFromModel(post)
 	}
 
 	return c.JSON(http.StatusOK, postJSONs)
 }
 
+// GetUnsavedPost godoc
+// @router /admin/unsaved-posts/{uuid} [get]
+// @summary Get unsaved post
+// @description Gets a specified unsaved post by its UUID.
+// @description The unsaved post will contain images if any.
+// @tags admin post management
+// @param uuid path string true "An UUID of the unsaved post to be fetched"
+// @produce json
+// @success 200 {object} model.UnsavedPost
+// @failure 400 {object} model.HTTPError400
+// @failure 401 {object} model.HTTPError401
+// @failure 404 {object} model.HTTPError404
+// @failure 500 {object} model.HTTPError500
 func GetUnsavedPost(c echo.Context) error {
-	type PostInfo struct {
-		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
-	}
+	postParam := new(model.GetUnsavedPostParam)
 
-	postInfo := new(PostInfo)
-
-	if err := c.Bind(postInfo); err != nil {
+	if err := c.Bind(postParam); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(postInfo); err != nil {
+	if err := c.Validate(postParam); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
@@ -136,7 +117,7 @@ func GetUnsavedPost(c echo.Context) error {
 		Where(
 			dbUnsavedPost.And(
 				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
-				dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
+				dbUnsavedPost.UUIDEQ(postParam.UUID))).
 		Select(
 			dbUnsavedPost.FieldUUID,
 			dbUnsavedPost.FieldSlug,
@@ -181,83 +162,7 @@ func GetUnsavedPost(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type ThumbnailJSON struct {
-		Validity  string    `json:"validity"`
-		Width     *uint32   `json:"width"`
-		Height    *uint32   `json:"height"`
-		Hash      *string   `json:"hash"`
-		URL       *string   `json:"url"`
-		CreatedAt time.Time `json:"created-at"`
-	}
-	type ImageJSON struct {
-		UUID      string    `json:"uuid"`
-		Validity  string    `json:"validity"`
-		Width     *uint32   `json:"width"`
-		Height    *uint32   `json:"height"`
-		Hash      *string   `json:"hash"`
-		Title     *string   `json:"title"`
-		URL       *string   `json:"url"`
-		CreatedAt time.Time `json:"created-at"`
-	}
-	type PostJSON struct {
-		UUID        string         `json:"uuid"`
-		Slug        *string        `json:"slug"`
-		AccessLevel *string        `json:"access-level"`
-		Title       *string        `json:"title"`
-		Content     *string        `json:"content"`
-		CreatedAt   time.Time      `json:"created-at"`
-		ModifiedAt  time.Time      `json:"modified-at"`
-		Category    *string        `json:"category"`
-		Thumbnail   *ThumbnailJSON `json:"thumbnail"`
-		Images      []ImageJSON    `json:"images"`
-	}
-
-	var category *string
-
-	if post.Edges.Category != nil {
-		category = &post.Edges.Category.Name
-	}
-
-	var thumbnail *ThumbnailJSON
-
-	if post.Edges.Thumbnail != nil {
-		thumbnail = &ThumbnailJSON{
-			Validity:  (string)(post.Edges.Thumbnail.Validity),
-			Width:     post.Edges.Thumbnail.Width,
-			Height:    post.Edges.Thumbnail.Height,
-			Hash:      post.Edges.Thumbnail.Hash,
-			URL:       post.Edges.Thumbnail.URL,
-			CreatedAt: post.Edges.Thumbnail.CreatedAt,
-		}
-	}
-
-	images := make([]ImageJSON, len(post.Edges.Images))
-
-	for index, image := range post.Edges.Images {
-		images[index] = ImageJSON{
-			UUID:      image.UUID,
-			Validity:  (string)(image.Validity),
-			Width:     image.Width,
-			Height:    image.Height,
-			Hash:      image.Hash,
-			Title:     image.Title,
-			URL:       image.URL,
-			CreatedAt: image.CreatedAt,
-		}
-	}
-
-	return c.JSON(http.StatusOK, PostJSON{
-		UUID:        post.UUID,
-		Slug:        post.Slug,
-		AccessLevel: (*string)(post.AccessLevel),
-		Title:       post.Title,
-		Content:     post.Content,
-		CreatedAt:   post.CreatedAt,
-		ModifiedAt:  post.ModifiedAt,
-		Category:    category,
-		Thumbnail:   thumbnail,
-		Images:      images,
-	})
+	return c.JSON(http.StatusOK, model.UnsavedPostFromModel(post))
 }
 
 func NewUnsavedPost(c echo.Context) error {
