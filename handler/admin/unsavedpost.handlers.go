@@ -41,7 +41,7 @@ func AttachUnsavedPost(group *echo.Group) {
 // @router /admin/unsaved-posts [get]
 // @summary List unsaved posts
 // @description Lists all unsaved posts without its images.
-// @description The unsaved posts are sorted by the 'created-at' field in ascending order.
+// @description The unsaved posts are sorted by the field 'created-at' in ascending order.
 // @tags admin post management
 // @produce json
 // @success 200 {array} model.UnsavedPostWithoutImage
@@ -91,7 +91,7 @@ func ListUnsavedPosts(c echo.Context) error {
 // GetUnsavedPost godoc
 // @router /admin/unsaved-posts/{uuid} [get]
 // @summary Get unsaved post
-// @description Gets a specified unsaved post by its UUID.
+// @description Gets a unsaved post by its UUID.
 // @description The unsaved post will contain images if any.
 // @tags admin post management
 // @param uuid path string true "An UUID of the unsaved post to be fetched"
@@ -165,6 +165,16 @@ func GetUnsavedPost(c echo.Context) error {
 	return c.JSON(http.StatusOK, model.UnsavedPostFromModel(post))
 }
 
+// NewUnsavedPost godoc
+// @router /admin/unsaved-posts [post]
+// @summary Create unsaved post
+// @description Creates a new unsaved post.
+// @description UUIDs are guaranteed to be unique across all unsaved posts.
+// @tags admin post management
+// @produce json
+// @success 201 {object} model.UnsavedPostUUIDOnly
+// @failure 401 {object} model.HTTPError401
+// @failure 500 {object} model.HTTPError500
 func NewUnsavedPost(c echo.Context) error {
 	uuid, err := util.GenerateToken64()
 
@@ -183,13 +193,23 @@ func NewUnsavedPost(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type PostJSON struct {
-		UUID string `json:"uuid"`
-	}
-
-	return c.JSON(http.StatusCreated, PostJSON{UUID: uuid})
+	return c.JSON(http.StatusCreated, model.UnsavedPostUUIDOnlyFromUUID(uuid))
 }
 
+// UpdateUnsavedPost godoc
+// @router /admin/unsaved-posts/{uuid} [put]
+// @summary Update unsaved post
+// @description Updates a unsaved post by its UUID.
+// @tags admin post management
+// @accept json
+// @param uuid path string true "An UUID of the unsaved post to be updated"
+// @param unsaved-post body model.UpdateUnsavedPostParam true "The unsaved post to be updated"
+// @produce json
+// @success 200 "NoContent: when the unsaved post has been updated successfully"
+// @failure 400 {object} model.HTTPError400
+// @failure 401 {object} model.HTTPError401
+// @failure 404 {object} model.HTTPError404
+// @failure 500 {object} model.HTTPError500
 func UpdateUnsavedPost(c echo.Context) error {
 	type PostInfo struct {
 		PostUUID    string                     `param:"post" validate:"required,hexadecimal,len=64"`

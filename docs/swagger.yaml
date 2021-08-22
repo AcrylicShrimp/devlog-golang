@@ -78,6 +78,9 @@ definitions:
       category:
         example: web
         type: string
+      content:
+        example: '# My first post'
+        type: string
       created-at:
         example: 2021-08-18 00:00:00Z
         type: string
@@ -159,6 +162,14 @@ definitions:
     - created-at
     - validity
     type: object
+  model.UnsavedPostUUIDOnly:
+    properties:
+      uuid:
+        example: fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b
+        type: string
+    required:
+    - uuid
+    type: object
   model.UnsavedPostWithoutImage:
     properties:
       access-level:
@@ -188,6 +199,24 @@ definitions:
     - created-at
     - modified-at
     - uuid
+    type: object
+  model.UpdateUnsavedPostParam:
+    properties:
+      access-level:
+        example: public
+        type: string
+      category:
+        example: web
+        type: string
+      content:
+        example: '# My first post'
+        type: string
+      slug:
+        example: my-first-post
+        type: string
+      title:
+        example: My first post
+        type: string
     type: object
 info:
   contact:
@@ -236,7 +265,7 @@ paths:
     get:
       description: |-
         Lists all categories.
-        The categories are sorted by the 'name' field in ascending order.
+        The categories are sorted by the field 'name' in ascending order.
       produces:
       - application/json
       responses:
@@ -262,7 +291,7 @@ paths:
       - application/json
       description: |-
         Creates a new category.
-        The 'name' field must be unique across all categories.
+        The field 'name' must be unique across all categories.
       parameters:
       - description: The category to be created
         in: body
@@ -298,7 +327,7 @@ paths:
     get:
       description: |-
         Lists all unsaved posts without its images.
-        The unsaved posts are sorted by the 'created-at' field in ascending order.
+        The unsaved posts are sorted by the field 'created-at' in ascending order.
       produces:
       - application/json
       responses:
@@ -319,10 +348,32 @@ paths:
       summary: List unsaved posts
       tags:
       - admin post management
+    post:
+      description: |-
+        Creates a new unsaved post.
+        UUIDs are guaranteed to be unique across all unsaved posts.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.UnsavedPostUUIDOnly'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Create unsaved post
+      tags:
+      - admin post management
   /admin/unsaved-posts/{uuid}:
     get:
       description: |-
-        Gets a specified unsaved post by its UUID.
+        Gets a unsaved post by its UUID.
         The unsaved post will contain images if any.
       parameters:
       - description: An UUID of the unsaved post to be fetched
@@ -354,6 +405,46 @@ paths:
           schema:
             $ref: '#/definitions/model.HTTPError500'
       summary: Get unsaved post
+      tags:
+      - admin post management
+    put:
+      consumes:
+      - application/json
+      description: Updates a unsaved post by its UUID.
+      parameters:
+      - description: An UUID of the unsaved post to be updated
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: The unsaved post to be updated
+        in: body
+        name: unsaved-post
+        required: true
+        schema:
+          $ref: '#/definitions/model.UpdateUnsavedPostParam'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'NoContent: when the unsaved post has been updated successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Update unsaved post
       tags:
       - admin post management
 securityDefinitions:

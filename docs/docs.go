@@ -32,7 +32,7 @@ var doc = `{
     "paths": {
         "/admin/categories": {
             "get": {
-                "description": "Lists all categories.\nThe categories are sorted by the 'name' field in ascending order.",
+                "description": "Lists all categories.\nThe categories are sorted by the field 'name' in ascending order.",
                 "produces": [
                     "application/json"
                 ],
@@ -65,7 +65,7 @@ var doc = `{
                 }
             },
             "post": {
-                "description": "Creates a new category.\nThe 'name' field must be unique across all categories.",
+                "description": "Creates a new category.\nThe field 'name' must be unique across all categories.",
                 "consumes": [
                     "application/json"
                 ],
@@ -168,7 +168,7 @@ var doc = `{
         },
         "/admin/unsaved-posts": {
             "get": {
-                "description": "Lists all unsaved posts without its images.\nThe unsaved posts are sorted by the 'created-at' field in ascending order.",
+                "description": "Lists all unsaved posts without its images.\nThe unsaved posts are sorted by the field 'created-at' in ascending order.",
                 "produces": [
                     "application/json"
                 ],
@@ -199,11 +199,41 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Creates a new unsaved post.\nUUIDs are guaranteed to be unique across all unsaved posts.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Create unsaved post",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.UnsavedPostUUIDOnly"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
             }
         },
         "/admin/unsaved-posts/{uuid}": {
             "get": {
-                "description": "Gets a specified unsaved post by its UUID.\nThe unsaved post will contain images if any.",
+                "description": "Gets a unsaved post by its UUID.\nThe unsaved post will contain images if any.",
                 "produces": [
                     "application/json"
                 ],
@@ -226,6 +256,66 @@ var doc = `{
                         "schema": {
                             "$ref": "#/definitions/model.UnsavedPost"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates a unsaved post by its UUID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Update unsaved post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be updated",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The unsaved post to be updated",
+                        "name": "unsaved-post",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateUnsavedPostParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "NoContent: when the unsaved post has been updated successfully"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -374,6 +464,10 @@ var doc = `{
                     "type": "string",
                     "example": "web"
                 },
+                "content": {
+                    "type": "string",
+                    "example": "# My first post"
+                },
                 "created-at": {
                     "type": "string",
                     "example": "2021-08-18 00:00:00Z"
@@ -480,6 +574,18 @@ var doc = `{
                 }
             }
         },
+        "model.UnsavedPostUUIDOnly": {
+            "type": "object",
+            "required": [
+                "uuid"
+            ],
+            "properties": {
+                "uuid": {
+                    "type": "string",
+                    "example": "fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"
+                }
+            }
+        },
         "model.UnsavedPostWithoutImage": {
             "type": "object",
             "required": [
@@ -518,6 +624,31 @@ var doc = `{
                 "uuid": {
                     "type": "string",
                     "example": "fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"
+                }
+            }
+        },
+        "model.UpdateUnsavedPostParam": {
+            "type": "object",
+            "properties": {
+                "access-level": {
+                    "type": "string",
+                    "example": "public"
+                },
+                "category": {
+                    "type": "string",
+                    "example": "web"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "# My first post"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "my-first-post"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "My first post"
                 }
             }
         }

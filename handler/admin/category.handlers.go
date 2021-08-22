@@ -23,7 +23,7 @@ func AttachCategory(group *echo.Group) {
 // @router /admin/categories [get]
 // @summary List categories
 // @description Lists all categories.
-// @description The categories are sorted by the 'name' field in ascending order.
+// @description The categories are sorted by the field 'name' in ascending order.
 // @tags admin category management
 // @produce json
 // @success 200 {array} model.Category
@@ -58,7 +58,7 @@ func ListCategories(c echo.Context) error {
 // @router /admin/categories [post]
 // @summary Create category
 // @description Creates a new category.
-// @description The 'name' field must be unique across all categories.
+// @description The field 'name' must be unique across all categories.
 // @tags admin category management
 // @accept json
 // @param category body model.NewCategoryParam true "The category to be created"
