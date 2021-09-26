@@ -24,11 +24,11 @@ import (
 
 func AttachUnsavedPost(group *echo.Group) {
 	group.GET("", ListUnsavedPosts, middleware.WithSession, middleware.RequireSession)
-	group.GET("/:post", GetUnsavedPost, middleware.WithSession, middleware.RequireSession)
+	group.GET("/:uuid", GetUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.POST("", NewUnsavedPost, middleware.WithSession, middleware.RequireSession)
-	group.PUT("/:post", UpdateUnsavedPost, middleware.WithSession, middleware.RequireSession)
+	group.PUT("/:uuid", UpdateUnsavedPost, middleware.WithSession, middleware.RequireSession)
 	group.DELETE("/:uuid", DeleteUnsavedPost, middleware.WithSession, middleware.RequireSession)
-	group.POST("/:post/thumbnail", NewUnsavedPostThumbnail)
+	group.POST("/:uuid/thumbnail", NewUnsavedPostThumbnail)
 	group.GET("/:post/thumbnail", GetUnsavedPostThumbnail, middleware.WithSession, middleware.RequireSession)
 	group.PUT("/:post/thumbnail", SetUnsavedPostThumbnail)
 	group.GET("/:post/images", ListUnsavedPostImage, middleware.WithSession, middleware.RequireSession)
@@ -102,12 +102,12 @@ func ListUnsavedPosts(c echo.Context) error {
 // @failure 404 {object} model.HTTPError404
 // @failure 500 {object} model.HTTPError500
 func GetUnsavedPost(c echo.Context) error {
-	postParam := new(model.GetUnsavedPostParam)
+	param := new(model.GetUnsavedPostParam)
 
-	if err := c.Bind(postParam); err != nil {
+	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(postParam); err != nil {
+	if err := c.Validate(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
@@ -117,7 +117,7 @@ func GetUnsavedPost(c echo.Context) error {
 		Where(
 			dbUnsavedPost.And(
 				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
-				dbUnsavedPost.UUIDEQ(postParam.UUID))).
+				dbUnsavedPost.UUIDEQ(param.UUID))).
 		Select(
 			dbUnsavedPost.FieldUUID,
 			dbUnsavedPost.FieldSlug,
@@ -211,24 +211,16 @@ func NewUnsavedPost(c echo.Context) error {
 // @failure 404 {object} model.HTTPError404
 // @failure 500 {object} model.HTTPError500
 func UpdateUnsavedPost(c echo.Context) error {
-	type PostInfo struct {
-		PostUUID    string                     `param:"post" validate:"required,hexadecimal,len=64"`
-		Slug        *string                    `json:"slug" form:"slug" validate:"omitempty,min=1,max=255"`
-		AccessLevel *dbUnsavedPost.AccessLevel `json:"access-level" form:"access-level" query:"access-level" validate:"omitempty,oneof=public unlisted private"`
-		Title       *string                    `json:"title" form:"title" query:"title" validate:"omitempty,min=1,max=255"`
-		Content     *string                    `json:"content" form:"content" query:"content" validate:"omitempty,min=1"`
-		Category    *string                    `json:"category" form:"category" query:"category" validate:"omitempty,min=1"`
-	}
+	param := new(model.UpdateUnsavedPostParam)
 
-	postInfo := new(PostInfo)
-
-	if err := c.Bind(postInfo); err != nil {
+	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(postInfo); err != nil {
+	if err := c.Validate(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if postInfo.Slug != nil && !regex.Slug.MatchString(*postInfo.Slug) {
+
+	if param.Slug != nil && !regex.Slug.MatchString(*param.Slug) {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
@@ -236,7 +228,7 @@ func UpdateUnsavedPost(c echo.Context) error {
 		post, err := tx.UnsavedPost.Query().
 			Where(dbUnsavedPost.And(
 				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
-				dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
+				dbUnsavedPost.UUIDEQ(param.UUID))).
 			Select(dbUnsavedPost.FieldID).
 			First(context.Background())
 
@@ -249,9 +241,9 @@ func UpdateUnsavedPost(c echo.Context) error {
 
 		var categoryID *int
 
-		if postInfo.Category != nil {
+		if param.Category != nil {
 			category, err := tx.Category.Query().
-				Where(dbCategory.NameEQ(*postInfo.Category)).
+				Where(dbCategory.NameEQ(*param.Category)).
 				Select(dbCategory.FieldID).
 				First(context.Background())
 
@@ -271,10 +263,10 @@ func UpdateUnsavedPost(c echo.Context) error {
 			ClearTitle().
 			ClearContent().
 			ClearCategory().
-			SetNillableSlug(postInfo.Slug).
-			SetNillableAccessLevel(postInfo.AccessLevel).
-			SetNillableTitle(postInfo.Title).
-			SetNillableContent(postInfo.Content).
+			SetNillableSlug(param.Slug).
+			SetNillableAccessLevel(param.AccessLevel).
+			SetNillableTitle(param.Title).
+			SetNillableContent(param.Content).
 			SetNillableCategoryID(categoryID).
 			Save(context.Background()); err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
@@ -290,17 +282,25 @@ func UpdateUnsavedPost(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+// DeleteUnsavedPost godoc
+// @router /admin/unsaved-posts/{uuid} [delete]
+// @summary Update unsaved post
+// @description Updates a unsaved post by its UUID.
+// @tags admin post management
+// @param uuid path string true "An UUID of the unsaved post to be updated"
+// @produce json
+// @success 200 "NoContent: when the unsaved post has been deleted successfully"
+// @failure 400 {object} model.HTTPError400
+// @failure 401 {object} model.HTTPError401
+// @failure 404 {object} model.HTTPError404
+// @failure 500 {object} model.HTTPError500
 func DeleteUnsavedPost(c echo.Context) error {
-	type PostInfo struct {
-		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
-	}
+	param := new(model.DeleteUnsavedPostParam)
 
-	postInfo := new(PostInfo)
-
-	if err := c.Bind(postInfo); err != nil {
+	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(postInfo); err != nil {
+	if err := c.Validate(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
@@ -308,7 +308,7 @@ func DeleteUnsavedPost(c echo.Context) error {
 		post, err := tx.UnsavedPost.Query().
 			Where(dbUnsavedPost.And(
 				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
-				dbUnsavedPost.UUIDEQ(postInfo.PostUUID))).
+				dbUnsavedPost.UUIDEQ(param.UUID))).
 			Select(
 				dbUnsavedPost.FieldID,
 				dbUnsavedPost.FieldUUID).
@@ -339,12 +339,11 @@ func DeleteUnsavedPost(c echo.Context) error {
 				defer deletionWaitGroup.Done()
 
 				key := fmt.Sprintf("v1/%v/thumbnail", post.UUID)
-				_, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
+
+				if _, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
 					Bucket: &env.AWSS3Bucket,
 					Key:    &key,
-				})
-
-				if err != nil {
+				}); err != nil {
 					ctx.Logger().Warnf("unable to remove the thumbnail of the post %v from the AWS S3 due to: %v", post.UUID, err)
 				}
 			}()
@@ -358,12 +357,11 @@ func DeleteUnsavedPost(c echo.Context) error {
 					defer deletionWaitGroup.Done()
 
 					key := fmt.Sprintf("v1/%v/images/%v", post.UUID, image.UUID)
-					_, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
+
+					if _, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
 						Bucket: &env.AWSS3Bucket,
 						Key:    &key,
-					})
-
-					if err != nil {
+					}); err != nil {
 						ctx.Logger().Warnf("unable to remove the image %v of the post %v from the AWS S3 due to: %v", image.UUID, post.UUID, err)
 					}
 				}(image)
@@ -382,23 +380,28 @@ func DeleteUnsavedPost(c echo.Context) error {
 	return c.NoContent(http.StatusOK)
 }
 
+// NewUnsavedPostThumbnail godoc
+// @router /admin/unsaved-posts/{uuid}/thumbnail [post]
+// @summary Create unsaved post thumbnail
+// @description Creates a new thumbnail for the unsaved post.
+// @tags admin post management
+// @produce json
+// @success 201 "NoContent: when the thumbnail of the unsaved post has been created successfully"
+// @failure 401 {object} model.HTTPError401
+// @failure 500 {object} model.HTTPError500
 func NewUnsavedPostThumbnail(c echo.Context) error {
-	type PostInfo struct {
-		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
-	}
+	param := new(model.NewUnsavedPostThumbnailParam)
 
-	postInfo := new(PostInfo)
-
-	if err := c.Bind(postInfo); err != nil {
+	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(postInfo); err != nil {
+	if err := c.Validate(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		post, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.UUIDEQ(postInfo.PostUUID)).
+			Where(dbUnsavedPost.UUIDEQ(param.UUID)).
 			Select(dbUnsavedPost.FieldID).
 			First(context.Background())
 
@@ -409,9 +412,13 @@ func NewUnsavedPostThumbnail(c echo.Context) error {
 			return nil, err
 		}
 
-		return tx.UnsavedPostThumbnail.Create().
+		if _, err := tx.UnsavedPostThumbnail.Create().
 			SetUnsavedPost(post).
-			Save(context.Background())
+			Save(context.Background()); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
 	})
 
 	if err != nil {

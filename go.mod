@@ -31,8 +31,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.3.2 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.6.1 // indirect
 	github.com/aws/smithy-go v1.7.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
-	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.3 // indirect
@@ -54,10 +52,7 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.8 // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
-	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/swaggo/files v0.0.0-20190704085106-630677cd5c14 // indirect
-	github.com/urfave/cli/v2 v2.3.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.1 // indirect
 	golang.org/x/net v0.0.0-20210421230115-4e50805a0758 // indirect
