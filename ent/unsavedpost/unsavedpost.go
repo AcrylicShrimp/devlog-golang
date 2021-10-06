@@ -40,42 +40,42 @@ const (
 	EdgeAttachments = "attachments"
 	// Table holds the table name of the unsavedpost in the database.
 	Table = "unsaved_posts"
-	// AuthorTable is the table the holds the author relation/edge.
+	// AuthorTable is the table that holds the author relation/edge.
 	AuthorTable = "unsaved_posts"
 	// AuthorInverseTable is the table name for the Admin entity.
 	// It exists in this package in order to avoid circular dependency with the "admin" package.
 	AuthorInverseTable = "admins"
 	// AuthorColumn is the table column denoting the author relation/edge.
 	AuthorColumn = "admin_unsaved_posts"
-	// CategoryTable is the table the holds the category relation/edge.
+	// CategoryTable is the table that holds the category relation/edge.
 	CategoryTable = "unsaved_posts"
 	// CategoryInverseTable is the table name for the Category entity.
 	// It exists in this package in order to avoid circular dependency with the "category" package.
 	CategoryInverseTable = "categories"
 	// CategoryColumn is the table column denoting the category relation/edge.
 	CategoryColumn = "category_unsaved_posts"
-	// ThumbnailTable is the table the holds the thumbnail relation/edge.
+	// ThumbnailTable is the table that holds the thumbnail relation/edge.
 	ThumbnailTable = "unsaved_post_thumbnails"
 	// ThumbnailInverseTable is the table name for the UnsavedPostThumbnail entity.
 	// It exists in this package in order to avoid circular dependency with the "unsavedpostthumbnail" package.
 	ThumbnailInverseTable = "unsaved_post_thumbnails"
 	// ThumbnailColumn is the table column denoting the thumbnail relation/edge.
 	ThumbnailColumn = "unsaved_post_thumbnail"
-	// ImagesTable is the table the holds the images relation/edge.
+	// ImagesTable is the table that holds the images relation/edge.
 	ImagesTable = "unsaved_post_images"
 	// ImagesInverseTable is the table name for the UnsavedPostImage entity.
 	// It exists in this package in order to avoid circular dependency with the "unsavedpostimage" package.
 	ImagesInverseTable = "unsaved_post_images"
 	// ImagesColumn is the table column denoting the images relation/edge.
 	ImagesColumn = "unsaved_post_images"
-	// VideosTable is the table the holds the videos relation/edge.
+	// VideosTable is the table that holds the videos relation/edge.
 	VideosTable = "unsaved_post_videos"
 	// VideosInverseTable is the table name for the UnsavedPostVideo entity.
 	// It exists in this package in order to avoid circular dependency with the "unsavedpostvideo" package.
 	VideosInverseTable = "unsaved_post_videos"
 	// VideosColumn is the table column denoting the videos relation/edge.
 	VideosColumn = "unsaved_post_videos"
-	// AttachmentsTable is the table the holds the attachments relation/edge.
+	// AttachmentsTable is the table that holds the attachments relation/edge.
 	AttachmentsTable = "unsaved_post_attachments"
 	// AttachmentsInverseTable is the table name for the UnsavedPostAttachment entity.
 	// It exists in this package in order to avoid circular dependency with the "unsavedpostattachment" package.

@@ -25,7 +25,7 @@ const (
 	EdgePost = "post"
 	// Table holds the table name of the postthumbnail in the database.
 	Table = "post_thumbnails"
-	// PostTable is the table the holds the post relation/edge.
+	// PostTable is the table that holds the post relation/edge.
 	PostTable = "post_thumbnails"
 	// PostInverseTable is the table name for the Post entity.
 	// It exists in this package in order to avoid circular dependency with the "post" package.

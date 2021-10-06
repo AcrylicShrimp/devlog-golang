@@ -20,9 +20,9 @@ type UnsavedPostDelete struct {
 	mutation *UnsavedPostMutation
 }
 
-// Where adds a new predicate to the UnsavedPostDelete builder.
+// Where appends a list predicates to the UnsavedPostDelete builder.
 func (upd *UnsavedPostDelete) Where(ps ...predicate.UnsavedPost) *UnsavedPostDelete {
-	upd.mutation.predicates = append(upd.mutation.predicates, ps...)
+	upd.mutation.Where(ps...)
 	return upd
 }
 
@@ -46,6 +46,9 @@ func (upd *UnsavedPostDelete) Exec(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(upd.hooks) - 1; i >= 0; i-- {
+			if upd.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upd.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upd.mutation); err != nil {

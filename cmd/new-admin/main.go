@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"devlog/ent"
 	"devlog/env"
+	"devlog/util"
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
 	"fmt"
@@ -70,10 +71,16 @@ func main() {
 		panic(err)
 	}
 
+	key, err := util.GenerateToken64()
+	if err != nil {
+		panic(err)
+	}
+
 	admin := client.Admin.Create().
 		SetEmail(strings.TrimSpace(email)).
 		SetUsername(strings.TrimSpace(username)).
 		SetPassword(string(passwordHash)).
+		SetKey(key).
 		SaveX(context.Background())
 	fmt.Println("A new admin has been successfully created: ", admin.ID)
 }

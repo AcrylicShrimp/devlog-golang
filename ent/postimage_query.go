@@ -325,8 +325,8 @@ func (piq *PostImageQuery) GroupBy(field string, fields ...string) *PostImageGro
 //		Select(postimage.FieldUUID).
 //		Scan(ctx, &v)
 //
-func (piq *PostImageQuery) Select(field string, fields ...string) *PostImageSelect {
-	piq.fields = append([]string{field}, fields...)
+func (piq *PostImageQuery) Select(fields ...string) *PostImageSelect {
+	piq.fields = append(piq.fields, fields...)
 	return &PostImageSelect{PostImageQuery: piq}
 }
 
@@ -477,10 +477,14 @@ func (piq *PostImageQuery) querySpec() *sqlgraph.QuerySpec {
 func (piq *PostImageQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(piq.driver.Dialect())
 	t1 := builder.Table(postimage.Table)
-	selector := builder.Select(t1.Columns(postimage.Columns...)...).From(t1)
+	columns := piq.fields
+	if len(columns) == 0 {
+		columns = postimage.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if piq.sql != nil {
 		selector = piq.sql
-		selector.Select(selector.Columns(postimage.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range piq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (pigb *PostImageGroupBy) sqlScan(ctx context.Context, v interface{}) error 
 }
 
 func (pigb *PostImageGroupBy) sqlQuery() *sql.Selector {
-	selector := pigb.sql
-	columns := make([]string, 0, len(pigb.fields)+len(pigb.fns))
-	columns = append(columns, pigb.fields...)
+	selector := pigb.sql.Select()
+	aggregation := make([]string, 0, len(pigb.fns))
 	for _, fn := range pigb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(pigb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(pigb.fields)+len(pigb.fns))
+		for _, f := range pigb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(pigb.fields...)...)
 }
 
 // PostImageSelect is the builder for selecting fields of PostImage entities.
@@ -970,16 +985,10 @@ func (pis *PostImageSelect) BoolX(ctx context.Context) bool {
 
 func (pis *PostImageSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := pis.sqlQuery().Query()
+	query, args := pis.sql.Query()
 	if err := pis.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (pis *PostImageSelect) sqlQuery() sql.Querier {
-	selector := pis.sql
-	selector.Select(selector.Columns(pis.fields...)...)
-	return selector
 }

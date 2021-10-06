@@ -14,14 +14,28 @@ var (
 		{Name: "email", Type: field.TypeString, Unique: true, Size: 128},
 		{Name: "username", Type: field.TypeString, Unique: true, Size: 64},
 		{Name: "password", Type: field.TypeString, Size: 60},
+		{Name: "key", Type: field.TypeString, Size: 64},
 		{Name: "joined_at", Type: field.TypeTime},
 	}
 	// AdminsTable holds the schema information for the "admins" table.
 	AdminsTable = &schema.Table{
-		Name:        "admins",
-		Columns:     AdminsColumns,
-		PrimaryKey:  []*schema.Column{AdminsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "admins",
+		Columns:    AdminsColumns,
+		PrimaryKey: []*schema.Column{AdminsColumns[0]},
+	}
+	// AdminRobotAccessesColumns holds the columns for the "admin_robot_accesses" table.
+	AdminRobotAccessesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "token", Type: field.TypeString, Unique: true, Size: 256},
+		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "last_access_at", Type: field.TypeTime, Nullable: true},
+	}
+	// AdminRobotAccessesTable holds the schema information for the "admin_robot_accesses" table.
+	AdminRobotAccessesTable = &schema.Table{
+		Name:       "admin_robot_accesses",
+		Columns:    AdminRobotAccessesColumns,
+		PrimaryKey: []*schema.Column{AdminRobotAccessesColumns[0]},
 	}
 	// AdminSessionsColumns holds the columns for the "admin_sessions" table.
 	AdminSessionsColumns = []*schema.Column{
@@ -55,10 +69,9 @@ var (
 	}
 	// CategoriesTable holds the schema information for the "categories" table.
 	CategoriesTable = &schema.Table{
-		Name:        "categories",
-		Columns:     CategoriesColumns,
-		PrimaryKey:  []*schema.Column{CategoriesColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{},
+		Name:       "categories",
+		Columns:    CategoriesColumns,
+		PrimaryKey: []*schema.Column{CategoriesColumns[0]},
 	}
 	// PostsColumns holds the columns for the "posts" table.
 	PostsColumns = []*schema.Column{
@@ -328,9 +341,35 @@ var (
 			},
 		},
 	}
+	// AdminRobotAccessesColumns holds the columns for the "admin_robot_accesses" table.
+	AdminRobotAccessesColumns = []*schema.Column{
+		{Name: "admin_id", Type: field.TypeInt},
+		{Name: "admin_robot_access_id", Type: field.TypeInt},
+	}
+	// AdminRobotAccessesTable holds the schema information for the "admin_robot_accesses" table.
+	AdminRobotAccessesTable = &schema.Table{
+		Name:       "admin_robot_accesses",
+		Columns:    AdminRobotAccessesColumns,
+		PrimaryKey: []*schema.Column{AdminRobotAccessesColumns[0], AdminRobotAccessesColumns[1]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "admin_robot_accesses_admin_id",
+				Columns:    []*schema.Column{AdminRobotAccessesColumns[0]},
+				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "admin_robot_accesses_admin_robot_access_id",
+				Columns:    []*schema.Column{AdminRobotAccessesColumns[1]},
+				RefColumns: []*schema.Column{AdminRobotAccessesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminsTable,
+		AdminRobotAccessesTable,
 		AdminSessionsTable,
 		CategoriesTable,
 		PostsTable,
@@ -343,6 +382,7 @@ var (
 		UnsavedPostImagesTable,
 		UnsavedPostThumbnailsTable,
 		UnsavedPostVideosTable,
+		AdminRobotAccessesTable,
 	}
 )
 
@@ -360,4 +400,6 @@ func init() {
 	UnsavedPostImagesTable.ForeignKeys[0].RefTable = UnsavedPostsTable
 	UnsavedPostThumbnailsTable.ForeignKeys[0].RefTable = UnsavedPostsTable
 	UnsavedPostVideosTable.ForeignKeys[0].RefTable = UnsavedPostsTable
+	AdminRobotAccessesTable.ForeignKeys[0].RefTable = AdminsTable
+	AdminRobotAccessesTable.ForeignKeys[1].RefTable = AdminRobotAccessesTable
 }

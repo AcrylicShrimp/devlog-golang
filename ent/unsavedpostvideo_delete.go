@@ -20,9 +20,9 @@ type UnsavedPostVideoDelete struct {
 	mutation *UnsavedPostVideoMutation
 }
 
-// Where adds a new predicate to the UnsavedPostVideoDelete builder.
+// Where appends a list predicates to the UnsavedPostVideoDelete builder.
 func (upvd *UnsavedPostVideoDelete) Where(ps ...predicate.UnsavedPostVideo) *UnsavedPostVideoDelete {
-	upvd.mutation.predicates = append(upvd.mutation.predicates, ps...)
+	upvd.mutation.Where(ps...)
 	return upvd
 }
 
@@ -46,6 +46,9 @@ func (upvd *UnsavedPostVideoDelete) Exec(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(upvd.hooks) - 1; i >= 0; i-- {
+			if upvd.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upvd.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upvd.mutation); err != nil {

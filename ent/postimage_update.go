@@ -23,9 +23,9 @@ type PostImageUpdate struct {
 	mutation *PostImageMutation
 }
 
-// Where adds a new predicate for the PostImageUpdate builder.
+// Where appends a list predicates to the PostImageUpdate builder.
 func (piu *PostImageUpdate) Where(ps ...predicate.PostImage) *PostImageUpdate {
-	piu.mutation.predicates = append(piu.mutation.predicates, ps...)
+	piu.mutation.Where(ps...)
 	return piu
 }
 
@@ -141,6 +141,9 @@ func (piu *PostImageUpdate) Save(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(piu.hooks) - 1; i >= 0; i-- {
+			if piu.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = piu.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, piu.mutation); err != nil {
@@ -319,8 +322,8 @@ func (piu *PostImageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if n, err = sqlgraph.UpdateNodes(ctx, piu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{postimage.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return 0, err
 	}
@@ -454,6 +457,9 @@ func (piuo *PostImageUpdateOne) Save(ctx context.Context) (*PostImage, error) {
 			return node, err
 		})
 		for i := len(piuo.hooks) - 1; i >= 0; i-- {
+			if piuo.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = piuo.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, piuo.mutation); err != nil {
@@ -652,8 +658,8 @@ func (piuo *PostImageUpdateOne) sqlSave(ctx context.Context) (_node *PostImage, 
 	if err = sqlgraph.UpdateNode(ctx, piuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{postimage.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}

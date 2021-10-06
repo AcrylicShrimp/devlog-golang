@@ -20,9 +20,9 @@ type PostImageDelete struct {
 	mutation *PostImageMutation
 }
 
-// Where adds a new predicate to the PostImageDelete builder.
+// Where appends a list predicates to the PostImageDelete builder.
 func (pid *PostImageDelete) Where(ps ...predicate.PostImage) *PostImageDelete {
-	pid.mutation.predicates = append(pid.mutation.predicates, ps...)
+	pid.mutation.Where(ps...)
 	return pid
 }
 
@@ -46,6 +46,9 @@ func (pid *PostImageDelete) Exec(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(pid.hooks) - 1; i >= 0; i-- {
+			if pid.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = pid.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, pid.mutation); err != nil {

@@ -175,6 +175,7 @@ func NewPost(c echo.Context) error {
 			if _, ok := err.(*ent.ConstraintError); ok {
 				return nil, echo.NewHTTPError(http.StatusConflict)
 			}
+
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
 

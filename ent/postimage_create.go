@@ -109,11 +109,17 @@ func (pic *PostImageCreate) Save(ctx context.Context) (*PostImage, error) {
 				return nil, err
 			}
 			pic.mutation = mutation
-			node, err = pic.sqlSave(ctx)
+			if node, err = pic.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(pic.hooks) - 1; i >= 0; i-- {
+			if pic.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = pic.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, pic.mutation); err != nil {
@@ -132,6 +138,19 @@ func (pic *PostImageCreate) SaveX(ctx context.Context) *PostImage {
 	return v
 }
 
+// Exec executes the query.
+func (pic *PostImageCreate) Exec(ctx context.Context) error {
+	_, err := pic.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (pic *PostImageCreate) ExecX(ctx context.Context) {
+	if err := pic.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (pic *PostImageCreate) defaults() {
 	if _, ok := pic.mutation.CreatedAt(); !ok {
@@ -143,45 +162,45 @@ func (pic *PostImageCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (pic *PostImageCreate) check() error {
 	if _, ok := pic.mutation.UUID(); !ok {
-		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+		return &ValidationError{Name: "uuid", err: errors.New(`ent: missing required field "uuid"`)}
 	}
 	if v, ok := pic.mutation.UUID(); ok {
 		if err := postimage.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+			return &ValidationError{Name: "uuid", err: fmt.Errorf(`ent: validator failed for field "uuid": %w`, err)}
 		}
 	}
 	if _, ok := pic.mutation.Width(); !ok {
-		return &ValidationError{Name: "width", err: errors.New("ent: missing required field \"width\"")}
+		return &ValidationError{Name: "width", err: errors.New(`ent: missing required field "width"`)}
 	}
 	if _, ok := pic.mutation.Height(); !ok {
-		return &ValidationError{Name: "height", err: errors.New("ent: missing required field \"height\"")}
+		return &ValidationError{Name: "height", err: errors.New(`ent: missing required field "height"`)}
 	}
 	if _, ok := pic.mutation.Hash(); !ok {
-		return &ValidationError{Name: "hash", err: errors.New("ent: missing required field \"hash\"")}
+		return &ValidationError{Name: "hash", err: errors.New(`ent: missing required field "hash"`)}
 	}
 	if v, ok := pic.mutation.Hash(); ok {
 		if err := postimage.HashValidator(v); err != nil {
-			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
+			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "hash": %w`, err)}
 		}
 	}
 	if _, ok := pic.mutation.Title(); !ok {
-		return &ValidationError{Name: "title", err: errors.New("ent: missing required field \"title\"")}
+		return &ValidationError{Name: "title", err: errors.New(`ent: missing required field "title"`)}
 	}
 	if v, ok := pic.mutation.Title(); ok {
 		if err := postimage.TitleValidator(v); err != nil {
-			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "title": %w`, err)}
 		}
 	}
 	if _, ok := pic.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
+		return &ValidationError{Name: "url", err: errors.New(`ent: missing required field "url"`)}
 	}
 	if v, ok := pic.mutation.URL(); ok {
 		if err := postimage.URLValidator(v); err != nil {
-			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
+			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "url": %w`, err)}
 		}
 	}
 	if _, ok := pic.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := pic.mutation.PostID(); !ok {
 		return &ValidationError{Name: "post", err: errors.New("ent: missing required edge \"post\"")}
@@ -192,8 +211,8 @@ func (pic *PostImageCreate) check() error {
 func (pic *PostImageCreate) sqlSave(ctx context.Context) (*PostImage, error) {
 	_node, _spec := pic.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pic.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -321,19 +340,23 @@ func (picb *PostImageCreateBulk) Save(ctx context.Context) ([]*PostImage, error)
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, picb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, picb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, picb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -357,4 +380,17 @@ func (picb *PostImageCreateBulk) SaveX(ctx context.Context) []*PostImage {
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (picb *PostImageCreateBulk) Exec(ctx context.Context) error {
+	_, err := picb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (picb *PostImageCreateBulk) ExecX(ctx context.Context) {
+	if err := picb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

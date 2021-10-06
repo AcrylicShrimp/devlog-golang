@@ -325,8 +325,8 @@ func (pvq *PostVideoQuery) GroupBy(field string, fields ...string) *PostVideoGro
 //		Select(postvideo.FieldUUID).
 //		Scan(ctx, &v)
 //
-func (pvq *PostVideoQuery) Select(field string, fields ...string) *PostVideoSelect {
-	pvq.fields = append([]string{field}, fields...)
+func (pvq *PostVideoQuery) Select(fields ...string) *PostVideoSelect {
+	pvq.fields = append(pvq.fields, fields...)
 	return &PostVideoSelect{PostVideoQuery: pvq}
 }
 
@@ -477,10 +477,14 @@ func (pvq *PostVideoQuery) querySpec() *sqlgraph.QuerySpec {
 func (pvq *PostVideoQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(pvq.driver.Dialect())
 	t1 := builder.Table(postvideo.Table)
-	selector := builder.Select(t1.Columns(postvideo.Columns...)...).From(t1)
+	columns := pvq.fields
+	if len(columns) == 0 {
+		columns = postvideo.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if pvq.sql != nil {
 		selector = pvq.sql
-		selector.Select(selector.Columns(postvideo.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range pvq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (pvgb *PostVideoGroupBy) sqlScan(ctx context.Context, v interface{}) error 
 }
 
 func (pvgb *PostVideoGroupBy) sqlQuery() *sql.Selector {
-	selector := pvgb.sql
-	columns := make([]string, 0, len(pvgb.fields)+len(pvgb.fns))
-	columns = append(columns, pvgb.fields...)
+	selector := pvgb.sql.Select()
+	aggregation := make([]string, 0, len(pvgb.fns))
 	for _, fn := range pvgb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(pvgb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(pvgb.fields)+len(pvgb.fns))
+		for _, f := range pvgb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(pvgb.fields...)...)
 }
 
 // PostVideoSelect is the builder for selecting fields of PostVideo entities.
@@ -970,16 +985,10 @@ func (pvs *PostVideoSelect) BoolX(ctx context.Context) bool {
 
 func (pvs *PostVideoSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := pvs.sqlQuery().Query()
+	query, args := pvs.sql.Query()
 	if err := pvs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (pvs *PostVideoSelect) sqlQuery() sql.Querier {
-	selector := pvs.sql
-	selector.Select(selector.Columns(pvs.fields...)...)
-	return selector
 }

@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"devlog/ent/admin"
+	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
 	"devlog/ent/unsavedpost"
@@ -41,6 +42,12 @@ func (ac *AdminCreate) SetPassword(s string) *AdminCreate {
 	return ac
 }
 
+// SetKey sets the "key" field.
+func (ac *AdminCreate) SetKey(s string) *AdminCreate {
+	ac.mutation.SetKey(s)
+	return ac
+}
+
 // SetJoinedAt sets the "joined_at" field.
 func (ac *AdminCreate) SetJoinedAt(t time.Time) *AdminCreate {
 	ac.mutation.SetJoinedAt(t)
@@ -68,6 +75,21 @@ func (ac *AdminCreate) AddSessions(a ...*AdminSession) *AdminCreate {
 		ids[i] = a[i].ID
 	}
 	return ac.AddSessionIDs(ids...)
+}
+
+// AddRobotAccessIDs adds the "robot_accesses" edge to the AdminRobotAccess entity by IDs.
+func (ac *AdminCreate) AddRobotAccessIDs(ids ...int) *AdminCreate {
+	ac.mutation.AddRobotAccessIDs(ids...)
+	return ac
+}
+
+// AddRobotAccesses adds the "robot_accesses" edges to the AdminRobotAccess entity.
+func (ac *AdminCreate) AddRobotAccesses(a ...*AdminRobotAccess) *AdminCreate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return ac.AddRobotAccessIDs(ids...)
 }
 
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
@@ -127,11 +149,17 @@ func (ac *AdminCreate) Save(ctx context.Context) (*Admin, error) {
 				return nil, err
 			}
 			ac.mutation = mutation
-			node, err = ac.sqlSave(ctx)
+			if node, err = ac.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(ac.hooks) - 1; i >= 0; i-- {
+			if ac.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = ac.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, ac.mutation); err != nil {
@@ -150,6 +178,19 @@ func (ac *AdminCreate) SaveX(ctx context.Context) *Admin {
 	return v
 }
 
+// Exec executes the query.
+func (ac *AdminCreate) Exec(ctx context.Context) error {
+	_, err := ac.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (ac *AdminCreate) ExecX(ctx context.Context) {
+	if err := ac.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (ac *AdminCreate) defaults() {
 	if _, ok := ac.mutation.JoinedAt(); !ok {
@@ -161,31 +202,39 @@ func (ac *AdminCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (ac *AdminCreate) check() error {
 	if _, ok := ac.mutation.Email(); !ok {
-		return &ValidationError{Name: "email", err: errors.New("ent: missing required field \"email\"")}
+		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "email"`)}
 	}
 	if v, ok := ac.mutation.Email(); ok {
 		if err := admin.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf("ent: validator failed for field \"email\": %w", err)}
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "email": %w`, err)}
 		}
 	}
 	if _, ok := ac.mutation.Username(); !ok {
-		return &ValidationError{Name: "username", err: errors.New("ent: missing required field \"username\"")}
+		return &ValidationError{Name: "username", err: errors.New(`ent: missing required field "username"`)}
 	}
 	if v, ok := ac.mutation.Username(); ok {
 		if err := admin.UsernameValidator(v); err != nil {
-			return &ValidationError{Name: "username", err: fmt.Errorf("ent: validator failed for field \"username\": %w", err)}
+			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "username": %w`, err)}
 		}
 	}
 	if _, ok := ac.mutation.Password(); !ok {
-		return &ValidationError{Name: "password", err: errors.New("ent: missing required field \"password\"")}
+		return &ValidationError{Name: "password", err: errors.New(`ent: missing required field "password"`)}
 	}
 	if v, ok := ac.mutation.Password(); ok {
 		if err := admin.PasswordValidator(v); err != nil {
-			return &ValidationError{Name: "password", err: fmt.Errorf("ent: validator failed for field \"password\": %w", err)}
+			return &ValidationError{Name: "password", err: fmt.Errorf(`ent: validator failed for field "password": %w`, err)}
+		}
+	}
+	if _, ok := ac.mutation.Key(); !ok {
+		return &ValidationError{Name: "key", err: errors.New(`ent: missing required field "key"`)}
+	}
+	if v, ok := ac.mutation.Key(); ok {
+		if err := admin.KeyValidator(v); err != nil {
+			return &ValidationError{Name: "key", err: fmt.Errorf(`ent: validator failed for field "key": %w`, err)}
 		}
 	}
 	if _, ok := ac.mutation.JoinedAt(); !ok {
-		return &ValidationError{Name: "joined_at", err: errors.New("ent: missing required field \"joined_at\"")}
+		return &ValidationError{Name: "joined_at", err: errors.New(`ent: missing required field "joined_at"`)}
 	}
 	return nil
 }
@@ -193,8 +242,8 @@ func (ac *AdminCreate) check() error {
 func (ac *AdminCreate) sqlSave(ctx context.Context) (*Admin, error) {
 	_node, _spec := ac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ac.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -238,6 +287,14 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 		})
 		_node.Password = value
 	}
+	if value, ok := ac.mutation.Key(); ok {
+		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldKey,
+		})
+		_node.Key = value
+	}
 	if value, ok := ac.mutation.JoinedAt(); ok {
 		_spec.Fields = append(_spec.Fields, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -257,6 +314,25 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: adminsession.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := ac.mutation.RobotAccessesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RobotAccessesTable,
+			Columns: admin.RobotAccessesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: adminrobotaccess.FieldID,
 				},
 			},
 		}
@@ -335,19 +411,23 @@ func (acb *AdminCreateBulk) Save(ctx context.Context) ([]*Admin, error) {
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, acb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, acb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, acb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -371,4 +451,17 @@ func (acb *AdminCreateBulk) SaveX(ctx context.Context) []*Admin {
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (acb *AdminCreateBulk) Exec(ctx context.Context) error {
+	_, err := acb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (acb *AdminCreateBulk) ExecX(ctx context.Context) {
+	if err := acb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

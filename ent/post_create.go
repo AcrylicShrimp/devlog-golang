@@ -217,11 +217,17 @@ func (pc *PostCreate) Save(ctx context.Context) (*Post, error) {
 				return nil, err
 			}
 			pc.mutation = mutation
-			node, err = pc.sqlSave(ctx)
+			if node, err = pc.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(pc.hooks) - 1; i >= 0; i-- {
+			if pc.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = pc.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, pc.mutation); err != nil {
@@ -240,6 +246,19 @@ func (pc *PostCreate) SaveX(ctx context.Context) *Post {
 	return v
 }
 
+// Exec executes the query.
+func (pc *PostCreate) Exec(ctx context.Context) error {
+	_, err := pc.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (pc *PostCreate) ExecX(ctx context.Context) {
+	if err := pc.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (pc *PostCreate) defaults() {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
@@ -255,56 +274,56 @@ func (pc *PostCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (pc *PostCreate) check() error {
 	if _, ok := pc.mutation.UUID(); !ok {
-		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+		return &ValidationError{Name: "uuid", err: errors.New(`ent: missing required field "uuid"`)}
 	}
 	if v, ok := pc.mutation.UUID(); ok {
 		if err := post.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+			return &ValidationError{Name: "uuid", err: fmt.Errorf(`ent: validator failed for field "uuid": %w`, err)}
 		}
 	}
 	if _, ok := pc.mutation.Slug(); !ok {
-		return &ValidationError{Name: "slug", err: errors.New("ent: missing required field \"slug\"")}
+		return &ValidationError{Name: "slug", err: errors.New(`ent: missing required field "slug"`)}
 	}
 	if v, ok := pc.mutation.Slug(); ok {
 		if err := post.SlugValidator(v); err != nil {
-			return &ValidationError{Name: "slug", err: fmt.Errorf("ent: validator failed for field \"slug\": %w", err)}
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "slug": %w`, err)}
 		}
 	}
 	if _, ok := pc.mutation.AccessLevel(); !ok {
-		return &ValidationError{Name: "access_level", err: errors.New("ent: missing required field \"access_level\"")}
+		return &ValidationError{Name: "access_level", err: errors.New(`ent: missing required field "access_level"`)}
 	}
 	if v, ok := pc.mutation.AccessLevel(); ok {
 		if err := post.AccessLevelValidator(v); err != nil {
-			return &ValidationError{Name: "access_level", err: fmt.Errorf("ent: validator failed for field \"access_level\": %w", err)}
+			return &ValidationError{Name: "access_level", err: fmt.Errorf(`ent: validator failed for field "access_level": %w`, err)}
 		}
 	}
 	if _, ok := pc.mutation.Title(); !ok {
-		return &ValidationError{Name: "title", err: errors.New("ent: missing required field \"title\"")}
+		return &ValidationError{Name: "title", err: errors.New(`ent: missing required field "title"`)}
 	}
 	if v, ok := pc.mutation.Title(); ok {
 		if err := post.TitleValidator(v); err != nil {
-			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "title": %w`, err)}
 		}
 	}
 	if _, ok := pc.mutation.Content(); !ok {
-		return &ValidationError{Name: "content", err: errors.New("ent: missing required field \"content\"")}
+		return &ValidationError{Name: "content", err: errors.New(`ent: missing required field "content"`)}
 	}
 	if _, ok := pc.mutation.HTMLContent(); !ok {
-		return &ValidationError{Name: "html_content", err: errors.New("ent: missing required field \"html_content\"")}
+		return &ValidationError{Name: "html_content", err: errors.New(`ent: missing required field "html_content"`)}
 	}
 	if _, ok := pc.mutation.PreviewContent(); !ok {
-		return &ValidationError{Name: "preview_content", err: errors.New("ent: missing required field \"preview_content\"")}
+		return &ValidationError{Name: "preview_content", err: errors.New(`ent: missing required field "preview_content"`)}
 	}
 	if v, ok := pc.mutation.PreviewContent(); ok {
 		if err := post.PreviewContentValidator(v); err != nil {
-			return &ValidationError{Name: "preview_content", err: fmt.Errorf("ent: validator failed for field \"preview_content\": %w", err)}
+			return &ValidationError{Name: "preview_content", err: fmt.Errorf(`ent: validator failed for field "preview_content": %w`, err)}
 		}
 	}
 	if _, ok := pc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := pc.mutation.ModifiedAt(); !ok {
-		return &ValidationError{Name: "modified_at", err: errors.New("ent: missing required field \"modified_at\"")}
+		return &ValidationError{Name: "modified_at", err: errors.New(`ent: missing required field "modified_at"`)}
 	}
 	if _, ok := pc.mutation.AuthorID(); !ok {
 		return &ValidationError{Name: "author", err: errors.New("ent: missing required edge \"author\"")}
@@ -315,8 +334,8 @@ func (pc *PostCreate) check() error {
 func (pc *PostCreate) sqlSave(ctx context.Context) (*Post, error) {
 	_node, _spec := pc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pc.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -556,19 +575,23 @@ func (pcb *PostCreateBulk) Save(ctx context.Context) ([]*Post, error) {
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, pcb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, pcb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, pcb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -592,4 +615,17 @@ func (pcb *PostCreateBulk) SaveX(ctx context.Context) []*Post {
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (pcb *PostCreateBulk) Exec(ctx context.Context) error {
+	_, err := pcb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (pcb *PostCreateBulk) ExecX(ctx context.Context) {
+	if err := pcb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

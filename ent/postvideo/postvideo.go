@@ -23,7 +23,7 @@ const (
 	EdgePost = "post"
 	// Table holds the table name of the postvideo in the database.
 	Table = "post_videos"
-	// PostTable is the table the holds the post relation/edge.
+	// PostTable is the table that holds the post relation/edge.
 	PostTable = "post_videos"
 	// PostInverseTable is the table name for the Post entity.
 	// It exists in this package in order to avoid circular dependency with the "post" package.

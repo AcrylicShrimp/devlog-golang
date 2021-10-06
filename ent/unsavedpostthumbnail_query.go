@@ -325,8 +325,8 @@ func (uptq *UnsavedPostThumbnailQuery) GroupBy(field string, fields ...string) *
 //		Select(unsavedpostthumbnail.FieldValidity).
 //		Scan(ctx, &v)
 //
-func (uptq *UnsavedPostThumbnailQuery) Select(field string, fields ...string) *UnsavedPostThumbnailSelect {
-	uptq.fields = append([]string{field}, fields...)
+func (uptq *UnsavedPostThumbnailQuery) Select(fields ...string) *UnsavedPostThumbnailSelect {
+	uptq.fields = append(uptq.fields, fields...)
 	return &UnsavedPostThumbnailSelect{UnsavedPostThumbnailQuery: uptq}
 }
 
@@ -477,10 +477,14 @@ func (uptq *UnsavedPostThumbnailQuery) querySpec() *sqlgraph.QuerySpec {
 func (uptq *UnsavedPostThumbnailQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(uptq.driver.Dialect())
 	t1 := builder.Table(unsavedpostthumbnail.Table)
-	selector := builder.Select(t1.Columns(unsavedpostthumbnail.Columns...)...).From(t1)
+	columns := uptq.fields
+	if len(columns) == 0 {
+		columns = unsavedpostthumbnail.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if uptq.sql != nil {
 		selector = uptq.sql
-		selector.Select(selector.Columns(unsavedpostthumbnail.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range uptq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (uptgb *UnsavedPostThumbnailGroupBy) sqlScan(ctx context.Context, v interfa
 }
 
 func (uptgb *UnsavedPostThumbnailGroupBy) sqlQuery() *sql.Selector {
-	selector := uptgb.sql
-	columns := make([]string, 0, len(uptgb.fields)+len(uptgb.fns))
-	columns = append(columns, uptgb.fields...)
+	selector := uptgb.sql.Select()
+	aggregation := make([]string, 0, len(uptgb.fns))
 	for _, fn := range uptgb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(uptgb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(uptgb.fields)+len(uptgb.fns))
+		for _, f := range uptgb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(uptgb.fields...)...)
 }
 
 // UnsavedPostThumbnailSelect is the builder for selecting fields of UnsavedPostThumbnail entities.
@@ -970,16 +985,10 @@ func (upts *UnsavedPostThumbnailSelect) BoolX(ctx context.Context) bool {
 
 func (upts *UnsavedPostThumbnailSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := upts.sqlQuery().Query()
+	query, args := upts.sql.Query()
 	if err := upts.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (upts *UnsavedPostThumbnailSelect) sqlQuery() sql.Querier {
-	selector := upts.sql
-	selector.Select(selector.Columns(upts.fields...)...)
-	return selector
 }

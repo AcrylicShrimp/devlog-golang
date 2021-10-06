@@ -20,9 +20,9 @@ type PostThumbnailDelete struct {
 	mutation *PostThumbnailMutation
 }
 
-// Where adds a new predicate to the PostThumbnailDelete builder.
+// Where appends a list predicates to the PostThumbnailDelete builder.
 func (ptd *PostThumbnailDelete) Where(ps ...predicate.PostThumbnail) *PostThumbnailDelete {
-	ptd.mutation.predicates = append(ptd.mutation.predicates, ps...)
+	ptd.mutation.Where(ps...)
 	return ptd
 }
 
@@ -46,6 +46,9 @@ func (ptd *PostThumbnailDelete) Exec(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(ptd.hooks) - 1; i >= 0; i-- {
+			if ptd.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = ptd.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, ptd.mutation); err != nil {

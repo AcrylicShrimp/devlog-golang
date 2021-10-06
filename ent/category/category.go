@@ -25,14 +25,14 @@ const (
 	EdgeUnsavedPosts = "unsaved_posts"
 	// Table holds the table name of the category in the database.
 	Table = "categories"
-	// PostsTable is the table the holds the posts relation/edge.
+	// PostsTable is the table that holds the posts relation/edge.
 	PostsTable = "posts"
 	// PostsInverseTable is the table name for the Post entity.
 	// It exists in this package in order to avoid circular dependency with the "post" package.
 	PostsInverseTable = "posts"
 	// PostsColumn is the table column denoting the posts relation/edge.
 	PostsColumn = "category_posts"
-	// UnsavedPostsTable is the table the holds the unsaved_posts relation/edge.
+	// UnsavedPostsTable is the table that holds the unsaved_posts relation/edge.
 	UnsavedPostsTable = "unsaved_posts"
 	// UnsavedPostsInverseTable is the table name for the UnsavedPost entity.
 	// It exists in this package in order to avoid circular dependency with the "unsavedpost" package.

@@ -22,6 +22,8 @@ type Admin struct {
 	Username string `json:"username,omitempty"`
 	// Password holds the value of the "password" field.
 	Password string `json:"password,omitempty"`
+	// Key holds the value of the "key" field.
+	Key string `json:"key,omitempty"`
 	// JoinedAt holds the value of the "joined_at" field.
 	JoinedAt time.Time `json:"joined_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -33,13 +35,15 @@ type Admin struct {
 type AdminEdges struct {
 	// Sessions holds the value of the sessions edge.
 	Sessions []*AdminSession `json:"sessions,omitempty"`
+	// RobotAccesses holds the value of the robot_accesses edge.
+	RobotAccesses []*AdminRobotAccess `json:"robot_accesses,omitempty"`
 	// Posts holds the value of the posts edge.
 	Posts []*Post `json:"posts,omitempty"`
 	// UnsavedPosts holds the value of the unsaved_posts edge.
 	UnsavedPosts []*UnsavedPost `json:"unsaved_posts,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -51,10 +55,19 @@ func (e AdminEdges) SessionsOrErr() ([]*AdminSession, error) {
 	return nil, &NotLoadedError{edge: "sessions"}
 }
 
+// RobotAccessesOrErr returns the RobotAccesses value or an error if the edge
+// was not loaded in eager-loading.
+func (e AdminEdges) RobotAccessesOrErr() ([]*AdminRobotAccess, error) {
+	if e.loadedTypes[1] {
+		return e.RobotAccesses, nil
+	}
+	return nil, &NotLoadedError{edge: "robot_accesses"}
+}
+
 // PostsOrErr returns the Posts value or an error if the edge
 // was not loaded in eager-loading.
 func (e AdminEdges) PostsOrErr() ([]*Post, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[2] {
 		return e.Posts, nil
 	}
 	return nil, &NotLoadedError{edge: "posts"}
@@ -63,7 +76,7 @@ func (e AdminEdges) PostsOrErr() ([]*Post, error) {
 // UnsavedPostsOrErr returns the UnsavedPosts value or an error if the edge
 // was not loaded in eager-loading.
 func (e AdminEdges) UnsavedPostsOrErr() ([]*UnsavedPost, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[3] {
 		return e.UnsavedPosts, nil
 	}
 	return nil, &NotLoadedError{edge: "unsaved_posts"}
@@ -76,7 +89,7 @@ func (*Admin) scanValues(columns []string) ([]interface{}, error) {
 		switch columns[i] {
 		case admin.FieldID:
 			values[i] = new(sql.NullInt64)
-		case admin.FieldEmail, admin.FieldUsername, admin.FieldPassword:
+		case admin.FieldEmail, admin.FieldUsername, admin.FieldPassword, admin.FieldKey:
 			values[i] = new(sql.NullString)
 		case admin.FieldJoinedAt:
 			values[i] = new(sql.NullTime)
@@ -119,6 +132,12 @@ func (a *Admin) assignValues(columns []string, values []interface{}) error {
 			} else if value.Valid {
 				a.Password = value.String
 			}
+		case admin.FieldKey:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field key", values[i])
+			} else if value.Valid {
+				a.Key = value.String
+			}
 		case admin.FieldJoinedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field joined_at", values[i])
@@ -133,6 +152,11 @@ func (a *Admin) assignValues(columns []string, values []interface{}) error {
 // QuerySessions queries the "sessions" edge of the Admin entity.
 func (a *Admin) QuerySessions() *AdminSessionQuery {
 	return (&AdminClient{config: a.config}).QuerySessions(a)
+}
+
+// QueryRobotAccesses queries the "robot_accesses" edge of the Admin entity.
+func (a *Admin) QueryRobotAccesses() *AdminRobotAccessQuery {
+	return (&AdminClient{config: a.config}).QueryRobotAccesses(a)
 }
 
 // QueryPosts queries the "posts" edge of the Admin entity.
@@ -174,6 +198,8 @@ func (a *Admin) String() string {
 	builder.WriteString(a.Username)
 	builder.WriteString(", password=")
 	builder.WriteString(a.Password)
+	builder.WriteString(", key=")
+	builder.WriteString(a.Key)
 	builder.WriteString(", joined_at=")
 	builder.WriteString(a.JoinedAt.Format(time.ANSIC))
 	builder.WriteByte(')')

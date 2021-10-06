@@ -114,6 +114,13 @@ func Password(v string) predicate.Admin {
 	})
 }
 
+// Key applies equality check predicate on the "key" field. It's identical to KeyEQ.
+func Key(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldKey), v))
+	})
+}
+
 // JoinedAt applies equality check predicate on the "joined_at" field. It's identical to JoinedAtEQ.
 func JoinedAt(v time.Time) predicate.Admin {
 	return predicate.Admin(func(s *sql.Selector) {
@@ -454,6 +461,117 @@ func PasswordContainsFold(v string) predicate.Admin {
 	})
 }
 
+// KeyEQ applies the EQ predicate on the "key" field.
+func KeyEQ(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EQ(s.C(FieldKey), v))
+	})
+}
+
+// KeyNEQ applies the NEQ predicate on the "key" field.
+func KeyNEQ(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.NEQ(s.C(FieldKey), v))
+	})
+}
+
+// KeyIn applies the In predicate on the "key" field.
+func KeyIn(vs ...string) predicate.Admin {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.In(s.C(FieldKey), v...))
+	})
+}
+
+// KeyNotIn applies the NotIn predicate on the "key" field.
+func KeyNotIn(vs ...string) predicate.Admin {
+	v := make([]interface{}, len(vs))
+	for i := range v {
+		v[i] = vs[i]
+	}
+	return predicate.Admin(func(s *sql.Selector) {
+		// if not arguments were provided, append the FALSE constants,
+		// since we can't apply "IN ()". This will make this predicate falsy.
+		if len(v) == 0 {
+			s.Where(sql.False())
+			return
+		}
+		s.Where(sql.NotIn(s.C(FieldKey), v...))
+	})
+}
+
+// KeyGT applies the GT predicate on the "key" field.
+func KeyGT(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.GT(s.C(FieldKey), v))
+	})
+}
+
+// KeyGTE applies the GTE predicate on the "key" field.
+func KeyGTE(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.GTE(s.C(FieldKey), v))
+	})
+}
+
+// KeyLT applies the LT predicate on the "key" field.
+func KeyLT(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.LT(s.C(FieldKey), v))
+	})
+}
+
+// KeyLTE applies the LTE predicate on the "key" field.
+func KeyLTE(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.LTE(s.C(FieldKey), v))
+	})
+}
+
+// KeyContains applies the Contains predicate on the "key" field.
+func KeyContains(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.Contains(s.C(FieldKey), v))
+	})
+}
+
+// KeyHasPrefix applies the HasPrefix predicate on the "key" field.
+func KeyHasPrefix(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.HasPrefix(s.C(FieldKey), v))
+	})
+}
+
+// KeyHasSuffix applies the HasSuffix predicate on the "key" field.
+func KeyHasSuffix(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.HasSuffix(s.C(FieldKey), v))
+	})
+}
+
+// KeyEqualFold applies the EqualFold predicate on the "key" field.
+func KeyEqualFold(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.EqualFold(s.C(FieldKey), v))
+	})
+}
+
+// KeyContainsFold applies the ContainsFold predicate on the "key" field.
+func KeyContainsFold(v string) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		s.Where(sql.ContainsFold(s.C(FieldKey), v))
+	})
+}
+
 // JoinedAtEQ applies the EQ predicate on the "joined_at" field.
 func JoinedAtEQ(v time.Time) predicate.Admin {
 	return predicate.Admin(func(s *sql.Selector) {
@@ -549,6 +667,34 @@ func HasSessionsWith(preds ...predicate.AdminSession) predicate.Admin {
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(SessionsInverseTable, FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, SessionsTable, SessionsColumn),
+		)
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasRobotAccesses applies the HasEdge predicate on the "robot_accesses" edge.
+func HasRobotAccesses() predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RobotAccessesTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, RobotAccessesTable, RobotAccessesPrimaryKey...),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasRobotAccessesWith applies the HasEdge predicate on the "robot_accesses" edge with a given conditions (other predicates).
+func HasRobotAccessesWith(preds ...predicate.AdminRobotAccess) predicate.Admin {
+	return predicate.Admin(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.To(RobotAccessesInverseTable, FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, RobotAccessesTable, RobotAccessesPrimaryKey...),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {

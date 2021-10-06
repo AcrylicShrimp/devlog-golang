@@ -361,8 +361,8 @@ func (cq *CategoryQuery) GroupBy(field string, fields ...string) *CategoryGroupB
 //		Select(category.FieldName).
 //		Scan(ctx, &v)
 //
-func (cq *CategoryQuery) Select(field string, fields ...string) *CategorySelect {
-	cq.fields = append([]string{field}, fields...)
+func (cq *CategoryQuery) Select(fields ...string) *CategorySelect {
+	cq.fields = append(cq.fields, fields...)
 	return &CategorySelect{CategoryQuery: cq}
 }
 
@@ -536,10 +536,14 @@ func (cq *CategoryQuery) querySpec() *sqlgraph.QuerySpec {
 func (cq *CategoryQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(cq.driver.Dialect())
 	t1 := builder.Table(category.Table)
-	selector := builder.Select(t1.Columns(category.Columns...)...).From(t1)
+	columns := cq.fields
+	if len(columns) == 0 {
+		columns = category.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if cq.sql != nil {
 		selector = cq.sql
-		selector.Select(selector.Columns(category.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range cq.predicates {
 		p(selector)
@@ -807,13 +811,24 @@ func (cgb *CategoryGroupBy) sqlScan(ctx context.Context, v interface{}) error {
 }
 
 func (cgb *CategoryGroupBy) sqlQuery() *sql.Selector {
-	selector := cgb.sql
-	columns := make([]string, 0, len(cgb.fields)+len(cgb.fns))
-	columns = append(columns, cgb.fields...)
+	selector := cgb.sql.Select()
+	aggregation := make([]string, 0, len(cgb.fns))
 	for _, fn := range cgb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(cgb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(cgb.fields)+len(cgb.fns))
+		for _, f := range cgb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(cgb.fields...)...)
 }
 
 // CategorySelect is the builder for selecting fields of Category entities.
@@ -1029,16 +1044,10 @@ func (cs *CategorySelect) BoolX(ctx context.Context) bool {
 
 func (cs *CategorySelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := cs.sqlQuery().Query()
+	query, args := cs.sql.Query()
 	if err := cs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (cs *CategorySelect) sqlQuery() sql.Querier {
-	selector := cs.sql
-	selector.Select(selector.Columns(cs.fields...)...)
-	return selector
 }

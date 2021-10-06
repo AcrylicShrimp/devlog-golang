@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql/driver"
 	"devlog/ent/admin"
+	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
 	"devlog/ent/predicate"
@@ -29,9 +30,10 @@ type AdminQuery struct {
 	fields     []string
 	predicates []predicate.Admin
 	// eager-loading edges.
-	withSessions     *AdminSessionQuery
-	withPosts        *PostQuery
-	withUnsavedPosts *UnsavedPostQuery
+	withSessions      *AdminSessionQuery
+	withRobotAccesses *AdminRobotAccessQuery
+	withPosts         *PostQuery
+	withUnsavedPosts  *UnsavedPostQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -83,6 +85,28 @@ func (aq *AdminQuery) QuerySessions() *AdminSessionQuery {
 			sqlgraph.From(admin.Table, admin.FieldID, selector),
 			sqlgraph.To(adminsession.Table, adminsession.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, admin.SessionsTable, admin.SessionsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRobotAccesses chains the current query on the "robot_accesses" edge.
+func (aq *AdminQuery) QueryRobotAccesses() *AdminRobotAccessQuery {
+	query := &AdminRobotAccessQuery{config: aq.config}
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := aq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := aq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(admin.Table, admin.FieldID, selector),
+			sqlgraph.To(adminrobotaccess.Table, adminrobotaccess.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, false, admin.RobotAccessesTable, admin.RobotAccessesPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
 		return fromU, nil
@@ -310,14 +334,15 @@ func (aq *AdminQuery) Clone() *AdminQuery {
 		return nil
 	}
 	return &AdminQuery{
-		config:           aq.config,
-		limit:            aq.limit,
-		offset:           aq.offset,
-		order:            append([]OrderFunc{}, aq.order...),
-		predicates:       append([]predicate.Admin{}, aq.predicates...),
-		withSessions:     aq.withSessions.Clone(),
-		withPosts:        aq.withPosts.Clone(),
-		withUnsavedPosts: aq.withUnsavedPosts.Clone(),
+		config:            aq.config,
+		limit:             aq.limit,
+		offset:            aq.offset,
+		order:             append([]OrderFunc{}, aq.order...),
+		predicates:        append([]predicate.Admin{}, aq.predicates...),
+		withSessions:      aq.withSessions.Clone(),
+		withRobotAccesses: aq.withRobotAccesses.Clone(),
+		withPosts:         aq.withPosts.Clone(),
+		withUnsavedPosts:  aq.withUnsavedPosts.Clone(),
 		// clone intermediate query.
 		sql:  aq.sql.Clone(),
 		path: aq.path,
@@ -332,6 +357,17 @@ func (aq *AdminQuery) WithSessions(opts ...func(*AdminSessionQuery)) *AdminQuery
 		opt(query)
 	}
 	aq.withSessions = query
+	return aq
+}
+
+// WithRobotAccesses tells the query-builder to eager-load the nodes that are connected to
+// the "robot_accesses" edge. The optional arguments are used to configure the query builder of the edge.
+func (aq *AdminQuery) WithRobotAccesses(opts ...func(*AdminRobotAccessQuery)) *AdminQuery {
+	query := &AdminRobotAccessQuery{config: aq.config}
+	for _, opt := range opts {
+		opt(query)
+	}
+	aq.withRobotAccesses = query
 	return aq
 }
 
@@ -397,8 +433,8 @@ func (aq *AdminQuery) GroupBy(field string, fields ...string) *AdminGroupBy {
 //		Select(admin.FieldEmail).
 //		Scan(ctx, &v)
 //
-func (aq *AdminQuery) Select(field string, fields ...string) *AdminSelect {
-	aq.fields = append([]string{field}, fields...)
+func (aq *AdminQuery) Select(fields ...string) *AdminSelect {
+	aq.fields = append(aq.fields, fields...)
 	return &AdminSelect{AdminQuery: aq}
 }
 
@@ -422,8 +458,9 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 	var (
 		nodes       = []*Admin{}
 		_spec       = aq.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			aq.withSessions != nil,
+			aq.withRobotAccesses != nil,
 			aq.withPosts != nil,
 			aq.withUnsavedPosts != nil,
 		}
@@ -474,6 +511,71 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 				return nil, fmt.Errorf(`unexpected foreign-key "admin_sessions" returned %v for node %v`, *fk, n.ID)
 			}
 			node.Edges.Sessions = append(node.Edges.Sessions, n)
+		}
+	}
+
+	if query := aq.withRobotAccesses; query != nil {
+		fks := make([]driver.Value, 0, len(nodes))
+		ids := make(map[int]*Admin, len(nodes))
+		for _, node := range nodes {
+			ids[node.ID] = node
+			fks = append(fks, node.ID)
+			node.Edges.RobotAccesses = []*AdminRobotAccess{}
+		}
+		var (
+			edgeids []int
+			edges   = make(map[int][]*Admin)
+		)
+		_spec := &sqlgraph.EdgeQuerySpec{
+			Edge: &sqlgraph.EdgeSpec{
+				Inverse: false,
+				Table:   admin.RobotAccessesTable,
+				Columns: admin.RobotAccessesPrimaryKey,
+			},
+			Predicate: func(s *sql.Selector) {
+				s.Where(sql.InValues(admin.RobotAccessesPrimaryKey[0], fks...))
+			},
+			ScanValues: func() [2]interface{} {
+				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
+			},
+			Assign: func(out, in interface{}) error {
+				eout, ok := out.(*sql.NullInt64)
+				if !ok || eout == nil {
+					return fmt.Errorf("unexpected id value for edge-out")
+				}
+				ein, ok := in.(*sql.NullInt64)
+				if !ok || ein == nil {
+					return fmt.Errorf("unexpected id value for edge-in")
+				}
+				outValue := int(eout.Int64)
+				inValue := int(ein.Int64)
+				node, ok := ids[outValue]
+				if !ok {
+					return fmt.Errorf("unexpected node id in edges: %v", outValue)
+				}
+				if _, ok := edges[inValue]; !ok {
+					edgeids = append(edgeids, inValue)
+				}
+				edges[inValue] = append(edges[inValue], node)
+				return nil
+			},
+		}
+		if err := sqlgraph.QueryEdges(ctx, aq.driver, _spec); err != nil {
+			return nil, fmt.Errorf(`query edges "robot_accesses": %w`, err)
+		}
+		query.Where(adminrobotaccess.IDIn(edgeids...))
+		neighbors, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, n := range neighbors {
+			nodes, ok := edges[n.ID]
+			if !ok {
+				return nil, fmt.Errorf(`unexpected "robot_accesses" node returned %v`, n.ID)
+			}
+			for i := range nodes {
+				nodes[i].Edges.RobotAccesses = append(nodes[i].Edges.RobotAccesses, n)
+			}
 		}
 	}
 
@@ -602,10 +704,14 @@ func (aq *AdminQuery) querySpec() *sqlgraph.QuerySpec {
 func (aq *AdminQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(aq.driver.Dialect())
 	t1 := builder.Table(admin.Table)
-	selector := builder.Select(t1.Columns(admin.Columns...)...).From(t1)
+	columns := aq.fields
+	if len(columns) == 0 {
+		columns = admin.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if aq.sql != nil {
 		selector = aq.sql
-		selector.Select(selector.Columns(admin.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range aq.predicates {
 		p(selector)
@@ -873,13 +979,24 @@ func (agb *AdminGroupBy) sqlScan(ctx context.Context, v interface{}) error {
 }
 
 func (agb *AdminGroupBy) sqlQuery() *sql.Selector {
-	selector := agb.sql
-	columns := make([]string, 0, len(agb.fields)+len(agb.fns))
-	columns = append(columns, agb.fields...)
+	selector := agb.sql.Select()
+	aggregation := make([]string, 0, len(agb.fns))
 	for _, fn := range agb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(agb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(agb.fields)+len(agb.fns))
+		for _, f := range agb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(agb.fields...)...)
 }
 
 // AdminSelect is the builder for selecting fields of Admin entities.
@@ -1095,16 +1212,10 @@ func (as *AdminSelect) BoolX(ctx context.Context) bool {
 
 func (as *AdminSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := as.sqlQuery().Query()
+	query, args := as.sql.Query()
 	if err := as.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (as *AdminSelect) sqlQuery() sql.Querier {
-	selector := as.sql
-	selector.Select(selector.Columns(as.fields...)...)
-	return selector
 }

@@ -91,11 +91,17 @@ func (pvc *PostVideoCreate) Save(ctx context.Context) (*PostVideo, error) {
 				return nil, err
 			}
 			pvc.mutation = mutation
-			node, err = pvc.sqlSave(ctx)
+			if node, err = pvc.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(pvc.hooks) - 1; i >= 0; i-- {
+			if pvc.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = pvc.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, pvc.mutation); err != nil {
@@ -114,6 +120,19 @@ func (pvc *PostVideoCreate) SaveX(ctx context.Context) *PostVideo {
 	return v
 }
 
+// Exec executes the query.
+func (pvc *PostVideoCreate) Exec(ctx context.Context) error {
+	_, err := pvc.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (pvc *PostVideoCreate) ExecX(ctx context.Context) {
+	if err := pvc.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (pvc *PostVideoCreate) defaults() {
 	if _, ok := pvc.mutation.CreatedAt(); !ok {
@@ -125,31 +144,31 @@ func (pvc *PostVideoCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (pvc *PostVideoCreate) check() error {
 	if _, ok := pvc.mutation.UUID(); !ok {
-		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+		return &ValidationError{Name: "uuid", err: errors.New(`ent: missing required field "uuid"`)}
 	}
 	if v, ok := pvc.mutation.UUID(); ok {
 		if err := postvideo.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+			return &ValidationError{Name: "uuid", err: fmt.Errorf(`ent: validator failed for field "uuid": %w`, err)}
 		}
 	}
 	if _, ok := pvc.mutation.Title(); !ok {
-		return &ValidationError{Name: "title", err: errors.New("ent: missing required field \"title\"")}
+		return &ValidationError{Name: "title", err: errors.New(`ent: missing required field "title"`)}
 	}
 	if v, ok := pvc.mutation.Title(); ok {
 		if err := postvideo.TitleValidator(v); err != nil {
-			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "title": %w`, err)}
 		}
 	}
 	if _, ok := pvc.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
+		return &ValidationError{Name: "url", err: errors.New(`ent: missing required field "url"`)}
 	}
 	if v, ok := pvc.mutation.URL(); ok {
 		if err := postvideo.URLValidator(v); err != nil {
-			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
+			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "url": %w`, err)}
 		}
 	}
 	if _, ok := pvc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := pvc.mutation.PostID(); !ok {
 		return &ValidationError{Name: "post", err: errors.New("ent: missing required edge \"post\"")}
@@ -160,8 +179,8 @@ func (pvc *PostVideoCreate) check() error {
 func (pvc *PostVideoCreate) sqlSave(ctx context.Context) (*PostVideo, error) {
 	_node, _spec := pvc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pvc.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -265,19 +284,23 @@ func (pvcb *PostVideoCreateBulk) Save(ctx context.Context) ([]*PostVideo, error)
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, pvcb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, pvcb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, pvcb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -301,4 +324,17 @@ func (pvcb *PostVideoCreateBulk) SaveX(ctx context.Context) []*PostVideo {
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (pvcb *PostVideoCreateBulk) Exec(ctx context.Context) error {
+	_, err := pvcb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (pvcb *PostVideoCreateBulk) ExecX(ctx context.Context) {
+	if err := pvcb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

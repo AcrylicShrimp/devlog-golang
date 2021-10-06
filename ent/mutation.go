@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"devlog/ent/admin"
+	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
@@ -35,6 +36,7 @@ const (
 
 	// Node types.
 	TypeAdmin                 = "Admin"
+	TypeAdminRobotAccess      = "AdminRobotAccess"
 	TypeAdminSession          = "AdminSession"
 	TypeCategory              = "Category"
 	TypePost                  = "Post"
@@ -52,26 +54,30 @@ const (
 // AdminMutation represents an operation that mutates the Admin nodes in the graph.
 type AdminMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *int
-	email                *string
-	username             *string
-	password             *string
-	joined_at            *time.Time
-	clearedFields        map[string]struct{}
-	sessions             map[int]struct{}
-	removedsessions      map[int]struct{}
-	clearedsessions      bool
-	posts                map[int]struct{}
-	removedposts         map[int]struct{}
-	clearedposts         bool
-	unsaved_posts        map[int]struct{}
-	removedunsaved_posts map[int]struct{}
-	clearedunsaved_posts bool
-	done                 bool
-	oldValue             func(context.Context) (*Admin, error)
-	predicates           []predicate.Admin
+	op                    Op
+	typ                   string
+	id                    *int
+	email                 *string
+	username              *string
+	password              *string
+	key                   *string
+	joined_at             *time.Time
+	clearedFields         map[string]struct{}
+	sessions              map[int]struct{}
+	removedsessions       map[int]struct{}
+	clearedsessions       bool
+	robot_accesses        map[int]struct{}
+	removedrobot_accesses map[int]struct{}
+	clearedrobot_accesses bool
+	posts                 map[int]struct{}
+	removedposts          map[int]struct{}
+	clearedposts          bool
+	unsaved_posts         map[int]struct{}
+	removedunsaved_posts  map[int]struct{}
+	clearedunsaved_posts  bool
+	done                  bool
+	oldValue              func(context.Context) (*Admin, error)
+	predicates            []predicate.Admin
 }
 
 var _ ent.Mutation = (*AdminMutation)(nil)
@@ -144,8 +150,8 @@ func (m AdminMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *AdminMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -261,6 +267,42 @@ func (m *AdminMutation) ResetPassword() {
 	m.password = nil
 }
 
+// SetKey sets the "key" field.
+func (m *AdminMutation) SetKey(s string) {
+	m.key = &s
+}
+
+// Key returns the value of the "key" field in the mutation.
+func (m *AdminMutation) Key() (r string, exists bool) {
+	v := m.key
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKey returns the old "key" field's value of the Admin entity.
+// If the Admin object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminMutation) OldKey(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldKey is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldKey requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKey: %w", err)
+	}
+	return oldValue.Key, nil
+}
+
+// ResetKey resets all changes to the "key" field.
+func (m *AdminMutation) ResetKey() {
+	m.key = nil
+}
+
 // SetJoinedAt sets the "joined_at" field.
 func (m *AdminMutation) SetJoinedAt(t time.Time) {
 	m.joined_at = &t
@@ -323,6 +365,7 @@ func (m *AdminMutation) RemoveSessionIDs(ids ...int) {
 		m.removedsessions = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.sessions, ids[i])
 		m.removedsessions[ids[i]] = struct{}{}
 	}
 }
@@ -348,6 +391,60 @@ func (m *AdminMutation) ResetSessions() {
 	m.sessions = nil
 	m.clearedsessions = false
 	m.removedsessions = nil
+}
+
+// AddRobotAccessIDs adds the "robot_accesses" edge to the AdminRobotAccess entity by ids.
+func (m *AdminMutation) AddRobotAccessIDs(ids ...int) {
+	if m.robot_accesses == nil {
+		m.robot_accesses = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.robot_accesses[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRobotAccesses clears the "robot_accesses" edge to the AdminRobotAccess entity.
+func (m *AdminMutation) ClearRobotAccesses() {
+	m.clearedrobot_accesses = true
+}
+
+// RobotAccessesCleared reports if the "robot_accesses" edge to the AdminRobotAccess entity was cleared.
+func (m *AdminMutation) RobotAccessesCleared() bool {
+	return m.clearedrobot_accesses
+}
+
+// RemoveRobotAccessIDs removes the "robot_accesses" edge to the AdminRobotAccess entity by IDs.
+func (m *AdminMutation) RemoveRobotAccessIDs(ids ...int) {
+	if m.removedrobot_accesses == nil {
+		m.removedrobot_accesses = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.robot_accesses, ids[i])
+		m.removedrobot_accesses[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRobotAccesses returns the removed IDs of the "robot_accesses" edge to the AdminRobotAccess entity.
+func (m *AdminMutation) RemovedRobotAccessesIDs() (ids []int) {
+	for id := range m.removedrobot_accesses {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RobotAccessesIDs returns the "robot_accesses" edge IDs in the mutation.
+func (m *AdminMutation) RobotAccessesIDs() (ids []int) {
+	for id := range m.robot_accesses {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRobotAccesses resets all changes to the "robot_accesses" edge.
+func (m *AdminMutation) ResetRobotAccesses() {
+	m.robot_accesses = nil
+	m.clearedrobot_accesses = false
+	m.removedrobot_accesses = nil
 }
 
 // AddPostIDs adds the "posts" edge to the Post entity by ids.
@@ -376,6 +473,7 @@ func (m *AdminMutation) RemovePostIDs(ids ...int) {
 		m.removedposts = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.posts, ids[i])
 		m.removedposts[ids[i]] = struct{}{}
 	}
 }
@@ -429,6 +527,7 @@ func (m *AdminMutation) RemoveUnsavedPostIDs(ids ...int) {
 		m.removedunsaved_posts = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.unsaved_posts, ids[i])
 		m.removedunsaved_posts[ids[i]] = struct{}{}
 	}
 }
@@ -456,6 +555,11 @@ func (m *AdminMutation) ResetUnsavedPosts() {
 	m.removedunsaved_posts = nil
 }
 
+// Where appends a list predicates to the AdminMutation builder.
+func (m *AdminMutation) Where(ps ...predicate.Admin) {
+	m.predicates = append(m.predicates, ps...)
+}
+
 // Op returns the operation name.
 func (m *AdminMutation) Op() Op {
 	return m.op
@@ -470,7 +574,7 @@ func (m *AdminMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AdminMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.email != nil {
 		fields = append(fields, admin.FieldEmail)
 	}
@@ -479,6 +583,9 @@ func (m *AdminMutation) Fields() []string {
 	}
 	if m.password != nil {
 		fields = append(fields, admin.FieldPassword)
+	}
+	if m.key != nil {
+		fields = append(fields, admin.FieldKey)
 	}
 	if m.joined_at != nil {
 		fields = append(fields, admin.FieldJoinedAt)
@@ -497,6 +604,8 @@ func (m *AdminMutation) Field(name string) (ent.Value, bool) {
 		return m.Username()
 	case admin.FieldPassword:
 		return m.Password()
+	case admin.FieldKey:
+		return m.Key()
 	case admin.FieldJoinedAt:
 		return m.JoinedAt()
 	}
@@ -514,6 +623,8 @@ func (m *AdminMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldUsername(ctx)
 	case admin.FieldPassword:
 		return m.OldPassword(ctx)
+	case admin.FieldKey:
+		return m.OldKey(ctx)
 	case admin.FieldJoinedAt:
 		return m.OldJoinedAt(ctx)
 	}
@@ -545,6 +656,13 @@ func (m *AdminMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetPassword(v)
+		return nil
+	case admin.FieldKey:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKey(v)
 		return nil
 	case admin.FieldJoinedAt:
 		v, ok := value.(time.Time)
@@ -611,6 +729,9 @@ func (m *AdminMutation) ResetField(name string) error {
 	case admin.FieldPassword:
 		m.ResetPassword()
 		return nil
+	case admin.FieldKey:
+		m.ResetKey()
+		return nil
 	case admin.FieldJoinedAt:
 		m.ResetJoinedAt()
 		return nil
@@ -620,9 +741,12 @@ func (m *AdminMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *AdminMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.sessions != nil {
 		edges = append(edges, admin.EdgeSessions)
+	}
+	if m.robot_accesses != nil {
+		edges = append(edges, admin.EdgeRobotAccesses)
 	}
 	if m.posts != nil {
 		edges = append(edges, admin.EdgePosts)
@@ -640,6 +764,12 @@ func (m *AdminMutation) AddedIDs(name string) []ent.Value {
 	case admin.EdgeSessions:
 		ids := make([]ent.Value, 0, len(m.sessions))
 		for id := range m.sessions {
+			ids = append(ids, id)
+		}
+		return ids
+	case admin.EdgeRobotAccesses:
+		ids := make([]ent.Value, 0, len(m.robot_accesses))
+		for id := range m.robot_accesses {
 			ids = append(ids, id)
 		}
 		return ids
@@ -661,9 +791,12 @@ func (m *AdminMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *AdminMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedsessions != nil {
 		edges = append(edges, admin.EdgeSessions)
+	}
+	if m.removedrobot_accesses != nil {
+		edges = append(edges, admin.EdgeRobotAccesses)
 	}
 	if m.removedposts != nil {
 		edges = append(edges, admin.EdgePosts)
@@ -681,6 +814,12 @@ func (m *AdminMutation) RemovedIDs(name string) []ent.Value {
 	case admin.EdgeSessions:
 		ids := make([]ent.Value, 0, len(m.removedsessions))
 		for id := range m.removedsessions {
+			ids = append(ids, id)
+		}
+		return ids
+	case admin.EdgeRobotAccesses:
+		ids := make([]ent.Value, 0, len(m.removedrobot_accesses))
+		for id := range m.removedrobot_accesses {
 			ids = append(ids, id)
 		}
 		return ids
@@ -702,9 +841,12 @@ func (m *AdminMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *AdminMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedsessions {
 		edges = append(edges, admin.EdgeSessions)
+	}
+	if m.clearedrobot_accesses {
+		edges = append(edges, admin.EdgeRobotAccesses)
 	}
 	if m.clearedposts {
 		edges = append(edges, admin.EdgePosts)
@@ -721,6 +863,8 @@ func (m *AdminMutation) EdgeCleared(name string) bool {
 	switch name {
 	case admin.EdgeSessions:
 		return m.clearedsessions
+	case admin.EdgeRobotAccesses:
+		return m.clearedrobot_accesses
 	case admin.EdgePosts:
 		return m.clearedposts
 	case admin.EdgeUnsavedPosts:
@@ -744,6 +888,9 @@ func (m *AdminMutation) ResetEdge(name string) error {
 	case admin.EdgeSessions:
 		m.ResetSessions()
 		return nil
+	case admin.EdgeRobotAccesses:
+		m.ResetRobotAccesses()
+		return nil
 	case admin.EdgePosts:
 		m.ResetPosts()
 		return nil
@@ -752,6 +899,594 @@ func (m *AdminMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Admin edge %s", name)
+}
+
+// AdminRobotAccessMutation represents an operation that mutates the AdminRobotAccess nodes in the graph.
+type AdminRobotAccessMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	token          *string
+	expires_at     *time.Time
+	created_at     *time.Time
+	last_access_at *time.Time
+	clearedFields  map[string]struct{}
+	user           map[int]struct{}
+	removeduser    map[int]struct{}
+	cleareduser    bool
+	done           bool
+	oldValue       func(context.Context) (*AdminRobotAccess, error)
+	predicates     []predicate.AdminRobotAccess
+}
+
+var _ ent.Mutation = (*AdminRobotAccessMutation)(nil)
+
+// adminrobotaccessOption allows management of the mutation configuration using functional options.
+type adminrobotaccessOption func(*AdminRobotAccessMutation)
+
+// newAdminRobotAccessMutation creates new mutation for the AdminRobotAccess entity.
+func newAdminRobotAccessMutation(c config, op Op, opts ...adminrobotaccessOption) *AdminRobotAccessMutation {
+	m := &AdminRobotAccessMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAdminRobotAccess,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAdminRobotAccessID sets the ID field of the mutation.
+func withAdminRobotAccessID(id int) adminrobotaccessOption {
+	return func(m *AdminRobotAccessMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AdminRobotAccess
+		)
+		m.oldValue = func(ctx context.Context) (*AdminRobotAccess, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AdminRobotAccess.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAdminRobotAccess sets the old AdminRobotAccess of the mutation.
+func withAdminRobotAccess(node *AdminRobotAccess) adminrobotaccessOption {
+	return func(m *AdminRobotAccessMutation) {
+		m.oldValue = func(context.Context) (*AdminRobotAccess, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AdminRobotAccessMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AdminRobotAccessMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AdminRobotAccessMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetToken sets the "token" field.
+func (m *AdminRobotAccessMutation) SetToken(s string) {
+	m.token = &s
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *AdminRobotAccessMutation) Token() (r string, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the AdminRobotAccess entity.
+// If the AdminRobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminRobotAccessMutation) OldToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *AdminRobotAccessMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *AdminRobotAccessMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *AdminRobotAccessMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the AdminRobotAccess entity.
+// If the AdminRobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminRobotAccessMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (m *AdminRobotAccessMutation) ClearExpiresAt() {
+	m.expires_at = nil
+	m.clearedFields[adminrobotaccess.FieldExpiresAt] = struct{}{}
+}
+
+// ExpiresAtCleared returns if the "expires_at" field was cleared in this mutation.
+func (m *AdminRobotAccessMutation) ExpiresAtCleared() bool {
+	_, ok := m.clearedFields[adminrobotaccess.FieldExpiresAt]
+	return ok
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *AdminRobotAccessMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	delete(m.clearedFields, adminrobotaccess.FieldExpiresAt)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AdminRobotAccessMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AdminRobotAccessMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AdminRobotAccess entity.
+// If the AdminRobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminRobotAccessMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AdminRobotAccessMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetLastAccessAt sets the "last_access_at" field.
+func (m *AdminRobotAccessMutation) SetLastAccessAt(t time.Time) {
+	m.last_access_at = &t
+}
+
+// LastAccessAt returns the value of the "last_access_at" field in the mutation.
+func (m *AdminRobotAccessMutation) LastAccessAt() (r time.Time, exists bool) {
+	v := m.last_access_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastAccessAt returns the old "last_access_at" field's value of the AdminRobotAccess entity.
+// If the AdminRobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminRobotAccessMutation) OldLastAccessAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldLastAccessAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldLastAccessAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastAccessAt: %w", err)
+	}
+	return oldValue.LastAccessAt, nil
+}
+
+// ClearLastAccessAt clears the value of the "last_access_at" field.
+func (m *AdminRobotAccessMutation) ClearLastAccessAt() {
+	m.last_access_at = nil
+	m.clearedFields[adminrobotaccess.FieldLastAccessAt] = struct{}{}
+}
+
+// LastAccessAtCleared returns if the "last_access_at" field was cleared in this mutation.
+func (m *AdminRobotAccessMutation) LastAccessAtCleared() bool {
+	_, ok := m.clearedFields[adminrobotaccess.FieldLastAccessAt]
+	return ok
+}
+
+// ResetLastAccessAt resets all changes to the "last_access_at" field.
+func (m *AdminRobotAccessMutation) ResetLastAccessAt() {
+	m.last_access_at = nil
+	delete(m.clearedFields, adminrobotaccess.FieldLastAccessAt)
+}
+
+// AddUserIDs adds the "user" edge to the Admin entity by ids.
+func (m *AdminRobotAccessMutation) AddUserIDs(ids ...int) {
+	if m.user == nil {
+		m.user = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.user[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUser clears the "user" edge to the Admin entity.
+func (m *AdminRobotAccessMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the Admin entity was cleared.
+func (m *AdminRobotAccessMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// RemoveUserIDs removes the "user" edge to the Admin entity by IDs.
+func (m *AdminRobotAccessMutation) RemoveUserIDs(ids ...int) {
+	if m.removeduser == nil {
+		m.removeduser = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.user, ids[i])
+		m.removeduser[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUser returns the removed IDs of the "user" edge to the Admin entity.
+func (m *AdminRobotAccessMutation) RemovedUserIDs() (ids []int) {
+	for id := range m.removeduser {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+func (m *AdminRobotAccessMutation) UserIDs() (ids []int) {
+	for id := range m.user {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *AdminRobotAccessMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+	m.removeduser = nil
+}
+
+// Where appends a list predicates to the AdminRobotAccessMutation builder.
+func (m *AdminRobotAccessMutation) Where(ps ...predicate.AdminRobotAccess) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *AdminRobotAccessMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (AdminRobotAccess).
+func (m *AdminRobotAccessMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AdminRobotAccessMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.token != nil {
+		fields = append(fields, adminrobotaccess.FieldToken)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, adminrobotaccess.FieldExpiresAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, adminrobotaccess.FieldCreatedAt)
+	}
+	if m.last_access_at != nil {
+		fields = append(fields, adminrobotaccess.FieldLastAccessAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AdminRobotAccessMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case adminrobotaccess.FieldToken:
+		return m.Token()
+	case adminrobotaccess.FieldExpiresAt:
+		return m.ExpiresAt()
+	case adminrobotaccess.FieldCreatedAt:
+		return m.CreatedAt()
+	case adminrobotaccess.FieldLastAccessAt:
+		return m.LastAccessAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AdminRobotAccessMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case adminrobotaccess.FieldToken:
+		return m.OldToken(ctx)
+	case adminrobotaccess.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case adminrobotaccess.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case adminrobotaccess.FieldLastAccessAt:
+		return m.OldLastAccessAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown AdminRobotAccess field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdminRobotAccessMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case adminrobotaccess.FieldToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	case adminrobotaccess.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case adminrobotaccess.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case adminrobotaccess.FieldLastAccessAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastAccessAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AdminRobotAccess field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AdminRobotAccessMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AdminRobotAccessMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdminRobotAccessMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AdminRobotAccess numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AdminRobotAccessMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(adminrobotaccess.FieldExpiresAt) {
+		fields = append(fields, adminrobotaccess.FieldExpiresAt)
+	}
+	if m.FieldCleared(adminrobotaccess.FieldLastAccessAt) {
+		fields = append(fields, adminrobotaccess.FieldLastAccessAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AdminRobotAccessMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AdminRobotAccessMutation) ClearField(name string) error {
+	switch name {
+	case adminrobotaccess.FieldExpiresAt:
+		m.ClearExpiresAt()
+		return nil
+	case adminrobotaccess.FieldLastAccessAt:
+		m.ClearLastAccessAt()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminRobotAccess nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AdminRobotAccessMutation) ResetField(name string) error {
+	switch name {
+	case adminrobotaccess.FieldToken:
+		m.ResetToken()
+		return nil
+	case adminrobotaccess.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case adminrobotaccess.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case adminrobotaccess.FieldLastAccessAt:
+		m.ResetLastAccessAt()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminRobotAccess field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AdminRobotAccessMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, adminrobotaccess.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AdminRobotAccessMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case adminrobotaccess.EdgeUser:
+		ids := make([]ent.Value, 0, len(m.user))
+		for id := range m.user {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AdminRobotAccessMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removeduser != nil {
+		edges = append(edges, adminrobotaccess.EdgeUser)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AdminRobotAccessMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case adminrobotaccess.EdgeUser:
+		ids := make([]ent.Value, 0, len(m.removeduser))
+		for id := range m.removeduser {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AdminRobotAccessMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, adminrobotaccess.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AdminRobotAccessMutation) EdgeCleared(name string) bool {
+	switch name {
+	case adminrobotaccess.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AdminRobotAccessMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown AdminRobotAccess unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AdminRobotAccessMutation) ResetEdge(name string) error {
+	switch name {
+	case adminrobotaccess.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminRobotAccess edge %s", name)
 }
 
 // AdminSessionMutation represents an operation that mutates the AdminSession nodes in the graph.
@@ -841,8 +1576,8 @@ func (m AdminSessionMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *AdminSessionMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -995,6 +1730,11 @@ func (m *AdminSessionMutation) UserIDs() (ids []int) {
 func (m *AdminSessionMutation) ResetUser() {
 	m.user = nil
 	m.cleareduser = false
+}
+
+// Where appends a list predicates to the AdminSessionMutation builder.
+func (m *AdminSessionMutation) Where(ps ...predicate.AdminSession) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -1310,8 +2050,8 @@ func (m CategoryMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *CategoryMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -1502,6 +2242,7 @@ func (m *CategoryMutation) RemovePostIDs(ids ...int) {
 		m.removedposts = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.posts, ids[i])
 		m.removedposts[ids[i]] = struct{}{}
 	}
 }
@@ -1555,6 +2296,7 @@ func (m *CategoryMutation) RemoveUnsavedPostIDs(ids ...int) {
 		m.removedunsaved_posts = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.unsaved_posts, ids[i])
 		m.removedunsaved_posts[ids[i]] = struct{}{}
 	}
 }
@@ -1580,6 +2322,11 @@ func (m *CategoryMutation) ResetUnsavedPosts() {
 	m.unsaved_posts = nil
 	m.clearedunsaved_posts = false
 	m.removedunsaved_posts = nil
+}
+
+// Where appends a list predicates to the CategoryMutation builder.
+func (m *CategoryMutation) Where(ps ...predicate.Category) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -1969,8 +2716,8 @@ func (m PostMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *PostMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -2445,6 +3192,7 @@ func (m *PostMutation) RemoveImageIDs(ids ...int) {
 		m.removedimages = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.images, ids[i])
 		m.removedimages[ids[i]] = struct{}{}
 	}
 }
@@ -2498,6 +3246,7 @@ func (m *PostMutation) RemoveVideoIDs(ids ...int) {
 		m.removedvideos = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.videos, ids[i])
 		m.removedvideos[ids[i]] = struct{}{}
 	}
 }
@@ -2551,6 +3300,7 @@ func (m *PostMutation) RemoveAttachmentIDs(ids ...int) {
 		m.removedattachments = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.attachments, ids[i])
 		m.removedattachments[ids[i]] = struct{}{}
 	}
 }
@@ -2576,6 +3326,11 @@ func (m *PostMutation) ResetAttachments() {
 	m.attachments = nil
 	m.clearedattachments = false
 	m.removedattachments = nil
+}
+
+// Where appends a list predicates to the PostMutation builder.
+func (m *PostMutation) Where(ps ...predicate.Post) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -3106,8 +3861,8 @@ func (m PostAttachmentMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *PostAttachmentMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -3388,6 +4143,11 @@ func (m *PostAttachmentMutation) PostIDs() (ids []int) {
 func (m *PostAttachmentMutation) ResetPost() {
 	m.post = nil
 	m.clearedpost = false
+}
+
+// Where appends a list predicates to the PostAttachmentMutation builder.
+func (m *PostAttachmentMutation) Where(ps ...predicate.PostAttachment) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -3770,8 +4530,8 @@ func (m PostImageMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *PostImageMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -4108,6 +4868,11 @@ func (m *PostImageMutation) PostIDs() (ids []int) {
 func (m *PostImageMutation) ResetPost() {
 	m.post = nil
 	m.clearedpost = false
+}
+
+// Where appends a list predicates to the PostImageMutation builder.
+func (m *PostImageMutation) Where(ps ...predicate.PostImage) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -4517,8 +5282,8 @@ func (m PostThumbnailMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *PostThumbnailMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -4783,6 +5548,11 @@ func (m *PostThumbnailMutation) PostIDs() (ids []int) {
 func (m *PostThumbnailMutation) ResetPost() {
 	m.post = nil
 	m.clearedpost = false
+}
+
+// Where appends a list predicates to the PostThumbnailMutation builder.
+func (m *PostThumbnailMutation) Where(ps ...predicate.PostThumbnail) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -5155,8 +5925,8 @@ func (m PostVideoMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *PostVideoMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -5345,6 +6115,11 @@ func (m *PostVideoMutation) PostIDs() (ids []int) {
 func (m *PostVideoMutation) ResetPost() {
 	m.post = nil
 	m.clearedpost = false
+}
+
+// Where appends a list predicates to the PostVideoMutation builder.
+func (m *PostVideoMutation) Where(ps ...predicate.PostVideo) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -5689,8 +6464,8 @@ func (m UnsavedPostMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *UnsavedPostMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -6145,6 +6920,7 @@ func (m *UnsavedPostMutation) RemoveImageIDs(ids ...int) {
 		m.removedimages = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.images, ids[i])
 		m.removedimages[ids[i]] = struct{}{}
 	}
 }
@@ -6198,6 +6974,7 @@ func (m *UnsavedPostMutation) RemoveVideoIDs(ids ...int) {
 		m.removedvideos = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.videos, ids[i])
 		m.removedvideos[ids[i]] = struct{}{}
 	}
 }
@@ -6251,6 +7028,7 @@ func (m *UnsavedPostMutation) RemoveAttachmentIDs(ids ...int) {
 		m.removedattachments = make(map[int]struct{})
 	}
 	for i := range ids {
+		delete(m.attachments, ids[i])
 		m.removedattachments[ids[i]] = struct{}{}
 	}
 }
@@ -6276,6 +7054,11 @@ func (m *UnsavedPostMutation) ResetAttachments() {
 	m.attachments = nil
 	m.clearedattachments = false
 	m.removedattachments = nil
+}
+
+// Where appends a list predicates to the UnsavedPostMutation builder.
+func (m *UnsavedPostMutation) Where(ps ...predicate.UnsavedPost) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -6800,8 +7583,8 @@ func (m UnsavedPostAttachmentMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *UnsavedPostAttachmentMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -7171,6 +7954,11 @@ func (m *UnsavedPostAttachmentMutation) UnsavedPostIDs() (ids []int) {
 func (m *UnsavedPostAttachmentMutation) ResetUnsavedPost() {
 	m.unsaved_post = nil
 	m.clearedunsaved_post = false
+}
+
+// Where appends a list predicates to the UnsavedPostAttachmentMutation builder.
+func (m *UnsavedPostAttachmentMutation) Where(ps ...predicate.UnsavedPostAttachment) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -7598,8 +8386,8 @@ func (m UnsavedPostImageMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *UnsavedPostImageMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -8039,6 +8827,11 @@ func (m *UnsavedPostImageMutation) UnsavedPostIDs() (ids []int) {
 func (m *UnsavedPostImageMutation) ResetUnsavedPost() {
 	m.unsaved_post = nil
 	m.clearedunsaved_post = false
+}
+
+// Where appends a list predicates to the UnsavedPostImageMutation builder.
+func (m *UnsavedPostImageMutation) Where(ps ...predicate.UnsavedPostImage) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -8499,8 +9292,8 @@ func (m UnsavedPostThumbnailMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *UnsavedPostThumbnailMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -8855,6 +9648,11 @@ func (m *UnsavedPostThumbnailMutation) UnsavedPostIDs() (ids []int) {
 func (m *UnsavedPostThumbnailMutation) ResetUnsavedPost() {
 	m.unsaved_post = nil
 	m.clearedunsaved_post = false
+}
+
+// Where appends a list predicates to the UnsavedPostThumbnailMutation builder.
+func (m *UnsavedPostThumbnailMutation) Where(ps ...predicate.UnsavedPostThumbnail) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.
@@ -9272,8 +10070,8 @@ func (m UnsavedPostVideoMutation) Tx() (*Tx, error) {
 	return tx, nil
 }
 
-// ID returns the ID value in the mutation. Note that the ID
-// is only available if it was provided to the builder.
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
 func (m *UnsavedPostVideoMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
@@ -9524,6 +10322,11 @@ func (m *UnsavedPostVideoMutation) UnsavedPostIDs() (ids []int) {
 func (m *UnsavedPostVideoMutation) ResetUnsavedPost() {
 	m.unsaved_post = nil
 	m.clearedunsaved_post = false
+}
+
+// Where appends a list predicates to the UnsavedPostVideoMutation builder.
+func (m *UnsavedPostVideoMutation) Where(ps ...predicate.UnsavedPostVideo) {
+	m.predicates = append(m.predicates, ps...)
 }
 
 // Op returns the operation name.

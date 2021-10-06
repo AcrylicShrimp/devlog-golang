@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
+	// AdminRobotAccess is the client for interacting with the AdminRobotAccess builders.
+	AdminRobotAccess *AdminRobotAccessClient
 	// AdminSession is the client for interacting with the AdminSession builders.
 	AdminSession *AdminSessionClient
 	// Category is the client for interacting with the Category builders.
@@ -174,6 +176,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Admin = NewAdminClient(tx.config)
+	tx.AdminRobotAccess = NewAdminRobotAccessClient(tx.config)
 	tx.AdminSession = NewAdminSessionClient(tx.config)
 	tx.Category = NewCategoryClient(tx.config)
 	tx.Post = NewPostClient(tx.config)

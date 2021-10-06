@@ -17,31 +17,40 @@ const (
 	FieldUsername = "username"
 	// FieldPassword holds the string denoting the password field in the database.
 	FieldPassword = "password"
+	// FieldKey holds the string denoting the key field in the database.
+	FieldKey = "key"
 	// FieldJoinedAt holds the string denoting the joined_at field in the database.
 	FieldJoinedAt = "joined_at"
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
+	// EdgeRobotAccesses holds the string denoting the robot_accesses edge name in mutations.
+	EdgeRobotAccesses = "robot_accesses"
 	// EdgePosts holds the string denoting the posts edge name in mutations.
 	EdgePosts = "posts"
 	// EdgeUnsavedPosts holds the string denoting the unsaved_posts edge name in mutations.
 	EdgeUnsavedPosts = "unsaved_posts"
 	// Table holds the table name of the admin in the database.
 	Table = "admins"
-	// SessionsTable is the table the holds the sessions relation/edge.
+	// SessionsTable is the table that holds the sessions relation/edge.
 	SessionsTable = "admin_sessions"
 	// SessionsInverseTable is the table name for the AdminSession entity.
 	// It exists in this package in order to avoid circular dependency with the "adminsession" package.
 	SessionsInverseTable = "admin_sessions"
 	// SessionsColumn is the table column denoting the sessions relation/edge.
 	SessionsColumn = "admin_sessions"
-	// PostsTable is the table the holds the posts relation/edge.
+	// RobotAccessesTable is the table that holds the robot_accesses relation/edge. The primary key declared below.
+	RobotAccessesTable = "admin_robot_accesses"
+	// RobotAccessesInverseTable is the table name for the AdminRobotAccess entity.
+	// It exists in this package in order to avoid circular dependency with the "adminrobotaccess" package.
+	RobotAccessesInverseTable = "admin_robot_accesses"
+	// PostsTable is the table that holds the posts relation/edge.
 	PostsTable = "posts"
 	// PostsInverseTable is the table name for the Post entity.
 	// It exists in this package in order to avoid circular dependency with the "post" package.
 	PostsInverseTable = "posts"
 	// PostsColumn is the table column denoting the posts relation/edge.
 	PostsColumn = "admin_posts"
-	// UnsavedPostsTable is the table the holds the unsaved_posts relation/edge.
+	// UnsavedPostsTable is the table that holds the unsaved_posts relation/edge.
 	UnsavedPostsTable = "unsaved_posts"
 	// UnsavedPostsInverseTable is the table name for the UnsavedPost entity.
 	// It exists in this package in order to avoid circular dependency with the "unsavedpost" package.
@@ -56,8 +65,15 @@ var Columns = []string{
 	FieldEmail,
 	FieldUsername,
 	FieldPassword,
+	FieldKey,
 	FieldJoinedAt,
 }
+
+var (
+	// RobotAccessesPrimaryKey and RobotAccessesColumn2 are the table columns denoting the
+	// primary key for the robot_accesses relation (M2M).
+	RobotAccessesPrimaryKey = []string{"admin_id", "admin_robot_access_id"}
+)
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
@@ -76,6 +92,8 @@ var (
 	UsernameValidator func(string) error
 	// PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	PasswordValidator func(string) error
+	// KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	KeyValidator func(string) error
 	// DefaultJoinedAt holds the default value on creation for the "joined_at" field.
 	DefaultJoinedAt func() time.Time
 )

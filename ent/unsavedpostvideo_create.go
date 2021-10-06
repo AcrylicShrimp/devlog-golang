@@ -121,11 +121,17 @@ func (upvc *UnsavedPostVideoCreate) Save(ctx context.Context) (*UnsavedPostVideo
 				return nil, err
 			}
 			upvc.mutation = mutation
-			node, err = upvc.sqlSave(ctx)
+			if node, err = upvc.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(upvc.hooks) - 1; i >= 0; i-- {
+			if upvc.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upvc.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upvc.mutation); err != nil {
@@ -144,6 +150,19 @@ func (upvc *UnsavedPostVideoCreate) SaveX(ctx context.Context) *UnsavedPostVideo
 	return v
 }
 
+// Exec executes the query.
+func (upvc *UnsavedPostVideoCreate) Exec(ctx context.Context) error {
+	_, err := upvc.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (upvc *UnsavedPostVideoCreate) ExecX(ctx context.Context) {
+	if err := upvc.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (upvc *UnsavedPostVideoCreate) defaults() {
 	if _, ok := upvc.mutation.Validity(); !ok {
@@ -159,33 +178,33 @@ func (upvc *UnsavedPostVideoCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (upvc *UnsavedPostVideoCreate) check() error {
 	if _, ok := upvc.mutation.UUID(); !ok {
-		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+		return &ValidationError{Name: "uuid", err: errors.New(`ent: missing required field "uuid"`)}
 	}
 	if v, ok := upvc.mutation.UUID(); ok {
 		if err := unsavedpostvideo.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+			return &ValidationError{Name: "uuid", err: fmt.Errorf(`ent: validator failed for field "uuid": %w`, err)}
 		}
 	}
 	if _, ok := upvc.mutation.Validity(); !ok {
-		return &ValidationError{Name: "validity", err: errors.New("ent: missing required field \"validity\"")}
+		return &ValidationError{Name: "validity", err: errors.New(`ent: missing required field "validity"`)}
 	}
 	if v, ok := upvc.mutation.Validity(); ok {
 		if err := unsavedpostvideo.ValidityValidator(v); err != nil {
-			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+			return &ValidationError{Name: "validity", err: fmt.Errorf(`ent: validator failed for field "validity": %w`, err)}
 		}
 	}
 	if v, ok := upvc.mutation.Title(); ok {
 		if err := unsavedpostvideo.TitleValidator(v); err != nil {
-			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "title": %w`, err)}
 		}
 	}
 	if v, ok := upvc.mutation.URL(); ok {
 		if err := unsavedpostvideo.URLValidator(v); err != nil {
-			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
+			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "url": %w`, err)}
 		}
 	}
 	if _, ok := upvc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := upvc.mutation.UnsavedPostID(); !ok {
 		return &ValidationError{Name: "unsaved_post", err: errors.New("ent: missing required edge \"unsaved_post\"")}
@@ -196,8 +215,8 @@ func (upvc *UnsavedPostVideoCreate) check() error {
 func (upvc *UnsavedPostVideoCreate) sqlSave(ctx context.Context) (*UnsavedPostVideo, error) {
 	_node, _spec := upvc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, upvc.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -309,19 +328,23 @@ func (upvcb *UnsavedPostVideoCreateBulk) Save(ctx context.Context) ([]*UnsavedPo
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, upvcb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, upvcb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, upvcb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -345,4 +368,17 @@ func (upvcb *UnsavedPostVideoCreateBulk) SaveX(ctx context.Context) []*UnsavedPo
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (upvcb *UnsavedPostVideoCreateBulk) Exec(ctx context.Context) error {
+	_, err := upvcb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (upvcb *UnsavedPostVideoCreateBulk) ExecX(ctx context.Context) {
+	if err := upvcb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

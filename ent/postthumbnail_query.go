@@ -325,8 +325,8 @@ func (ptq *PostThumbnailQuery) GroupBy(field string, fields ...string) *PostThum
 //		Select(postthumbnail.FieldWidth).
 //		Scan(ctx, &v)
 //
-func (ptq *PostThumbnailQuery) Select(field string, fields ...string) *PostThumbnailSelect {
-	ptq.fields = append([]string{field}, fields...)
+func (ptq *PostThumbnailQuery) Select(fields ...string) *PostThumbnailSelect {
+	ptq.fields = append(ptq.fields, fields...)
 	return &PostThumbnailSelect{PostThumbnailQuery: ptq}
 }
 
@@ -477,10 +477,14 @@ func (ptq *PostThumbnailQuery) querySpec() *sqlgraph.QuerySpec {
 func (ptq *PostThumbnailQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(ptq.driver.Dialect())
 	t1 := builder.Table(postthumbnail.Table)
-	selector := builder.Select(t1.Columns(postthumbnail.Columns...)...).From(t1)
+	columns := ptq.fields
+	if len(columns) == 0 {
+		columns = postthumbnail.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if ptq.sql != nil {
 		selector = ptq.sql
-		selector.Select(selector.Columns(postthumbnail.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range ptq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (ptgb *PostThumbnailGroupBy) sqlScan(ctx context.Context, v interface{}) er
 }
 
 func (ptgb *PostThumbnailGroupBy) sqlQuery() *sql.Selector {
-	selector := ptgb.sql
-	columns := make([]string, 0, len(ptgb.fields)+len(ptgb.fns))
-	columns = append(columns, ptgb.fields...)
+	selector := ptgb.sql.Select()
+	aggregation := make([]string, 0, len(ptgb.fns))
 	for _, fn := range ptgb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(ptgb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(ptgb.fields)+len(ptgb.fns))
+		for _, f := range ptgb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(ptgb.fields...)...)
 }
 
 // PostThumbnailSelect is the builder for selecting fields of PostThumbnail entities.
@@ -970,16 +985,10 @@ func (pts *PostThumbnailSelect) BoolX(ctx context.Context) bool {
 
 func (pts *PostThumbnailSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := pts.sqlQuery().Query()
+	query, args := pts.sql.Query()
 	if err := pts.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (pts *PostThumbnailSelect) sqlQuery() sql.Querier {
-	selector := pts.sql
-	selector.Select(selector.Columns(pts.fields...)...)
-	return selector
 }

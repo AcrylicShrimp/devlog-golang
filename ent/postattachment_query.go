@@ -325,8 +325,8 @@ func (paq *PostAttachmentQuery) GroupBy(field string, fields ...string) *PostAtt
 //		Select(postattachment.FieldUUID).
 //		Scan(ctx, &v)
 //
-func (paq *PostAttachmentQuery) Select(field string, fields ...string) *PostAttachmentSelect {
-	paq.fields = append([]string{field}, fields...)
+func (paq *PostAttachmentQuery) Select(fields ...string) *PostAttachmentSelect {
+	paq.fields = append(paq.fields, fields...)
 	return &PostAttachmentSelect{PostAttachmentQuery: paq}
 }
 
@@ -477,10 +477,14 @@ func (paq *PostAttachmentQuery) querySpec() *sqlgraph.QuerySpec {
 func (paq *PostAttachmentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(paq.driver.Dialect())
 	t1 := builder.Table(postattachment.Table)
-	selector := builder.Select(t1.Columns(postattachment.Columns...)...).From(t1)
+	columns := paq.fields
+	if len(columns) == 0 {
+		columns = postattachment.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if paq.sql != nil {
 		selector = paq.sql
-		selector.Select(selector.Columns(postattachment.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range paq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (pagb *PostAttachmentGroupBy) sqlScan(ctx context.Context, v interface{}) e
 }
 
 func (pagb *PostAttachmentGroupBy) sqlQuery() *sql.Selector {
-	selector := pagb.sql
-	columns := make([]string, 0, len(pagb.fields)+len(pagb.fns))
-	columns = append(columns, pagb.fields...)
+	selector := pagb.sql.Select()
+	aggregation := make([]string, 0, len(pagb.fns))
 	for _, fn := range pagb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(pagb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(pagb.fields)+len(pagb.fns))
+		for _, f := range pagb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(pagb.fields...)...)
 }
 
 // PostAttachmentSelect is the builder for selecting fields of PostAttachment entities.
@@ -970,16 +985,10 @@ func (pas *PostAttachmentSelect) BoolX(ctx context.Context) bool {
 
 func (pas *PostAttachmentSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := pas.sqlQuery().Query()
+	query, args := pas.sql.Query()
 	if err := pas.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (pas *PostAttachmentSelect) sqlQuery() sql.Querier {
-	selector := pas.sql
-	selector.Select(selector.Columns(pas.fields...)...)
-	return selector
 }

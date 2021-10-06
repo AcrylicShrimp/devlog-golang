@@ -21,7 +21,7 @@ const (
 	EdgeUser = "user"
 	// Table holds the table name of the adminsession in the database.
 	Table = "admin_sessions"
-	// UserTable is the table the holds the user relation/edge.
+	// UserTable is the table that holds the user relation/edge.
 	UserTable = "admin_sessions"
 	// UserInverseTable is the table name for the Admin entity.
 	// It exists in this package in order to avoid circular dependency with the "admin" package.

@@ -8,25 +8,17 @@ import (
 	"time"
 )
 
-type GetUnsavedPostParam struct {
+type UnsavedPostUUIDParam struct {
 	UUID string `json:"-" param:"uuid" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
 }
 
-type UpdateUnsavedPostParam struct {
+type UnsavedPostParam struct {
 	UUID        string                     `json:"-" param:"uuid" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
 	Slug        *string                    `json:"slug" validate:"min=1,max=255" example:"my-first-post"`
 	AccessLevel *dbUnsavedPost.AccessLevel `json:"access-level" validate:"oneof=public unlisted private" example:"public"`
 	Title       *string                    `json:"title" validate:"min=1,max=255" example:"My first post"`
 	Content     *string                    `json:"content" validate:"min=1" example:"# My first post"`
 	Category    *string                    `json:"category" validate:"min=1" example:"web"`
-}
-
-type DeleteUnsavedPostParam struct {
-	UUID string `json:"-" param:"uuid" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
-}
-
-type NewUnsavedPostThumbnailParam struct {
-	UUID string `json:"-" param:"uuid" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
 }
 
 type UnsavedPostThumbnail struct {

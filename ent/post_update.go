@@ -28,9 +28,9 @@ type PostUpdate struct {
 	mutation *PostMutation
 }
 
-// Where adds a new predicate for the PostUpdate builder.
+// Where appends a list predicates to the PostUpdate builder.
 func (pu *PostUpdate) Where(ps ...predicate.Post) *PostUpdate {
-	pu.mutation.predicates = append(pu.mutation.predicates, ps...)
+	pu.mutation.Where(ps...)
 	return pu
 }
 
@@ -303,6 +303,9 @@ func (pu *PostUpdate) Save(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(pu.hooks) - 1; i >= 0; i-- {
+			if pu.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = pu.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, pu.mutation); err != nil {
@@ -726,8 +729,8 @@ func (pu *PostUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{post.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return 0, err
 	}
@@ -1018,6 +1021,9 @@ func (puo *PostUpdateOne) Save(ctx context.Context) (*Post, error) {
 			return node, err
 		})
 		for i := len(puo.hooks) - 1; i >= 0; i-- {
+			if puo.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = puo.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, puo.mutation); err != nil {
@@ -1461,8 +1467,8 @@ func (puo *PostUpdateOne) sqlSave(ctx context.Context) (_node *Post, err error) 
 	if err = sqlgraph.UpdateNode(ctx, puo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{post.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}

@@ -325,8 +325,8 @@ func (upvq *UnsavedPostVideoQuery) GroupBy(field string, fields ...string) *Unsa
 //		Select(unsavedpostvideo.FieldUUID).
 //		Scan(ctx, &v)
 //
-func (upvq *UnsavedPostVideoQuery) Select(field string, fields ...string) *UnsavedPostVideoSelect {
-	upvq.fields = append([]string{field}, fields...)
+func (upvq *UnsavedPostVideoQuery) Select(fields ...string) *UnsavedPostVideoSelect {
+	upvq.fields = append(upvq.fields, fields...)
 	return &UnsavedPostVideoSelect{UnsavedPostVideoQuery: upvq}
 }
 
@@ -477,10 +477,14 @@ func (upvq *UnsavedPostVideoQuery) querySpec() *sqlgraph.QuerySpec {
 func (upvq *UnsavedPostVideoQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(upvq.driver.Dialect())
 	t1 := builder.Table(unsavedpostvideo.Table)
-	selector := builder.Select(t1.Columns(unsavedpostvideo.Columns...)...).From(t1)
+	columns := upvq.fields
+	if len(columns) == 0 {
+		columns = unsavedpostvideo.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if upvq.sql != nil {
 		selector = upvq.sql
-		selector.Select(selector.Columns(unsavedpostvideo.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range upvq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (upvgb *UnsavedPostVideoGroupBy) sqlScan(ctx context.Context, v interface{}
 }
 
 func (upvgb *UnsavedPostVideoGroupBy) sqlQuery() *sql.Selector {
-	selector := upvgb.sql
-	columns := make([]string, 0, len(upvgb.fields)+len(upvgb.fns))
-	columns = append(columns, upvgb.fields...)
+	selector := upvgb.sql.Select()
+	aggregation := make([]string, 0, len(upvgb.fns))
 	for _, fn := range upvgb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(upvgb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(upvgb.fields)+len(upvgb.fns))
+		for _, f := range upvgb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(upvgb.fields...)...)
 }
 
 // UnsavedPostVideoSelect is the builder for selecting fields of UnsavedPostVideo entities.
@@ -970,16 +985,10 @@ func (upvs *UnsavedPostVideoSelect) BoolX(ctx context.Context) bool {
 
 func (upvs *UnsavedPostVideoSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := upvs.sqlQuery().Query()
+	query, args := upvs.sql.Query()
 	if err := upvs.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (upvs *UnsavedPostVideoSelect) sqlQuery() sql.Querier {
-	selector := upvs.sql
-	selector.Select(selector.Columns(upvs.fields...)...)
-	return selector
 }

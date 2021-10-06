@@ -85,11 +85,17 @@ func (asc *AdminSessionCreate) Save(ctx context.Context) (*AdminSession, error) 
 				return nil, err
 			}
 			asc.mutation = mutation
-			node, err = asc.sqlSave(ctx)
+			if node, err = asc.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(asc.hooks) - 1; i >= 0; i-- {
+			if asc.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = asc.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, asc.mutation); err != nil {
@@ -108,6 +114,19 @@ func (asc *AdminSessionCreate) SaveX(ctx context.Context) *AdminSession {
 	return v
 }
 
+// Exec executes the query.
+func (asc *AdminSessionCreate) Exec(ctx context.Context) error {
+	_, err := asc.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (asc *AdminSessionCreate) ExecX(ctx context.Context) {
+	if err := asc.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (asc *AdminSessionCreate) defaults() {
 	if _, ok := asc.mutation.CreatedAt(); !ok {
@@ -119,18 +138,18 @@ func (asc *AdminSessionCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (asc *AdminSessionCreate) check() error {
 	if _, ok := asc.mutation.Token(); !ok {
-		return &ValidationError{Name: "token", err: errors.New("ent: missing required field \"token\"")}
+		return &ValidationError{Name: "token", err: errors.New(`ent: missing required field "token"`)}
 	}
 	if v, ok := asc.mutation.Token(); ok {
 		if err := adminsession.TokenValidator(v); err != nil {
-			return &ValidationError{Name: "token", err: fmt.Errorf("ent: validator failed for field \"token\": %w", err)}
+			return &ValidationError{Name: "token", err: fmt.Errorf(`ent: validator failed for field "token": %w`, err)}
 		}
 	}
 	if _, ok := asc.mutation.ExpiresAt(); !ok {
-		return &ValidationError{Name: "expires_at", err: errors.New("ent: missing required field \"expires_at\"")}
+		return &ValidationError{Name: "expires_at", err: errors.New(`ent: missing required field "expires_at"`)}
 	}
 	if _, ok := asc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := asc.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user", err: errors.New("ent: missing required edge \"user\"")}
@@ -141,8 +160,8 @@ func (asc *AdminSessionCreate) check() error {
 func (asc *AdminSessionCreate) sqlSave(ctx context.Context) (*AdminSession, error) {
 	_node, _spec := asc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, asc.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -238,19 +257,23 @@ func (ascb *AdminSessionCreateBulk) Save(ctx context.Context) ([]*AdminSession, 
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, ascb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, ascb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, ascb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -274,4 +297,17 @@ func (ascb *AdminSessionCreateBulk) SaveX(ctx context.Context) []*AdminSession {
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (ascb *AdminSessionCreateBulk) Exec(ctx context.Context) error {
+	_, err := ascb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (ascb *AdminSessionCreateBulk) ExecX(ctx context.Context) {
+	if err := ascb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

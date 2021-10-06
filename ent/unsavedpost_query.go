@@ -506,8 +506,8 @@ func (upq *UnsavedPostQuery) GroupBy(field string, fields ...string) *UnsavedPos
 //		Select(unsavedpost.FieldUUID).
 //		Scan(ctx, &v)
 //
-func (upq *UnsavedPostQuery) Select(field string, fields ...string) *UnsavedPostSelect {
-	upq.fields = append([]string{field}, fields...)
+func (upq *UnsavedPostQuery) Select(fields ...string) *UnsavedPostSelect {
+	upq.fields = append(upq.fields, fields...)
 	return &UnsavedPostSelect{UnsavedPostQuery: upq}
 }
 
@@ -807,10 +807,14 @@ func (upq *UnsavedPostQuery) querySpec() *sqlgraph.QuerySpec {
 func (upq *UnsavedPostQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(upq.driver.Dialect())
 	t1 := builder.Table(unsavedpost.Table)
-	selector := builder.Select(t1.Columns(unsavedpost.Columns...)...).From(t1)
+	columns := upq.fields
+	if len(columns) == 0 {
+		columns = unsavedpost.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if upq.sql != nil {
 		selector = upq.sql
-		selector.Select(selector.Columns(unsavedpost.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range upq.predicates {
 		p(selector)
@@ -1078,13 +1082,24 @@ func (upgb *UnsavedPostGroupBy) sqlScan(ctx context.Context, v interface{}) erro
 }
 
 func (upgb *UnsavedPostGroupBy) sqlQuery() *sql.Selector {
-	selector := upgb.sql
-	columns := make([]string, 0, len(upgb.fields)+len(upgb.fns))
-	columns = append(columns, upgb.fields...)
+	selector := upgb.sql.Select()
+	aggregation := make([]string, 0, len(upgb.fns))
 	for _, fn := range upgb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(upgb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(upgb.fields)+len(upgb.fns))
+		for _, f := range upgb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(upgb.fields...)...)
 }
 
 // UnsavedPostSelect is the builder for selecting fields of UnsavedPost entities.
@@ -1300,16 +1315,10 @@ func (ups *UnsavedPostSelect) BoolX(ctx context.Context) bool {
 
 func (ups *UnsavedPostSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := ups.sqlQuery().Query()
+	query, args := ups.sql.Query()
 	if err := ups.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (ups *UnsavedPostSelect) sqlQuery() sql.Querier {
-	selector := ups.sql
-	selector.Select(selector.Columns(ups.fields...)...)
-	return selector
 }

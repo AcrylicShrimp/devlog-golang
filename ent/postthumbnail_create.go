@@ -97,11 +97,17 @@ func (ptc *PostThumbnailCreate) Save(ctx context.Context) (*PostThumbnail, error
 				return nil, err
 			}
 			ptc.mutation = mutation
-			node, err = ptc.sqlSave(ctx)
+			if node, err = ptc.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(ptc.hooks) - 1; i >= 0; i-- {
+			if ptc.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = ptc.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, ptc.mutation); err != nil {
@@ -120,6 +126,19 @@ func (ptc *PostThumbnailCreate) SaveX(ctx context.Context) *PostThumbnail {
 	return v
 }
 
+// Exec executes the query.
+func (ptc *PostThumbnailCreate) Exec(ctx context.Context) error {
+	_, err := ptc.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (ptc *PostThumbnailCreate) ExecX(ctx context.Context) {
+	if err := ptc.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (ptc *PostThumbnailCreate) defaults() {
 	if _, ok := ptc.mutation.CreatedAt(); !ok {
@@ -131,29 +150,29 @@ func (ptc *PostThumbnailCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (ptc *PostThumbnailCreate) check() error {
 	if _, ok := ptc.mutation.Width(); !ok {
-		return &ValidationError{Name: "width", err: errors.New("ent: missing required field \"width\"")}
+		return &ValidationError{Name: "width", err: errors.New(`ent: missing required field "width"`)}
 	}
 	if _, ok := ptc.mutation.Height(); !ok {
-		return &ValidationError{Name: "height", err: errors.New("ent: missing required field \"height\"")}
+		return &ValidationError{Name: "height", err: errors.New(`ent: missing required field "height"`)}
 	}
 	if _, ok := ptc.mutation.Hash(); !ok {
-		return &ValidationError{Name: "hash", err: errors.New("ent: missing required field \"hash\"")}
+		return &ValidationError{Name: "hash", err: errors.New(`ent: missing required field "hash"`)}
 	}
 	if v, ok := ptc.mutation.Hash(); ok {
 		if err := postthumbnail.HashValidator(v); err != nil {
-			return &ValidationError{Name: "hash", err: fmt.Errorf("ent: validator failed for field \"hash\": %w", err)}
+			return &ValidationError{Name: "hash", err: fmt.Errorf(`ent: validator failed for field "hash": %w`, err)}
 		}
 	}
 	if _, ok := ptc.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
+		return &ValidationError{Name: "url", err: errors.New(`ent: missing required field "url"`)}
 	}
 	if v, ok := ptc.mutation.URL(); ok {
 		if err := postthumbnail.URLValidator(v); err != nil {
-			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
+			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "url": %w`, err)}
 		}
 	}
 	if _, ok := ptc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := ptc.mutation.PostID(); !ok {
 		return &ValidationError{Name: "post", err: errors.New("ent: missing required edge \"post\"")}
@@ -164,8 +183,8 @@ func (ptc *PostThumbnailCreate) check() error {
 func (ptc *PostThumbnailCreate) sqlSave(ctx context.Context) (*PostThumbnail, error) {
 	_node, _spec := ptc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, ptc.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -277,19 +296,23 @@ func (ptcb *PostThumbnailCreateBulk) Save(ctx context.Context) ([]*PostThumbnail
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, ptcb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, ptcb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, ptcb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -313,4 +336,17 @@ func (ptcb *PostThumbnailCreateBulk) SaveX(ctx context.Context) []*PostThumbnail
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (ptcb *PostThumbnailCreateBulk) Exec(ctx context.Context) error {
+	_, err := ptcb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (ptcb *PostThumbnailCreateBulk) ExecX(ctx context.Context) {
+	if err := ptcb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

@@ -325,8 +325,8 @@ func (asq *AdminSessionQuery) GroupBy(field string, fields ...string) *AdminSess
 //		Select(adminsession.FieldToken).
 //		Scan(ctx, &v)
 //
-func (asq *AdminSessionQuery) Select(field string, fields ...string) *AdminSessionSelect {
-	asq.fields = append([]string{field}, fields...)
+func (asq *AdminSessionQuery) Select(fields ...string) *AdminSessionSelect {
+	asq.fields = append(asq.fields, fields...)
 	return &AdminSessionSelect{AdminSessionQuery: asq}
 }
 
@@ -477,10 +477,14 @@ func (asq *AdminSessionQuery) querySpec() *sqlgraph.QuerySpec {
 func (asq *AdminSessionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(asq.driver.Dialect())
 	t1 := builder.Table(adminsession.Table)
-	selector := builder.Select(t1.Columns(adminsession.Columns...)...).From(t1)
+	columns := asq.fields
+	if len(columns) == 0 {
+		columns = adminsession.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if asq.sql != nil {
 		selector = asq.sql
-		selector.Select(selector.Columns(adminsession.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range asq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (asgb *AdminSessionGroupBy) sqlScan(ctx context.Context, v interface{}) err
 }
 
 func (asgb *AdminSessionGroupBy) sqlQuery() *sql.Selector {
-	selector := asgb.sql
-	columns := make([]string, 0, len(asgb.fields)+len(asgb.fns))
-	columns = append(columns, asgb.fields...)
+	selector := asgb.sql.Select()
+	aggregation := make([]string, 0, len(asgb.fns))
 	for _, fn := range asgb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(asgb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(asgb.fields)+len(asgb.fns))
+		for _, f := range asgb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(asgb.fields...)...)
 }
 
 // AdminSessionSelect is the builder for selecting fields of AdminSession entities.
@@ -970,16 +985,10 @@ func (ass *AdminSessionSelect) BoolX(ctx context.Context) bool {
 
 func (ass *AdminSessionSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := ass.sqlQuery().Query()
+	query, args := ass.sql.Query()
 	if err := ass.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (ass *AdminSessionSelect) sqlQuery() sql.Querier {
-	selector := ass.sql
-	selector.Select(selector.Columns(ass.fields...)...)
-	return selector
 }

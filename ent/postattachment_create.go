@@ -103,11 +103,17 @@ func (pac *PostAttachmentCreate) Save(ctx context.Context) (*PostAttachment, err
 				return nil, err
 			}
 			pac.mutation = mutation
-			node, err = pac.sqlSave(ctx)
+			if node, err = pac.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(pac.hooks) - 1; i >= 0; i-- {
+			if pac.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = pac.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, pac.mutation); err != nil {
@@ -126,6 +132,19 @@ func (pac *PostAttachmentCreate) SaveX(ctx context.Context) *PostAttachment {
 	return v
 }
 
+// Exec executes the query.
+func (pac *PostAttachmentCreate) Exec(ctx context.Context) error {
+	_, err := pac.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (pac *PostAttachmentCreate) ExecX(ctx context.Context) {
+	if err := pac.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (pac *PostAttachmentCreate) defaults() {
 	if _, ok := pac.mutation.CreatedAt(); !ok {
@@ -137,42 +156,42 @@ func (pac *PostAttachmentCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (pac *PostAttachmentCreate) check() error {
 	if _, ok := pac.mutation.UUID(); !ok {
-		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+		return &ValidationError{Name: "uuid", err: errors.New(`ent: missing required field "uuid"`)}
 	}
 	if v, ok := pac.mutation.UUID(); ok {
 		if err := postattachment.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+			return &ValidationError{Name: "uuid", err: fmt.Errorf(`ent: validator failed for field "uuid": %w`, err)}
 		}
 	}
 	if _, ok := pac.mutation.Size(); !ok {
-		return &ValidationError{Name: "size", err: errors.New("ent: missing required field \"size\"")}
+		return &ValidationError{Name: "size", err: errors.New(`ent: missing required field "size"`)}
 	}
 	if _, ok := pac.mutation.Name(); !ok {
-		return &ValidationError{Name: "name", err: errors.New("ent: missing required field \"name\"")}
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "name"`)}
 	}
 	if v, ok := pac.mutation.Name(); ok {
 		if err := postattachment.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "name": %w`, err)}
 		}
 	}
 	if _, ok := pac.mutation.Mime(); !ok {
-		return &ValidationError{Name: "mime", err: errors.New("ent: missing required field \"mime\"")}
+		return &ValidationError{Name: "mime", err: errors.New(`ent: missing required field "mime"`)}
 	}
 	if v, ok := pac.mutation.Mime(); ok {
 		if err := postattachment.MimeValidator(v); err != nil {
-			return &ValidationError{Name: "mime", err: fmt.Errorf("ent: validator failed for field \"mime\": %w", err)}
+			return &ValidationError{Name: "mime", err: fmt.Errorf(`ent: validator failed for field "mime": %w`, err)}
 		}
 	}
 	if _, ok := pac.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New("ent: missing required field \"url\"")}
+		return &ValidationError{Name: "url", err: errors.New(`ent: missing required field "url"`)}
 	}
 	if v, ok := pac.mutation.URL(); ok {
 		if err := postattachment.URLValidator(v); err != nil {
-			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
+			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "url": %w`, err)}
 		}
 	}
 	if _, ok := pac.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := pac.mutation.PostID(); !ok {
 		return &ValidationError{Name: "post", err: errors.New("ent: missing required edge \"post\"")}
@@ -183,8 +202,8 @@ func (pac *PostAttachmentCreate) check() error {
 func (pac *PostAttachmentCreate) sqlSave(ctx context.Context) (*PostAttachment, error) {
 	_node, _spec := pac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, pac.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -304,19 +323,23 @@ func (pacb *PostAttachmentCreateBulk) Save(ctx context.Context) ([]*PostAttachme
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, pacb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, pacb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, pacb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -340,4 +363,17 @@ func (pacb *PostAttachmentCreateBulk) SaveX(ctx context.Context) []*PostAttachme
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (pacb *PostAttachmentCreateBulk) Exec(ctx context.Context) error {
+	_, err := pacb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (pacb *PostAttachmentCreateBulk) ExecX(ctx context.Context) {
+	if err := pacb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"devlog/ent/admin"
+	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
@@ -38,10 +39,24 @@ func init() {
 	adminDescPassword := adminFields[2].Descriptor()
 	// admin.PasswordValidator is a validator for the "password" field. It is called by the builders before save.
 	admin.PasswordValidator = adminDescPassword.Validators[0].(func(string) error)
+	// adminDescKey is the schema descriptor for key field.
+	adminDescKey := adminFields[3].Descriptor()
+	// admin.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	admin.KeyValidator = adminDescKey.Validators[0].(func(string) error)
 	// adminDescJoinedAt is the schema descriptor for joined_at field.
-	adminDescJoinedAt := adminFields[3].Descriptor()
+	adminDescJoinedAt := adminFields[4].Descriptor()
 	// admin.DefaultJoinedAt holds the default value on creation for the joined_at field.
 	admin.DefaultJoinedAt = adminDescJoinedAt.Default.(func() time.Time)
+	adminrobotaccessFields := schema.AdminRobotAccess{}.Fields()
+	_ = adminrobotaccessFields
+	// adminrobotaccessDescToken is the schema descriptor for token field.
+	adminrobotaccessDescToken := adminrobotaccessFields[0].Descriptor()
+	// adminrobotaccess.TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	adminrobotaccess.TokenValidator = adminrobotaccessDescToken.Validators[0].(func(string) error)
+	// adminrobotaccessDescCreatedAt is the schema descriptor for created_at field.
+	adminrobotaccessDescCreatedAt := adminrobotaccessFields[2].Descriptor()
+	// adminrobotaccess.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminrobotaccess.DefaultCreatedAt = adminrobotaccessDescCreatedAt.Default.(func() time.Time)
 	adminsessionFields := schema.AdminSession{}.Fields()
 	_ = adminsessionFields
 	// adminsessionDescToken is the schema descriptor for token field.

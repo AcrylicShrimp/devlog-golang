@@ -325,8 +325,8 @@ func (upaq *UnsavedPostAttachmentQuery) GroupBy(field string, fields ...string) 
 //		Select(unsavedpostattachment.FieldUUID).
 //		Scan(ctx, &v)
 //
-func (upaq *UnsavedPostAttachmentQuery) Select(field string, fields ...string) *UnsavedPostAttachmentSelect {
-	upaq.fields = append([]string{field}, fields...)
+func (upaq *UnsavedPostAttachmentQuery) Select(fields ...string) *UnsavedPostAttachmentSelect {
+	upaq.fields = append(upaq.fields, fields...)
 	return &UnsavedPostAttachmentSelect{UnsavedPostAttachmentQuery: upaq}
 }
 
@@ -477,10 +477,14 @@ func (upaq *UnsavedPostAttachmentQuery) querySpec() *sqlgraph.QuerySpec {
 func (upaq *UnsavedPostAttachmentQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(upaq.driver.Dialect())
 	t1 := builder.Table(unsavedpostattachment.Table)
-	selector := builder.Select(t1.Columns(unsavedpostattachment.Columns...)...).From(t1)
+	columns := upaq.fields
+	if len(columns) == 0 {
+		columns = unsavedpostattachment.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if upaq.sql != nil {
 		selector = upaq.sql
-		selector.Select(selector.Columns(unsavedpostattachment.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range upaq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (upagb *UnsavedPostAttachmentGroupBy) sqlScan(ctx context.Context, v interf
 }
 
 func (upagb *UnsavedPostAttachmentGroupBy) sqlQuery() *sql.Selector {
-	selector := upagb.sql
-	columns := make([]string, 0, len(upagb.fields)+len(upagb.fns))
-	columns = append(columns, upagb.fields...)
+	selector := upagb.sql.Select()
+	aggregation := make([]string, 0, len(upagb.fns))
 	for _, fn := range upagb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(upagb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(upagb.fields)+len(upagb.fns))
+		for _, f := range upagb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(upagb.fields...)...)
 }
 
 // UnsavedPostAttachmentSelect is the builder for selecting fields of UnsavedPostAttachment entities.
@@ -970,16 +985,10 @@ func (upas *UnsavedPostAttachmentSelect) BoolX(ctx context.Context) bool {
 
 func (upas *UnsavedPostAttachmentSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := upas.sqlQuery().Query()
+	query, args := upas.sql.Query()
 	if err := upas.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (upas *UnsavedPostAttachmentSelect) sqlQuery() sql.Querier {
-	selector := upas.sql
-	selector.Select(selector.Columns(upas.fields...)...)
-	return selector
 }

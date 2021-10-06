@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"devlog/ent/admin"
+	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
 	"devlog/ent/predicate"
@@ -24,9 +25,9 @@ type AdminUpdate struct {
 	mutation *AdminMutation
 }
 
-// Where adds a new predicate for the AdminUpdate builder.
+// Where appends a list predicates to the AdminUpdate builder.
 func (au *AdminUpdate) Where(ps ...predicate.Admin) *AdminUpdate {
-	au.mutation.predicates = append(au.mutation.predicates, ps...)
+	au.mutation.Where(ps...)
 	return au
 }
 
@@ -45,6 +46,12 @@ func (au *AdminUpdate) SetUsername(s string) *AdminUpdate {
 // SetPassword sets the "password" field.
 func (au *AdminUpdate) SetPassword(s string) *AdminUpdate {
 	au.mutation.SetPassword(s)
+	return au
+}
+
+// SetKey sets the "key" field.
+func (au *AdminUpdate) SetKey(s string) *AdminUpdate {
+	au.mutation.SetKey(s)
 	return au
 }
 
@@ -75,6 +82,21 @@ func (au *AdminUpdate) AddSessions(a ...*AdminSession) *AdminUpdate {
 		ids[i] = a[i].ID
 	}
 	return au.AddSessionIDs(ids...)
+}
+
+// AddRobotAccessIDs adds the "robot_accesses" edge to the AdminRobotAccess entity by IDs.
+func (au *AdminUpdate) AddRobotAccessIDs(ids ...int) *AdminUpdate {
+	au.mutation.AddRobotAccessIDs(ids...)
+	return au
+}
+
+// AddRobotAccesses adds the "robot_accesses" edges to the AdminRobotAccess entity.
+func (au *AdminUpdate) AddRobotAccesses(a ...*AdminRobotAccess) *AdminUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return au.AddRobotAccessIDs(ids...)
 }
 
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
@@ -131,6 +153,27 @@ func (au *AdminUpdate) RemoveSessions(a ...*AdminSession) *AdminUpdate {
 		ids[i] = a[i].ID
 	}
 	return au.RemoveSessionIDs(ids...)
+}
+
+// ClearRobotAccesses clears all "robot_accesses" edges to the AdminRobotAccess entity.
+func (au *AdminUpdate) ClearRobotAccesses() *AdminUpdate {
+	au.mutation.ClearRobotAccesses()
+	return au
+}
+
+// RemoveRobotAccessIDs removes the "robot_accesses" edge to AdminRobotAccess entities by IDs.
+func (au *AdminUpdate) RemoveRobotAccessIDs(ids ...int) *AdminUpdate {
+	au.mutation.RemoveRobotAccessIDs(ids...)
+	return au
+}
+
+// RemoveRobotAccesses removes "robot_accesses" edges to AdminRobotAccess entities.
+func (au *AdminUpdate) RemoveRobotAccesses(a ...*AdminRobotAccess) *AdminUpdate {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return au.RemoveRobotAccessIDs(ids...)
 }
 
 // ClearPosts clears all "posts" edges to the Post entity.
@@ -201,6 +244,9 @@ func (au *AdminUpdate) Save(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(au.hooks) - 1; i >= 0; i-- {
+			if au.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = au.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, au.mutation); err != nil {
@@ -249,6 +295,11 @@ func (au *AdminUpdate) check() error {
 			return &ValidationError{Name: "password", err: fmt.Errorf("ent: validator failed for field \"password\": %w", err)}
 		}
 	}
+	if v, ok := au.mutation.Key(); ok {
+		if err := admin.KeyValidator(v); err != nil {
+			return &ValidationError{Name: "key", err: fmt.Errorf("ent: validator failed for field \"key\": %w", err)}
+		}
+	}
 	return nil
 }
 
@@ -289,6 +340,13 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Type:   field.TypeString,
 			Value:  value,
 			Column: admin.FieldPassword,
+		})
+	}
+	if value, ok := au.mutation.Key(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldKey,
 		})
 	}
 	if value, ok := au.mutation.JoinedAt(); ok {
@@ -344,6 +402,60 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: adminsession.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if au.mutation.RobotAccessesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RobotAccessesTable,
+			Columns: admin.RobotAccessesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: adminrobotaccess.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RemovedRobotAccessesIDs(); len(nodes) > 0 && !au.mutation.RobotAccessesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RobotAccessesTable,
+			Columns: admin.RobotAccessesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: adminrobotaccess.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := au.mutation.RobotAccessesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RobotAccessesTable,
+			Columns: admin.RobotAccessesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: adminrobotaccess.FieldID,
 				},
 			},
 		}
@@ -463,8 +575,8 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{admin.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return 0, err
 	}
@@ -497,6 +609,12 @@ func (auo *AdminUpdateOne) SetPassword(s string) *AdminUpdateOne {
 	return auo
 }
 
+// SetKey sets the "key" field.
+func (auo *AdminUpdateOne) SetKey(s string) *AdminUpdateOne {
+	auo.mutation.SetKey(s)
+	return auo
+}
+
 // SetJoinedAt sets the "joined_at" field.
 func (auo *AdminUpdateOne) SetJoinedAt(t time.Time) *AdminUpdateOne {
 	auo.mutation.SetJoinedAt(t)
@@ -524,6 +642,21 @@ func (auo *AdminUpdateOne) AddSessions(a ...*AdminSession) *AdminUpdateOne {
 		ids[i] = a[i].ID
 	}
 	return auo.AddSessionIDs(ids...)
+}
+
+// AddRobotAccessIDs adds the "robot_accesses" edge to the AdminRobotAccess entity by IDs.
+func (auo *AdminUpdateOne) AddRobotAccessIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.AddRobotAccessIDs(ids...)
+	return auo
+}
+
+// AddRobotAccesses adds the "robot_accesses" edges to the AdminRobotAccess entity.
+func (auo *AdminUpdateOne) AddRobotAccesses(a ...*AdminRobotAccess) *AdminUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return auo.AddRobotAccessIDs(ids...)
 }
 
 // AddPostIDs adds the "posts" edge to the Post entity by IDs.
@@ -580,6 +713,27 @@ func (auo *AdminUpdateOne) RemoveSessions(a ...*AdminSession) *AdminUpdateOne {
 		ids[i] = a[i].ID
 	}
 	return auo.RemoveSessionIDs(ids...)
+}
+
+// ClearRobotAccesses clears all "robot_accesses" edges to the AdminRobotAccess entity.
+func (auo *AdminUpdateOne) ClearRobotAccesses() *AdminUpdateOne {
+	auo.mutation.ClearRobotAccesses()
+	return auo
+}
+
+// RemoveRobotAccessIDs removes the "robot_accesses" edge to AdminRobotAccess entities by IDs.
+func (auo *AdminUpdateOne) RemoveRobotAccessIDs(ids ...int) *AdminUpdateOne {
+	auo.mutation.RemoveRobotAccessIDs(ids...)
+	return auo
+}
+
+// RemoveRobotAccesses removes "robot_accesses" edges to AdminRobotAccess entities.
+func (auo *AdminUpdateOne) RemoveRobotAccesses(a ...*AdminRobotAccess) *AdminUpdateOne {
+	ids := make([]int, len(a))
+	for i := range a {
+		ids[i] = a[i].ID
+	}
+	return auo.RemoveRobotAccessIDs(ids...)
 }
 
 // ClearPosts clears all "posts" edges to the Post entity.
@@ -657,6 +811,9 @@ func (auo *AdminUpdateOne) Save(ctx context.Context) (*Admin, error) {
 			return node, err
 		})
 		for i := len(auo.hooks) - 1; i >= 0; i-- {
+			if auo.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = auo.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, auo.mutation); err != nil {
@@ -703,6 +860,11 @@ func (auo *AdminUpdateOne) check() error {
 	if v, ok := auo.mutation.Password(); ok {
 		if err := admin.PasswordValidator(v); err != nil {
 			return &ValidationError{Name: "password", err: fmt.Errorf("ent: validator failed for field \"password\": %w", err)}
+		}
+	}
+	if v, ok := auo.mutation.Key(); ok {
+		if err := admin.KeyValidator(v); err != nil {
+			return &ValidationError{Name: "key", err: fmt.Errorf("ent: validator failed for field \"key\": %w", err)}
 		}
 	}
 	return nil
@@ -764,6 +926,13 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 			Column: admin.FieldPassword,
 		})
 	}
+	if value, ok := auo.mutation.Key(); ok {
+		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
+			Type:   field.TypeString,
+			Value:  value,
+			Column: admin.FieldKey,
+		})
+	}
 	if value, ok := auo.mutation.JoinedAt(); ok {
 		_spec.Fields.Set = append(_spec.Fields.Set, &sqlgraph.FieldSpec{
 			Type:   field.TypeTime,
@@ -817,6 +986,60 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
 					Column: adminsession.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if auo.mutation.RobotAccessesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RobotAccessesTable,
+			Columns: admin.RobotAccessesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: adminrobotaccess.FieldID,
+				},
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RemovedRobotAccessesIDs(); len(nodes) > 0 && !auo.mutation.RobotAccessesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RobotAccessesTable,
+			Columns: admin.RobotAccessesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: adminrobotaccess.FieldID,
+				},
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := auo.mutation.RobotAccessesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2M,
+			Inverse: false,
+			Table:   admin.RobotAccessesTable,
+			Columns: admin.RobotAccessesPrimaryKey,
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: &sqlgraph.FieldSpec{
+					Type:   field.TypeInt,
+					Column: adminrobotaccess.FieldID,
 				},
 			},
 		}
@@ -939,8 +1162,8 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 	if err = sqlgraph.UpdateNode(ctx, auo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{admin.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}

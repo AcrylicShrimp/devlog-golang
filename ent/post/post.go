@@ -44,42 +44,42 @@ const (
 	EdgeAttachments = "attachments"
 	// Table holds the table name of the post in the database.
 	Table = "posts"
-	// AuthorTable is the table the holds the author relation/edge.
+	// AuthorTable is the table that holds the author relation/edge.
 	AuthorTable = "posts"
 	// AuthorInverseTable is the table name for the Admin entity.
 	// It exists in this package in order to avoid circular dependency with the "admin" package.
 	AuthorInverseTable = "admins"
 	// AuthorColumn is the table column denoting the author relation/edge.
 	AuthorColumn = "admin_posts"
-	// CategoryTable is the table the holds the category relation/edge.
+	// CategoryTable is the table that holds the category relation/edge.
 	CategoryTable = "posts"
 	// CategoryInverseTable is the table name for the Category entity.
 	// It exists in this package in order to avoid circular dependency with the "category" package.
 	CategoryInverseTable = "categories"
 	// CategoryColumn is the table column denoting the category relation/edge.
 	CategoryColumn = "category_posts"
-	// ThumbnailTable is the table the holds the thumbnail relation/edge.
+	// ThumbnailTable is the table that holds the thumbnail relation/edge.
 	ThumbnailTable = "post_thumbnails"
 	// ThumbnailInverseTable is the table name for the PostThumbnail entity.
 	// It exists in this package in order to avoid circular dependency with the "postthumbnail" package.
 	ThumbnailInverseTable = "post_thumbnails"
 	// ThumbnailColumn is the table column denoting the thumbnail relation/edge.
 	ThumbnailColumn = "post_thumbnail"
-	// ImagesTable is the table the holds the images relation/edge.
+	// ImagesTable is the table that holds the images relation/edge.
 	ImagesTable = "post_images"
 	// ImagesInverseTable is the table name for the PostImage entity.
 	// It exists in this package in order to avoid circular dependency with the "postimage" package.
 	ImagesInverseTable = "post_images"
 	// ImagesColumn is the table column denoting the images relation/edge.
 	ImagesColumn = "post_images"
-	// VideosTable is the table the holds the videos relation/edge.
+	// VideosTable is the table that holds the videos relation/edge.
 	VideosTable = "post_videos"
 	// VideosInverseTable is the table name for the PostVideo entity.
 	// It exists in this package in order to avoid circular dependency with the "postvideo" package.
 	VideosInverseTable = "post_videos"
 	// VideosColumn is the table column denoting the videos relation/edge.
 	VideosColumn = "post_videos"
-	// AttachmentsTable is the table the holds the attachments relation/edge.
+	// AttachmentsTable is the table that holds the attachments relation/edge.
 	AttachmentsTable = "post_attachments"
 	// AttachmentsInverseTable is the table name for the PostAttachment entity.
 	// It exists in this package in order to avoid circular dependency with the "postattachment" package.

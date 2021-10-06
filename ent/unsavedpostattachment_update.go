@@ -23,9 +23,9 @@ type UnsavedPostAttachmentUpdate struct {
 	mutation *UnsavedPostAttachmentMutation
 }
 
-// Where adds a new predicate for the UnsavedPostAttachmentUpdate builder.
+// Where appends a list predicates to the UnsavedPostAttachmentUpdate builder.
 func (upau *UnsavedPostAttachmentUpdate) Where(ps ...predicate.UnsavedPostAttachment) *UnsavedPostAttachmentUpdate {
-	upau.mutation.predicates = append(upau.mutation.predicates, ps...)
+	upau.mutation.Where(ps...)
 	return upau
 }
 
@@ -198,6 +198,9 @@ func (upau *UnsavedPostAttachmentUpdate) Save(ctx context.Context) (int, error) 
 			return affected, err
 		})
 		for i := len(upau.hooks) - 1; i >= 0; i-- {
+			if upau.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upau.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upau.mutation); err != nil {
@@ -398,8 +401,8 @@ func (upau *UnsavedPostAttachmentUpdate) sqlSave(ctx context.Context) (n int, er
 	if n, err = sqlgraph.UpdateNodes(ctx, upau.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{unsavedpostattachment.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return 0, err
 	}
@@ -590,6 +593,9 @@ func (upauo *UnsavedPostAttachmentUpdateOne) Save(ctx context.Context) (*Unsaved
 			return node, err
 		})
 		for i := len(upauo.hooks) - 1; i >= 0; i-- {
+			if upauo.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upauo.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upauo.mutation); err != nil {
@@ -810,8 +816,8 @@ func (upauo *UnsavedPostAttachmentUpdateOne) sqlSave(ctx context.Context) (_node
 	if err = sqlgraph.UpdateNode(ctx, upauo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{unsavedpostattachment.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}

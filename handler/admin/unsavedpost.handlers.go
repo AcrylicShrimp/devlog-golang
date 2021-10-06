@@ -91,7 +91,7 @@ func ListUnsavedPosts(c echo.Context) error {
 // GetUnsavedPost godoc
 // @router /admin/unsaved-posts/{uuid} [get]
 // @summary Get unsaved post
-// @description Gets a unsaved post by its UUID.
+// @description Gets an unsaved post by its UUID.
 // @description The unsaved post will contain images if any.
 // @tags admin post management
 // @param uuid path string true "An UUID of the unsaved post to be fetched"
@@ -102,7 +102,7 @@ func ListUnsavedPosts(c echo.Context) error {
 // @failure 404 {object} model.HTTPError404
 // @failure 500 {object} model.HTTPError500
 func GetUnsavedPost(c echo.Context) error {
-	param := new(model.GetUnsavedPostParam)
+	param := new(model.UnsavedPostUUIDParam)
 
 	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
@@ -199,11 +199,11 @@ func NewUnsavedPost(c echo.Context) error {
 // UpdateUnsavedPost godoc
 // @router /admin/unsaved-posts/{uuid} [put]
 // @summary Update unsaved post
-// @description Updates a unsaved post by its UUID.
+// @description Updates an unsaved post by its UUID.
 // @tags admin post management
 // @accept json
 // @param uuid path string true "An UUID of the unsaved post to be updated"
-// @param unsaved-post body model.UpdateUnsavedPostParam true "The unsaved post to be updated"
+// @param unsaved-post body model.UnsavedPostParam true "The unsaved post to be updated"
 // @produce json
 // @success 200 "NoContent: when the unsaved post has been updated successfully"
 // @failure 400 {object} model.HTTPError400
@@ -211,7 +211,7 @@ func NewUnsavedPost(c echo.Context) error {
 // @failure 404 {object} model.HTTPError404
 // @failure 500 {object} model.HTTPError500
 func UpdateUnsavedPost(c echo.Context) error {
-	param := new(model.UpdateUnsavedPostParam)
+	param := new(model.UnsavedPostParam)
 
 	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
@@ -285,9 +285,9 @@ func UpdateUnsavedPost(c echo.Context) error {
 // DeleteUnsavedPost godoc
 // @router /admin/unsaved-posts/{uuid} [delete]
 // @summary Update unsaved post
-// @description Updates a unsaved post by its UUID.
+// @description Updates an unsaved post by its UUID.
 // @tags admin post management
-// @param uuid path string true "An UUID of the unsaved post to be updated"
+// @param uuid path string true "An UUID of the unsaved post to be deleted"
 // @produce json
 // @success 200 "NoContent: when the unsaved post has been deleted successfully"
 // @failure 400 {object} model.HTTPError400
@@ -295,7 +295,7 @@ func UpdateUnsavedPost(c echo.Context) error {
 // @failure 404 {object} model.HTTPError404
 // @failure 500 {object} model.HTTPError500
 func DeleteUnsavedPost(c echo.Context) error {
-	param := new(model.DeleteUnsavedPostParam)
+	param := new(model.UnsavedPostUUIDParam)
 
 	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
@@ -370,7 +370,11 @@ func DeleteUnsavedPost(c echo.Context) error {
 
 		deletionWaitGroup.Wait()
 
-		return nil, tx.UnsavedPost.DeleteOne(post).Exec(context.Background())
+		if err := tx.UnsavedPost.DeleteOne(post).Exec(context.Background()); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		return nil, nil
 	})
 
 	if err != nil {
@@ -385,12 +389,16 @@ func DeleteUnsavedPost(c echo.Context) error {
 // @summary Create unsaved post thumbnail
 // @description Creates a new thumbnail for the unsaved post.
 // @tags admin post management
+// @param uuid path string true "An UUID of the unsaved post to be created"
 // @produce json
 // @success 201 "NoContent: when the thumbnail of the unsaved post has been created successfully"
+// @failure 400 {object} model.HTTPError400
 // @failure 401 {object} model.HTTPError401
+// @failure 404 {object} model.HTTPError404
+// @failure 409 {object} model.HTTPError409
 // @failure 500 {object} model.HTTPError500
 func NewUnsavedPostThumbnail(c echo.Context) error {
-	param := new(model.NewUnsavedPostThumbnailParam)
+	param := new(model.UnsavedPostUUIDParam)
 
 	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
@@ -415,7 +423,10 @@ func NewUnsavedPostThumbnail(c echo.Context) error {
 		if _, err := tx.UnsavedPostThumbnail.Create().
 			SetUnsavedPost(post).
 			Save(context.Background()); err != nil {
-			return nil, err
+			if _, ok := err.(*ent.ConstraintError); ok {
+				return nil, echo.NewHTTPError(http.StatusConflict)
+			}
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		return nil, nil
@@ -428,24 +439,32 @@ func NewUnsavedPostThumbnail(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
+// GetUnsavedPostThumbnail godoc
+// @router /admin/unsaved-posts/{uuid}/thumbnail [get]
+// @summary Get unsaved post thumbnail
+// @description Gets a thumbnail of an unsaved post by its UUID.
+// @tags admin post management
+// @param uuid path string true "An UUID of the unsaved post to be fetched"
+// @produce json
+// @success 200 {object} model.UnsavedPostThumbnail
+// @failure 400 {object} model.HTTPError400
+// @failure 401 {object} model.HTTPError401
+// @failure 404 {object} model.HTTPError404
+// @failure 500 {object} model.HTTPError500
 func GetUnsavedPostThumbnail(c echo.Context) error {
-	type ThumbnailInfo struct {
-		PostUUID string `param:"post" validate:"required,hexadecimal,len=64"`
-	}
+	param := new(model.UnsavedPostUUIDParam)
 
-	thumbnailInfo := new(ThumbnailInfo)
-
-	if err := c.Bind(thumbnailInfo); err != nil {
+	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(thumbnailInfo); err != nil {
+	if err := c.Validate(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	client := c.(*common.Context).Client()
 
 	thumbnail, err := client.UnsavedPostThumbnail.Query().
-		Where(dbUnsavedPostThumbnail.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(thumbnailInfo.PostUUID))).
+		Where(dbUnsavedPostThumbnail.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(param.UUID))).
 		Select(
 			dbUnsavedPostThumbnail.FieldValidity,
 			dbUnsavedPostThumbnail.FieldWidth,
@@ -462,21 +481,7 @@ func GetUnsavedPostThumbnail(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	type ThumbnailJSON struct {
-		Validity string  `json:"validity"`
-		Width    *uint32 `json:"width"`
-		Height   *uint32 `json:"height"`
-		Hash     *string `json:"hash"`
-		URL      *string `json:"url"`
-	}
-
-	return c.JSON(http.StatusCreated, ThumbnailJSON{
-		Validity: string(thumbnail.Validity),
-		Width:    thumbnail.Width,
-		Height:   thumbnail.Height,
-		Hash:     thumbnail.Hash,
-		URL:      thumbnail.URL,
-	})
+	return c.JSON(http.StatusOK, model.UnsavedPostThumbnailFromModel(thumbnail))
 }
 
 func SetUnsavedPostThumbnail(c echo.Context) error {

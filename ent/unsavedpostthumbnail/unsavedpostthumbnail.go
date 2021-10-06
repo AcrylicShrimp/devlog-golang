@@ -28,7 +28,7 @@ const (
 	EdgeUnsavedPost = "unsaved_post"
 	// Table holds the table name of the unsavedpostthumbnail in the database.
 	Table = "unsaved_post_thumbnails"
-	// UnsavedPostTable is the table the holds the unsaved_post relation/edge.
+	// UnsavedPostTable is the table that holds the unsaved_post relation/edge.
 	UnsavedPostTable = "unsaved_post_thumbnails"
 	// UnsavedPostInverseTable is the table name for the UnsavedPost entity.
 	// It exists in this package in order to avoid circular dependency with the "unsavedpost" package.

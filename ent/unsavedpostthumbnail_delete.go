@@ -20,9 +20,9 @@ type UnsavedPostThumbnailDelete struct {
 	mutation *UnsavedPostThumbnailMutation
 }
 
-// Where adds a new predicate to the UnsavedPostThumbnailDelete builder.
+// Where appends a list predicates to the UnsavedPostThumbnailDelete builder.
 func (uptd *UnsavedPostThumbnailDelete) Where(ps ...predicate.UnsavedPostThumbnail) *UnsavedPostThumbnailDelete {
-	uptd.mutation.predicates = append(uptd.mutation.predicates, ps...)
+	uptd.mutation.Where(ps...)
 	return uptd
 }
 
@@ -46,6 +46,9 @@ func (uptd *UnsavedPostThumbnailDelete) Exec(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(uptd.hooks) - 1; i >= 0; i-- {
+			if uptd.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = uptd.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, uptd.mutation); err != nil {

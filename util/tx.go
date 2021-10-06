@@ -10,6 +10,7 @@ import (
 func WithTx(c echo.Context, fn func(ctx *common.Context, tx *ent.Tx) (interface{}, error)) (interface{}, error) {
 	ctx := c.(*common.Context)
 	tx, err := ctx.Client().Tx(context.Background())
+
 	if err != nil {
 		return nil, err
 	}
@@ -22,6 +23,7 @@ func WithTx(c echo.Context, fn func(ctx *common.Context, tx *ent.Tx) (interface{
 	}()
 
 	v, err := fn(ctx, tx)
+
 	if err != nil {
 		_ = tx.Rollback()
 		return nil, err

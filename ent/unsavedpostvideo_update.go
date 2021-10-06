@@ -23,9 +23,9 @@ type UnsavedPostVideoUpdate struct {
 	mutation *UnsavedPostVideoMutation
 }
 
-// Where adds a new predicate for the UnsavedPostVideoUpdate builder.
+// Where appends a list predicates to the UnsavedPostVideoUpdate builder.
 func (upvu *UnsavedPostVideoUpdate) Where(ps ...predicate.UnsavedPostVideo) *UnsavedPostVideoUpdate {
-	upvu.mutation.predicates = append(upvu.mutation.predicates, ps...)
+	upvu.mutation.Where(ps...)
 	return upvu
 }
 
@@ -151,6 +151,9 @@ func (upvu *UnsavedPostVideoUpdate) Save(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(upvu.hooks) - 1; i >= 0; i-- {
+			if upvu.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upvu.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upvu.mutation); err != nil {
@@ -313,8 +316,8 @@ func (upvu *UnsavedPostVideoUpdate) sqlSave(ctx context.Context) (n int, err err
 	if n, err = sqlgraph.UpdateNodes(ctx, upvu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{unsavedpostvideo.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return 0, err
 	}
@@ -458,6 +461,9 @@ func (upvuo *UnsavedPostVideoUpdateOne) Save(ctx context.Context) (*UnsavedPostV
 			return node, err
 		})
 		for i := len(upvuo.hooks) - 1; i >= 0; i-- {
+			if upvuo.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upvuo.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upvuo.mutation); err != nil {
@@ -640,8 +646,8 @@ func (upvuo *UnsavedPostVideoUpdateOne) sqlSave(ctx context.Context) (_node *Uns
 	if err = sqlgraph.UpdateNode(ctx, upvuo.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{unsavedpostvideo.Label}
-		} else if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		} else if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}

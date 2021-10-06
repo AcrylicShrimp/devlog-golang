@@ -237,11 +237,17 @@ func (upc *UnsavedPostCreate) Save(ctx context.Context) (*UnsavedPost, error) {
 				return nil, err
 			}
 			upc.mutation = mutation
-			node, err = upc.sqlSave(ctx)
+			if node, err = upc.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(upc.hooks) - 1; i >= 0; i-- {
+			if upc.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upc.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upc.mutation); err != nil {
@@ -260,6 +266,19 @@ func (upc *UnsavedPostCreate) SaveX(ctx context.Context) *UnsavedPost {
 	return v
 }
 
+// Exec executes the query.
+func (upc *UnsavedPostCreate) Exec(ctx context.Context) error {
+	_, err := upc.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (upc *UnsavedPostCreate) ExecX(ctx context.Context) {
+	if err := upc.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (upc *UnsavedPostCreate) defaults() {
 	if _, ok := upc.mutation.CreatedAt(); !ok {
@@ -275,33 +294,33 @@ func (upc *UnsavedPostCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (upc *UnsavedPostCreate) check() error {
 	if _, ok := upc.mutation.UUID(); !ok {
-		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+		return &ValidationError{Name: "uuid", err: errors.New(`ent: missing required field "uuid"`)}
 	}
 	if v, ok := upc.mutation.UUID(); ok {
 		if err := unsavedpost.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+			return &ValidationError{Name: "uuid", err: fmt.Errorf(`ent: validator failed for field "uuid": %w`, err)}
 		}
 	}
 	if v, ok := upc.mutation.Slug(); ok {
 		if err := unsavedpost.SlugValidator(v); err != nil {
-			return &ValidationError{Name: "slug", err: fmt.Errorf("ent: validator failed for field \"slug\": %w", err)}
+			return &ValidationError{Name: "slug", err: fmt.Errorf(`ent: validator failed for field "slug": %w`, err)}
 		}
 	}
 	if v, ok := upc.mutation.AccessLevel(); ok {
 		if err := unsavedpost.AccessLevelValidator(v); err != nil {
-			return &ValidationError{Name: "access_level", err: fmt.Errorf("ent: validator failed for field \"access_level\": %w", err)}
+			return &ValidationError{Name: "access_level", err: fmt.Errorf(`ent: validator failed for field "access_level": %w`, err)}
 		}
 	}
 	if v, ok := upc.mutation.Title(); ok {
 		if err := unsavedpost.TitleValidator(v); err != nil {
-			return &ValidationError{Name: "title", err: fmt.Errorf("ent: validator failed for field \"title\": %w", err)}
+			return &ValidationError{Name: "title", err: fmt.Errorf(`ent: validator failed for field "title": %w`, err)}
 		}
 	}
 	if _, ok := upc.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := upc.mutation.ModifiedAt(); !ok {
-		return &ValidationError{Name: "modified_at", err: errors.New("ent: missing required field \"modified_at\"")}
+		return &ValidationError{Name: "modified_at", err: errors.New(`ent: missing required field "modified_at"`)}
 	}
 	if _, ok := upc.mutation.AuthorID(); !ok {
 		return &ValidationError{Name: "author", err: errors.New("ent: missing required edge \"author\"")}
@@ -312,8 +331,8 @@ func (upc *UnsavedPostCreate) check() error {
 func (upc *UnsavedPostCreate) sqlSave(ctx context.Context) (*UnsavedPost, error) {
 	_node, _spec := upc.createSpec()
 	if err := sqlgraph.CreateNode(ctx, upc.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -537,19 +556,23 @@ func (upcb *UnsavedPostCreateBulk) Save(ctx context.Context) ([]*UnsavedPost, er
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, upcb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, upcb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, upcb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -573,4 +596,17 @@ func (upcb *UnsavedPostCreateBulk) SaveX(ctx context.Context) []*UnsavedPost {
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (upcb *UnsavedPostCreateBulk) Exec(ctx context.Context) error {
+	_, err := upcb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (upcb *UnsavedPostCreateBulk) ExecX(ctx context.Context) {
+	if err := upcb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

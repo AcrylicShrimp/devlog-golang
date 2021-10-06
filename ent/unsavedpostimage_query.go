@@ -325,8 +325,8 @@ func (upiq *UnsavedPostImageQuery) GroupBy(field string, fields ...string) *Unsa
 //		Select(unsavedpostimage.FieldUUID).
 //		Scan(ctx, &v)
 //
-func (upiq *UnsavedPostImageQuery) Select(field string, fields ...string) *UnsavedPostImageSelect {
-	upiq.fields = append([]string{field}, fields...)
+func (upiq *UnsavedPostImageQuery) Select(fields ...string) *UnsavedPostImageSelect {
+	upiq.fields = append(upiq.fields, fields...)
 	return &UnsavedPostImageSelect{UnsavedPostImageQuery: upiq}
 }
 
@@ -477,10 +477,14 @@ func (upiq *UnsavedPostImageQuery) querySpec() *sqlgraph.QuerySpec {
 func (upiq *UnsavedPostImageQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(upiq.driver.Dialect())
 	t1 := builder.Table(unsavedpostimage.Table)
-	selector := builder.Select(t1.Columns(unsavedpostimage.Columns...)...).From(t1)
+	columns := upiq.fields
+	if len(columns) == 0 {
+		columns = unsavedpostimage.Columns
+	}
+	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if upiq.sql != nil {
 		selector = upiq.sql
-		selector.Select(selector.Columns(unsavedpostimage.Columns...)...)
+		selector.Select(selector.Columns(columns...)...)
 	}
 	for _, p := range upiq.predicates {
 		p(selector)
@@ -748,13 +752,24 @@ func (upigb *UnsavedPostImageGroupBy) sqlScan(ctx context.Context, v interface{}
 }
 
 func (upigb *UnsavedPostImageGroupBy) sqlQuery() *sql.Selector {
-	selector := upigb.sql
-	columns := make([]string, 0, len(upigb.fields)+len(upigb.fns))
-	columns = append(columns, upigb.fields...)
+	selector := upigb.sql.Select()
+	aggregation := make([]string, 0, len(upigb.fns))
 	for _, fn := range upigb.fns {
-		columns = append(columns, fn(selector))
+		aggregation = append(aggregation, fn(selector))
 	}
-	return selector.Select(columns...).GroupBy(upigb.fields...)
+	// If no columns were selected in a custom aggregation function, the default
+	// selection is the fields used for "group-by", and the aggregation functions.
+	if len(selector.SelectedColumns()) == 0 {
+		columns := make([]string, 0, len(upigb.fields)+len(upigb.fns))
+		for _, f := range upigb.fields {
+			columns = append(columns, selector.C(f))
+		}
+		for _, c := range aggregation {
+			columns = append(columns, c)
+		}
+		selector.Select(columns...)
+	}
+	return selector.GroupBy(selector.Columns(upigb.fields...)...)
 }
 
 // UnsavedPostImageSelect is the builder for selecting fields of UnsavedPostImage entities.
@@ -970,16 +985,10 @@ func (upis *UnsavedPostImageSelect) BoolX(ctx context.Context) bool {
 
 func (upis *UnsavedPostImageSelect) sqlScan(ctx context.Context, v interface{}) error {
 	rows := &sql.Rows{}
-	query, args := upis.sqlQuery().Query()
+	query, args := upis.sql.Query()
 	if err := upis.driver.Query(ctx, query, args, rows); err != nil {
 		return err
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-func (upis *UnsavedPostImageSelect) sqlQuery() sql.Querier {
-	selector := upis.sql
-	selector.Select(selector.Columns(upis.fields...)...)
-	return selector
 }

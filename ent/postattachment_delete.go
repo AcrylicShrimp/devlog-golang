@@ -20,9 +20,9 @@ type PostAttachmentDelete struct {
 	mutation *PostAttachmentMutation
 }
 
-// Where adds a new predicate to the PostAttachmentDelete builder.
+// Where appends a list predicates to the PostAttachmentDelete builder.
 func (pad *PostAttachmentDelete) Where(ps ...predicate.PostAttachment) *PostAttachmentDelete {
-	pad.mutation.predicates = append(pad.mutation.predicates, ps...)
+	pad.mutation.Where(ps...)
 	return pad
 }
 
@@ -46,6 +46,9 @@ func (pad *PostAttachmentDelete) Exec(ctx context.Context) (int, error) {
 			return affected, err
 		})
 		for i := len(pad.hooks) - 1; i >= 0; i-- {
+			if pad.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = pad.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, pad.mutation); err != nil {

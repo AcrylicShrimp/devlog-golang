@@ -149,11 +149,17 @@ func (upac *UnsavedPostAttachmentCreate) Save(ctx context.Context) (*UnsavedPost
 				return nil, err
 			}
 			upac.mutation = mutation
-			node, err = upac.sqlSave(ctx)
+			if node, err = upac.sqlSave(ctx); err != nil {
+				return nil, err
+			}
+			mutation.id = &node.ID
 			mutation.done = true
 			return node, err
 		})
 		for i := len(upac.hooks) - 1; i >= 0; i-- {
+			if upac.hooks[i] == nil {
+				return nil, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upac.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upac.mutation); err != nil {
@@ -172,6 +178,19 @@ func (upac *UnsavedPostAttachmentCreate) SaveX(ctx context.Context) *UnsavedPost
 	return v
 }
 
+// Exec executes the query.
+func (upac *UnsavedPostAttachmentCreate) Exec(ctx context.Context) error {
+	_, err := upac.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (upac *UnsavedPostAttachmentCreate) ExecX(ctx context.Context) {
+	if err := upac.Exec(ctx); err != nil {
+		panic(err)
+	}
+}
+
 // defaults sets the default values of the builder before save.
 func (upac *UnsavedPostAttachmentCreate) defaults() {
 	if _, ok := upac.mutation.Validity(); !ok {
@@ -187,38 +206,38 @@ func (upac *UnsavedPostAttachmentCreate) defaults() {
 // check runs all checks and user-defined validators on the builder.
 func (upac *UnsavedPostAttachmentCreate) check() error {
 	if _, ok := upac.mutation.UUID(); !ok {
-		return &ValidationError{Name: "uuid", err: errors.New("ent: missing required field \"uuid\"")}
+		return &ValidationError{Name: "uuid", err: errors.New(`ent: missing required field "uuid"`)}
 	}
 	if v, ok := upac.mutation.UUID(); ok {
 		if err := unsavedpostattachment.UUIDValidator(v); err != nil {
-			return &ValidationError{Name: "uuid", err: fmt.Errorf("ent: validator failed for field \"uuid\": %w", err)}
+			return &ValidationError{Name: "uuid", err: fmt.Errorf(`ent: validator failed for field "uuid": %w`, err)}
 		}
 	}
 	if _, ok := upac.mutation.Validity(); !ok {
-		return &ValidationError{Name: "validity", err: errors.New("ent: missing required field \"validity\"")}
+		return &ValidationError{Name: "validity", err: errors.New(`ent: missing required field "validity"`)}
 	}
 	if v, ok := upac.mutation.Validity(); ok {
 		if err := unsavedpostattachment.ValidityValidator(v); err != nil {
-			return &ValidationError{Name: "validity", err: fmt.Errorf("ent: validator failed for field \"validity\": %w", err)}
+			return &ValidationError{Name: "validity", err: fmt.Errorf(`ent: validator failed for field "validity": %w`, err)}
 		}
 	}
 	if v, ok := upac.mutation.Name(); ok {
 		if err := unsavedpostattachment.NameValidator(v); err != nil {
-			return &ValidationError{Name: "name", err: fmt.Errorf("ent: validator failed for field \"name\": %w", err)}
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "name": %w`, err)}
 		}
 	}
 	if v, ok := upac.mutation.Mime(); ok {
 		if err := unsavedpostattachment.MimeValidator(v); err != nil {
-			return &ValidationError{Name: "mime", err: fmt.Errorf("ent: validator failed for field \"mime\": %w", err)}
+			return &ValidationError{Name: "mime", err: fmt.Errorf(`ent: validator failed for field "mime": %w`, err)}
 		}
 	}
 	if v, ok := upac.mutation.URL(); ok {
 		if err := unsavedpostattachment.URLValidator(v); err != nil {
-			return &ValidationError{Name: "url", err: fmt.Errorf("ent: validator failed for field \"url\": %w", err)}
+			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "url": %w`, err)}
 		}
 	}
 	if _, ok := upac.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New("ent: missing required field \"created_at\"")}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
 	if _, ok := upac.mutation.UnsavedPostID(); !ok {
 		return &ValidationError{Name: "unsaved_post", err: errors.New("ent: missing required edge \"unsaved_post\"")}
@@ -229,8 +248,8 @@ func (upac *UnsavedPostAttachmentCreate) check() error {
 func (upac *UnsavedPostAttachmentCreate) sqlSave(ctx context.Context) (*UnsavedPostAttachment, error) {
 	_node, _spec := upac.createSpec()
 	if err := sqlgraph.CreateNode(ctx, upac.driver, _spec); err != nil {
-		if cerr, ok := isSQLConstraintError(err); ok {
-			err = cerr
+		if sqlgraph.IsConstraintError(err) {
+			err = &ConstraintError{err.Error(), err}
 		}
 		return nil, err
 	}
@@ -358,19 +377,23 @@ func (upacb *UnsavedPostAttachmentCreateBulk) Save(ctx context.Context) ([]*Unsa
 				if i < len(mutators)-1 {
 					_, err = mutators[i+1].Mutate(root, upacb.builders[i+1].mutation)
 				} else {
+					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, upacb.driver, &sqlgraph.BatchCreateSpec{Nodes: specs}); err != nil {
-						if cerr, ok := isSQLConstraintError(err); ok {
-							err = cerr
+					if err = sqlgraph.BatchCreate(ctx, upacb.driver, spec); err != nil {
+						if sqlgraph.IsConstraintError(err) {
+							err = &ConstraintError{err.Error(), err}
 						}
 					}
 				}
-				mutation.done = true
 				if err != nil {
 					return nil, err
 				}
-				id := specs[i].ID.Value.(int64)
-				nodes[i].ID = int(id)
+				mutation.id = &nodes[i].ID
+				mutation.done = true
+				if specs[i].ID.Value != nil {
+					id := specs[i].ID.Value.(int64)
+					nodes[i].ID = int(id)
+				}
 				return nodes[i], nil
 			})
 			for i := len(builder.hooks) - 1; i >= 0; i-- {
@@ -394,4 +417,17 @@ func (upacb *UnsavedPostAttachmentCreateBulk) SaveX(ctx context.Context) []*Unsa
 		panic(err)
 	}
 	return v
+}
+
+// Exec executes the query.
+func (upacb *UnsavedPostAttachmentCreateBulk) Exec(ctx context.Context) error {
+	_, err := upacb.Save(ctx)
+	return err
+}
+
+// ExecX is like Exec, but panics if an error occurs.
+func (upacb *UnsavedPostAttachmentCreateBulk) ExecX(ctx context.Context) {
+	if err := upacb.Exec(ctx); err != nil {
+		panic(err)
+	}
 }

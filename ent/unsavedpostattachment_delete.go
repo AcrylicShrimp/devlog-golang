@@ -20,9 +20,9 @@ type UnsavedPostAttachmentDelete struct {
 	mutation *UnsavedPostAttachmentMutation
 }
 
-// Where adds a new predicate to the UnsavedPostAttachmentDelete builder.
+// Where appends a list predicates to the UnsavedPostAttachmentDelete builder.
 func (upad *UnsavedPostAttachmentDelete) Where(ps ...predicate.UnsavedPostAttachment) *UnsavedPostAttachmentDelete {
-	upad.mutation.predicates = append(upad.mutation.predicates, ps...)
+	upad.mutation.Where(ps...)
 	return upad
 }
 
@@ -46,6 +46,9 @@ func (upad *UnsavedPostAttachmentDelete) Exec(ctx context.Context) (int, error) 
 			return affected, err
 		})
 		for i := len(upad.hooks) - 1; i >= 0; i-- {
+			if upad.hooks[i] == nil {
+				return 0, fmt.Errorf("ent: uninitialized hook (forgotten import ent/runtime?)")
+			}
 			mut = upad.hooks[i](mut)
 		}
 		if _, err := mut.Mutate(ctx, upad.mutation); err != nil {
