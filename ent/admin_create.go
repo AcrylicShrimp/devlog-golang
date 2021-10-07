@@ -5,9 +5,9 @@ package ent
 import (
 	"context"
 	"devlog/ent/admin"
-	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
+	"devlog/ent/robotaccess"
 	"devlog/ent/unsavedpost"
 	"errors"
 	"fmt"
@@ -77,17 +77,17 @@ func (ac *AdminCreate) AddSessions(a ...*AdminSession) *AdminCreate {
 	return ac.AddSessionIDs(ids...)
 }
 
-// AddRobotAccessIDs adds the "robot_accesses" edge to the AdminRobotAccess entity by IDs.
+// AddRobotAccessIDs adds the "robot_accesses" edge to the RobotAccess entity by IDs.
 func (ac *AdminCreate) AddRobotAccessIDs(ids ...int) *AdminCreate {
 	ac.mutation.AddRobotAccessIDs(ids...)
 	return ac
 }
 
-// AddRobotAccesses adds the "robot_accesses" edges to the AdminRobotAccess entity.
-func (ac *AdminCreate) AddRobotAccesses(a ...*AdminRobotAccess) *AdminCreate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// AddRobotAccesses adds the "robot_accesses" edges to the RobotAccess entity.
+func (ac *AdminCreate) AddRobotAccesses(r ...*RobotAccess) *AdminCreate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
 	return ac.AddRobotAccessIDs(ids...)
 }
@@ -332,7 +332,7 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: adminrobotaccess.FieldID,
+					Column: robotaccess.FieldID,
 				},
 			},
 		}

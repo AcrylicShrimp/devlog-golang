@@ -12,7 +12,6 @@ import (
 	dbUnsavedPostImage "devlog/ent/unsavedpostimage"
 	dbUnsavedPostThumbnail "devlog/ent/unsavedpostthumbnail"
 	"devlog/markdown"
-	"devlog/middleware"
 	"devlog/regex"
 	"devlog/util"
 	"github.com/labstack/echo/v4"
@@ -26,7 +25,7 @@ import (
 )
 
 func AttachPost(group *echo.Group) {
-	group.POST("", NewPost, middleware.WithSession, middleware.RequireSession)
+	group.POST("", NewPost)
 }
 
 func NewPost(c echo.Context) error {

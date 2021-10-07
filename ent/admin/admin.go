@@ -40,9 +40,9 @@ const (
 	SessionsColumn = "admin_sessions"
 	// RobotAccessesTable is the table that holds the robot_accesses relation/edge. The primary key declared below.
 	RobotAccessesTable = "admin_robot_accesses"
-	// RobotAccessesInverseTable is the table name for the AdminRobotAccess entity.
-	// It exists in this package in order to avoid circular dependency with the "adminrobotaccess" package.
-	RobotAccessesInverseTable = "admin_robot_accesses"
+	// RobotAccessesInverseTable is the table name for the RobotAccess entity.
+	// It exists in this package in order to avoid circular dependency with the "robotaccess" package.
+	RobotAccessesInverseTable = "robot_accesses"
 	// PostsTable is the table that holds the posts relation/edge.
 	PostsTable = "posts"
 	// PostsInverseTable is the table name for the Post entity.
@@ -72,7 +72,7 @@ var Columns = []string{
 var (
 	// RobotAccessesPrimaryKey and RobotAccessesColumn2 are the table columns denoting the
 	// primary key for the robot_accesses relation (M2M).
-	RobotAccessesPrimaryKey = []string{"admin_id", "admin_robot_access_id"}
+	RobotAccessesPrimaryKey = []string{"admin_id", "robot_access_id"}
 )
 
 // ValidColumn reports if the column name is valid (part of the table columns).

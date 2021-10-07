@@ -25,7 +25,6 @@ type config struct {
 // hooks per client, for fast access.
 type hooks struct {
 	Admin                 []ent.Hook
-	AdminRobotAccess      []ent.Hook
 	AdminSession          []ent.Hook
 	Category              []ent.Hook
 	Post                  []ent.Hook
@@ -33,6 +32,7 @@ type hooks struct {
 	PostImage             []ent.Hook
 	PostThumbnail         []ent.Hook
 	PostVideo             []ent.Hook
+	RobotAccess           []ent.Hook
 	UnsavedPost           []ent.Hook
 	UnsavedPostAttachment []ent.Hook
 	UnsavedPostImage      []ent.Hook

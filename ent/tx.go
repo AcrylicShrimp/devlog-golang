@@ -14,8 +14,6 @@ type Tx struct {
 	config
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
-	// AdminRobotAccess is the client for interacting with the AdminRobotAccess builders.
-	AdminRobotAccess *AdminRobotAccessClient
 	// AdminSession is the client for interacting with the AdminSession builders.
 	AdminSession *AdminSessionClient
 	// Category is the client for interacting with the Category builders.
@@ -30,6 +28,8 @@ type Tx struct {
 	PostThumbnail *PostThumbnailClient
 	// PostVideo is the client for interacting with the PostVideo builders.
 	PostVideo *PostVideoClient
+	// RobotAccess is the client for interacting with the RobotAccess builders.
+	RobotAccess *RobotAccessClient
 	// UnsavedPost is the client for interacting with the UnsavedPost builders.
 	UnsavedPost *UnsavedPostClient
 	// UnsavedPostAttachment is the client for interacting with the UnsavedPostAttachment builders.
@@ -176,7 +176,6 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Admin = NewAdminClient(tx.config)
-	tx.AdminRobotAccess = NewAdminRobotAccessClient(tx.config)
 	tx.AdminSession = NewAdminSessionClient(tx.config)
 	tx.Category = NewCategoryClient(tx.config)
 	tx.Post = NewPostClient(tx.config)
@@ -184,6 +183,7 @@ func (tx *Tx) init() {
 	tx.PostImage = NewPostImageClient(tx.config)
 	tx.PostThumbnail = NewPostThumbnailClient(tx.config)
 	tx.PostVideo = NewPostVideoClient(tx.config)
+	tx.RobotAccess = NewRobotAccessClient(tx.config)
 	tx.UnsavedPost = NewUnsavedPostClient(tx.config)
 	tx.UnsavedPostAttachment = NewUnsavedPostAttachmentClient(tx.config)
 	tx.UnsavedPostImage = NewUnsavedPostImageClient(tx.config)

@@ -5,10 +5,10 @@ package ent
 import (
 	"context"
 	"devlog/ent/admin"
-	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
 	"devlog/ent/predicate"
+	"devlog/ent/robotaccess"
 	"devlog/ent/unsavedpost"
 	"fmt"
 	"time"
@@ -84,17 +84,17 @@ func (au *AdminUpdate) AddSessions(a ...*AdminSession) *AdminUpdate {
 	return au.AddSessionIDs(ids...)
 }
 
-// AddRobotAccessIDs adds the "robot_accesses" edge to the AdminRobotAccess entity by IDs.
+// AddRobotAccessIDs adds the "robot_accesses" edge to the RobotAccess entity by IDs.
 func (au *AdminUpdate) AddRobotAccessIDs(ids ...int) *AdminUpdate {
 	au.mutation.AddRobotAccessIDs(ids...)
 	return au
 }
 
-// AddRobotAccesses adds the "robot_accesses" edges to the AdminRobotAccess entity.
-func (au *AdminUpdate) AddRobotAccesses(a ...*AdminRobotAccess) *AdminUpdate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// AddRobotAccesses adds the "robot_accesses" edges to the RobotAccess entity.
+func (au *AdminUpdate) AddRobotAccesses(r ...*RobotAccess) *AdminUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
 	return au.AddRobotAccessIDs(ids...)
 }
@@ -155,23 +155,23 @@ func (au *AdminUpdate) RemoveSessions(a ...*AdminSession) *AdminUpdate {
 	return au.RemoveSessionIDs(ids...)
 }
 
-// ClearRobotAccesses clears all "robot_accesses" edges to the AdminRobotAccess entity.
+// ClearRobotAccesses clears all "robot_accesses" edges to the RobotAccess entity.
 func (au *AdminUpdate) ClearRobotAccesses() *AdminUpdate {
 	au.mutation.ClearRobotAccesses()
 	return au
 }
 
-// RemoveRobotAccessIDs removes the "robot_accesses" edge to AdminRobotAccess entities by IDs.
+// RemoveRobotAccessIDs removes the "robot_accesses" edge to RobotAccess entities by IDs.
 func (au *AdminUpdate) RemoveRobotAccessIDs(ids ...int) *AdminUpdate {
 	au.mutation.RemoveRobotAccessIDs(ids...)
 	return au
 }
 
-// RemoveRobotAccesses removes "robot_accesses" edges to AdminRobotAccess entities.
-func (au *AdminUpdate) RemoveRobotAccesses(a ...*AdminRobotAccess) *AdminUpdate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// RemoveRobotAccesses removes "robot_accesses" edges to RobotAccess entities.
+func (au *AdminUpdate) RemoveRobotAccesses(r ...*RobotAccess) *AdminUpdate {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
 	return au.RemoveRobotAccessIDs(ids...)
 }
@@ -420,7 +420,7 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: adminrobotaccess.FieldID,
+					Column: robotaccess.FieldID,
 				},
 			},
 		}
@@ -436,7 +436,7 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: adminrobotaccess.FieldID,
+					Column: robotaccess.FieldID,
 				},
 			},
 		}
@@ -455,7 +455,7 @@ func (au *AdminUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: adminrobotaccess.FieldID,
+					Column: robotaccess.FieldID,
 				},
 			},
 		}
@@ -644,17 +644,17 @@ func (auo *AdminUpdateOne) AddSessions(a ...*AdminSession) *AdminUpdateOne {
 	return auo.AddSessionIDs(ids...)
 }
 
-// AddRobotAccessIDs adds the "robot_accesses" edge to the AdminRobotAccess entity by IDs.
+// AddRobotAccessIDs adds the "robot_accesses" edge to the RobotAccess entity by IDs.
 func (auo *AdminUpdateOne) AddRobotAccessIDs(ids ...int) *AdminUpdateOne {
 	auo.mutation.AddRobotAccessIDs(ids...)
 	return auo
 }
 
-// AddRobotAccesses adds the "robot_accesses" edges to the AdminRobotAccess entity.
-func (auo *AdminUpdateOne) AddRobotAccesses(a ...*AdminRobotAccess) *AdminUpdateOne {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// AddRobotAccesses adds the "robot_accesses" edges to the RobotAccess entity.
+func (auo *AdminUpdateOne) AddRobotAccesses(r ...*RobotAccess) *AdminUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
 	return auo.AddRobotAccessIDs(ids...)
 }
@@ -715,23 +715,23 @@ func (auo *AdminUpdateOne) RemoveSessions(a ...*AdminSession) *AdminUpdateOne {
 	return auo.RemoveSessionIDs(ids...)
 }
 
-// ClearRobotAccesses clears all "robot_accesses" edges to the AdminRobotAccess entity.
+// ClearRobotAccesses clears all "robot_accesses" edges to the RobotAccess entity.
 func (auo *AdminUpdateOne) ClearRobotAccesses() *AdminUpdateOne {
 	auo.mutation.ClearRobotAccesses()
 	return auo
 }
 
-// RemoveRobotAccessIDs removes the "robot_accesses" edge to AdminRobotAccess entities by IDs.
+// RemoveRobotAccessIDs removes the "robot_accesses" edge to RobotAccess entities by IDs.
 func (auo *AdminUpdateOne) RemoveRobotAccessIDs(ids ...int) *AdminUpdateOne {
 	auo.mutation.RemoveRobotAccessIDs(ids...)
 	return auo
 }
 
-// RemoveRobotAccesses removes "robot_accesses" edges to AdminRobotAccess entities.
-func (auo *AdminUpdateOne) RemoveRobotAccesses(a ...*AdminRobotAccess) *AdminUpdateOne {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+// RemoveRobotAccesses removes "robot_accesses" edges to RobotAccess entities.
+func (auo *AdminUpdateOne) RemoveRobotAccesses(r ...*RobotAccess) *AdminUpdateOne {
+	ids := make([]int, len(r))
+	for i := range r {
+		ids[i] = r[i].ID
 	}
 	return auo.RemoveRobotAccessIDs(ids...)
 }
@@ -1004,7 +1004,7 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: adminrobotaccess.FieldID,
+					Column: robotaccess.FieldID,
 				},
 			},
 		}
@@ -1020,7 +1020,7 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: adminrobotaccess.FieldID,
+					Column: robotaccess.FieldID,
 				},
 			},
 		}
@@ -1039,7 +1039,7 @@ func (auo *AdminUpdateOne) sqlSave(ctx context.Context) (_node *Admin, err error
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
 					Type:   field.TypeInt,
-					Column: adminrobotaccess.FieldID,
+					Column: robotaccess.FieldID,
 				},
 			},
 		}

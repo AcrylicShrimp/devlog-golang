@@ -4,7 +4,6 @@ package ent
 
 import (
 	"devlog/ent/admin"
-	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
@@ -12,6 +11,7 @@ import (
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
+	"devlog/ent/robotaccess"
 	"devlog/ent/unsavedpost"
 	"devlog/ent/unsavedpostattachment"
 	"devlog/ent/unsavedpostimage"
@@ -43,7 +43,6 @@ type OrderFunc func(*sql.Selector)
 func columnChecker(table string) func(string) error {
 	checks := map[string]func(string) bool{
 		admin.Table:                 admin.ValidColumn,
-		adminrobotaccess.Table:      adminrobotaccess.ValidColumn,
 		adminsession.Table:          adminsession.ValidColumn,
 		category.Table:              category.ValidColumn,
 		post.Table:                  post.ValidColumn,
@@ -51,6 +50,7 @@ func columnChecker(table string) func(string) error {
 		postimage.Table:             postimage.ValidColumn,
 		postthumbnail.Table:         postthumbnail.ValidColumn,
 		postvideo.Table:             postvideo.ValidColumn,
+		robotaccess.Table:           robotaccess.ValidColumn,
 		unsavedpost.Table:           unsavedpost.ValidColumn,
 		unsavedpostattachment.Table: unsavedpostattachment.ValidColumn,
 		unsavedpostimage.Table:      unsavedpostimage.ValidColumn,

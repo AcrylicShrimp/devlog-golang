@@ -5,7 +5,6 @@ package ent
 import (
 	"context"
 	"devlog/ent/admin"
-	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
@@ -14,6 +13,7 @@ import (
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
 	"devlog/ent/predicate"
+	"devlog/ent/robotaccess"
 	"devlog/ent/unsavedpost"
 	"devlog/ent/unsavedpostattachment"
 	"devlog/ent/unsavedpostimage"
@@ -36,7 +36,6 @@ const (
 
 	// Node types.
 	TypeAdmin                 = "Admin"
-	TypeAdminRobotAccess      = "AdminRobotAccess"
 	TypeAdminSession          = "AdminSession"
 	TypeCategory              = "Category"
 	TypePost                  = "Post"
@@ -44,6 +43,7 @@ const (
 	TypePostImage             = "PostImage"
 	TypePostThumbnail         = "PostThumbnail"
 	TypePostVideo             = "PostVideo"
+	TypeRobotAccess           = "RobotAccess"
 	TypeUnsavedPost           = "UnsavedPost"
 	TypeUnsavedPostAttachment = "UnsavedPostAttachment"
 	TypeUnsavedPostImage      = "UnsavedPostImage"
@@ -393,7 +393,7 @@ func (m *AdminMutation) ResetSessions() {
 	m.removedsessions = nil
 }
 
-// AddRobotAccessIDs adds the "robot_accesses" edge to the AdminRobotAccess entity by ids.
+// AddRobotAccessIDs adds the "robot_accesses" edge to the RobotAccess entity by ids.
 func (m *AdminMutation) AddRobotAccessIDs(ids ...int) {
 	if m.robot_accesses == nil {
 		m.robot_accesses = make(map[int]struct{})
@@ -403,17 +403,17 @@ func (m *AdminMutation) AddRobotAccessIDs(ids ...int) {
 	}
 }
 
-// ClearRobotAccesses clears the "robot_accesses" edge to the AdminRobotAccess entity.
+// ClearRobotAccesses clears the "robot_accesses" edge to the RobotAccess entity.
 func (m *AdminMutation) ClearRobotAccesses() {
 	m.clearedrobot_accesses = true
 }
 
-// RobotAccessesCleared reports if the "robot_accesses" edge to the AdminRobotAccess entity was cleared.
+// RobotAccessesCleared reports if the "robot_accesses" edge to the RobotAccess entity was cleared.
 func (m *AdminMutation) RobotAccessesCleared() bool {
 	return m.clearedrobot_accesses
 }
 
-// RemoveRobotAccessIDs removes the "robot_accesses" edge to the AdminRobotAccess entity by IDs.
+// RemoveRobotAccessIDs removes the "robot_accesses" edge to the RobotAccess entity by IDs.
 func (m *AdminMutation) RemoveRobotAccessIDs(ids ...int) {
 	if m.removedrobot_accesses == nil {
 		m.removedrobot_accesses = make(map[int]struct{})
@@ -424,7 +424,7 @@ func (m *AdminMutation) RemoveRobotAccessIDs(ids ...int) {
 	}
 }
 
-// RemovedRobotAccesses returns the removed IDs of the "robot_accesses" edge to the AdminRobotAccess entity.
+// RemovedRobotAccesses returns the removed IDs of the "robot_accesses" edge to the RobotAccess entity.
 func (m *AdminMutation) RemovedRobotAccessesIDs() (ids []int) {
 	for id := range m.removedrobot_accesses {
 		ids = append(ids, id)
@@ -899,594 +899,6 @@ func (m *AdminMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown Admin edge %s", name)
-}
-
-// AdminRobotAccessMutation represents an operation that mutates the AdminRobotAccess nodes in the graph.
-type AdminRobotAccessMutation struct {
-	config
-	op             Op
-	typ            string
-	id             *int
-	token          *string
-	expires_at     *time.Time
-	created_at     *time.Time
-	last_access_at *time.Time
-	clearedFields  map[string]struct{}
-	user           map[int]struct{}
-	removeduser    map[int]struct{}
-	cleareduser    bool
-	done           bool
-	oldValue       func(context.Context) (*AdminRobotAccess, error)
-	predicates     []predicate.AdminRobotAccess
-}
-
-var _ ent.Mutation = (*AdminRobotAccessMutation)(nil)
-
-// adminrobotaccessOption allows management of the mutation configuration using functional options.
-type adminrobotaccessOption func(*AdminRobotAccessMutation)
-
-// newAdminRobotAccessMutation creates new mutation for the AdminRobotAccess entity.
-func newAdminRobotAccessMutation(c config, op Op, opts ...adminrobotaccessOption) *AdminRobotAccessMutation {
-	m := &AdminRobotAccessMutation{
-		config:        c,
-		op:            op,
-		typ:           TypeAdminRobotAccess,
-		clearedFields: make(map[string]struct{}),
-	}
-	for _, opt := range opts {
-		opt(m)
-	}
-	return m
-}
-
-// withAdminRobotAccessID sets the ID field of the mutation.
-func withAdminRobotAccessID(id int) adminrobotaccessOption {
-	return func(m *AdminRobotAccessMutation) {
-		var (
-			err   error
-			once  sync.Once
-			value *AdminRobotAccess
-		)
-		m.oldValue = func(ctx context.Context) (*AdminRobotAccess, error) {
-			once.Do(func() {
-				if m.done {
-					err = fmt.Errorf("querying old values post mutation is not allowed")
-				} else {
-					value, err = m.Client().AdminRobotAccess.Get(ctx, id)
-				}
-			})
-			return value, err
-		}
-		m.id = &id
-	}
-}
-
-// withAdminRobotAccess sets the old AdminRobotAccess of the mutation.
-func withAdminRobotAccess(node *AdminRobotAccess) adminrobotaccessOption {
-	return func(m *AdminRobotAccessMutation) {
-		m.oldValue = func(context.Context) (*AdminRobotAccess, error) {
-			return node, nil
-		}
-		m.id = &node.ID
-	}
-}
-
-// Client returns a new `ent.Client` from the mutation. If the mutation was
-// executed in a transaction (ent.Tx), a transactional client is returned.
-func (m AdminRobotAccessMutation) Client() *Client {
-	client := &Client{config: m.config}
-	client.init()
-	return client
-}
-
-// Tx returns an `ent.Tx` for mutations that were executed in transactions;
-// it returns an error otherwise.
-func (m AdminRobotAccessMutation) Tx() (*Tx, error) {
-	if _, ok := m.driver.(*txDriver); !ok {
-		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
-	}
-	tx := &Tx{config: m.config}
-	tx.init()
-	return tx, nil
-}
-
-// ID returns the ID value in the mutation. Note that the ID is only available
-// if it was provided to the builder or after it was returned from the database.
-func (m *AdminRobotAccessMutation) ID() (id int, exists bool) {
-	if m.id == nil {
-		return
-	}
-	return *m.id, true
-}
-
-// SetToken sets the "token" field.
-func (m *AdminRobotAccessMutation) SetToken(s string) {
-	m.token = &s
-}
-
-// Token returns the value of the "token" field in the mutation.
-func (m *AdminRobotAccessMutation) Token() (r string, exists bool) {
-	v := m.token
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldToken returns the old "token" field's value of the AdminRobotAccess entity.
-// If the AdminRobotAccess object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminRobotAccessMutation) OldToken(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldToken is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldToken requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldToken: %w", err)
-	}
-	return oldValue.Token, nil
-}
-
-// ResetToken resets all changes to the "token" field.
-func (m *AdminRobotAccessMutation) ResetToken() {
-	m.token = nil
-}
-
-// SetExpiresAt sets the "expires_at" field.
-func (m *AdminRobotAccessMutation) SetExpiresAt(t time.Time) {
-	m.expires_at = &t
-}
-
-// ExpiresAt returns the value of the "expires_at" field in the mutation.
-func (m *AdminRobotAccessMutation) ExpiresAt() (r time.Time, exists bool) {
-	v := m.expires_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldExpiresAt returns the old "expires_at" field's value of the AdminRobotAccess entity.
-// If the AdminRobotAccess object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminRobotAccessMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldExpiresAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldExpiresAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
-	}
-	return oldValue.ExpiresAt, nil
-}
-
-// ClearExpiresAt clears the value of the "expires_at" field.
-func (m *AdminRobotAccessMutation) ClearExpiresAt() {
-	m.expires_at = nil
-	m.clearedFields[adminrobotaccess.FieldExpiresAt] = struct{}{}
-}
-
-// ExpiresAtCleared returns if the "expires_at" field was cleared in this mutation.
-func (m *AdminRobotAccessMutation) ExpiresAtCleared() bool {
-	_, ok := m.clearedFields[adminrobotaccess.FieldExpiresAt]
-	return ok
-}
-
-// ResetExpiresAt resets all changes to the "expires_at" field.
-func (m *AdminRobotAccessMutation) ResetExpiresAt() {
-	m.expires_at = nil
-	delete(m.clearedFields, adminrobotaccess.FieldExpiresAt)
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (m *AdminRobotAccessMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *AdminRobotAccessMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the AdminRobotAccess entity.
-// If the AdminRobotAccess object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminRobotAccessMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *AdminRobotAccessMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// SetLastAccessAt sets the "last_access_at" field.
-func (m *AdminRobotAccessMutation) SetLastAccessAt(t time.Time) {
-	m.last_access_at = &t
-}
-
-// LastAccessAt returns the value of the "last_access_at" field in the mutation.
-func (m *AdminRobotAccessMutation) LastAccessAt() (r time.Time, exists bool) {
-	v := m.last_access_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldLastAccessAt returns the old "last_access_at" field's value of the AdminRobotAccess entity.
-// If the AdminRobotAccess object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AdminRobotAccessMutation) OldLastAccessAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, fmt.Errorf("OldLastAccessAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, fmt.Errorf("OldLastAccessAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldLastAccessAt: %w", err)
-	}
-	return oldValue.LastAccessAt, nil
-}
-
-// ClearLastAccessAt clears the value of the "last_access_at" field.
-func (m *AdminRobotAccessMutation) ClearLastAccessAt() {
-	m.last_access_at = nil
-	m.clearedFields[adminrobotaccess.FieldLastAccessAt] = struct{}{}
-}
-
-// LastAccessAtCleared returns if the "last_access_at" field was cleared in this mutation.
-func (m *AdminRobotAccessMutation) LastAccessAtCleared() bool {
-	_, ok := m.clearedFields[adminrobotaccess.FieldLastAccessAt]
-	return ok
-}
-
-// ResetLastAccessAt resets all changes to the "last_access_at" field.
-func (m *AdminRobotAccessMutation) ResetLastAccessAt() {
-	m.last_access_at = nil
-	delete(m.clearedFields, adminrobotaccess.FieldLastAccessAt)
-}
-
-// AddUserIDs adds the "user" edge to the Admin entity by ids.
-func (m *AdminRobotAccessMutation) AddUserIDs(ids ...int) {
-	if m.user == nil {
-		m.user = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.user[ids[i]] = struct{}{}
-	}
-}
-
-// ClearUser clears the "user" edge to the Admin entity.
-func (m *AdminRobotAccessMutation) ClearUser() {
-	m.cleareduser = true
-}
-
-// UserCleared reports if the "user" edge to the Admin entity was cleared.
-func (m *AdminRobotAccessMutation) UserCleared() bool {
-	return m.cleareduser
-}
-
-// RemoveUserIDs removes the "user" edge to the Admin entity by IDs.
-func (m *AdminRobotAccessMutation) RemoveUserIDs(ids ...int) {
-	if m.removeduser == nil {
-		m.removeduser = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.user, ids[i])
-		m.removeduser[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedUser returns the removed IDs of the "user" edge to the Admin entity.
-func (m *AdminRobotAccessMutation) RemovedUserIDs() (ids []int) {
-	for id := range m.removeduser {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// UserIDs returns the "user" edge IDs in the mutation.
-func (m *AdminRobotAccessMutation) UserIDs() (ids []int) {
-	for id := range m.user {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetUser resets all changes to the "user" edge.
-func (m *AdminRobotAccessMutation) ResetUser() {
-	m.user = nil
-	m.cleareduser = false
-	m.removeduser = nil
-}
-
-// Where appends a list predicates to the AdminRobotAccessMutation builder.
-func (m *AdminRobotAccessMutation) Where(ps ...predicate.AdminRobotAccess) {
-	m.predicates = append(m.predicates, ps...)
-}
-
-// Op returns the operation name.
-func (m *AdminRobotAccessMutation) Op() Op {
-	return m.op
-}
-
-// Type returns the node type of this mutation (AdminRobotAccess).
-func (m *AdminRobotAccessMutation) Type() string {
-	return m.typ
-}
-
-// Fields returns all fields that were changed during this mutation. Note that in
-// order to get all numeric fields that were incremented/decremented, call
-// AddedFields().
-func (m *AdminRobotAccessMutation) Fields() []string {
-	fields := make([]string, 0, 4)
-	if m.token != nil {
-		fields = append(fields, adminrobotaccess.FieldToken)
-	}
-	if m.expires_at != nil {
-		fields = append(fields, adminrobotaccess.FieldExpiresAt)
-	}
-	if m.created_at != nil {
-		fields = append(fields, adminrobotaccess.FieldCreatedAt)
-	}
-	if m.last_access_at != nil {
-		fields = append(fields, adminrobotaccess.FieldLastAccessAt)
-	}
-	return fields
-}
-
-// Field returns the value of a field with the given name. The second boolean
-// return value indicates that this field was not set, or was not defined in the
-// schema.
-func (m *AdminRobotAccessMutation) Field(name string) (ent.Value, bool) {
-	switch name {
-	case adminrobotaccess.FieldToken:
-		return m.Token()
-	case adminrobotaccess.FieldExpiresAt:
-		return m.ExpiresAt()
-	case adminrobotaccess.FieldCreatedAt:
-		return m.CreatedAt()
-	case adminrobotaccess.FieldLastAccessAt:
-		return m.LastAccessAt()
-	}
-	return nil, false
-}
-
-// OldField returns the old value of the field from the database. An error is
-// returned if the mutation operation is not UpdateOne, or the query to the
-// database failed.
-func (m *AdminRobotAccessMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
-	switch name {
-	case adminrobotaccess.FieldToken:
-		return m.OldToken(ctx)
-	case adminrobotaccess.FieldExpiresAt:
-		return m.OldExpiresAt(ctx)
-	case adminrobotaccess.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
-	case adminrobotaccess.FieldLastAccessAt:
-		return m.OldLastAccessAt(ctx)
-	}
-	return nil, fmt.Errorf("unknown AdminRobotAccess field %s", name)
-}
-
-// SetField sets the value of a field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AdminRobotAccessMutation) SetField(name string, value ent.Value) error {
-	switch name {
-	case adminrobotaccess.FieldToken:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetToken(v)
-		return nil
-	case adminrobotaccess.FieldExpiresAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetExpiresAt(v)
-		return nil
-	case adminrobotaccess.FieldCreatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetCreatedAt(v)
-		return nil
-	case adminrobotaccess.FieldLastAccessAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetLastAccessAt(v)
-		return nil
-	}
-	return fmt.Errorf("unknown AdminRobotAccess field %s", name)
-}
-
-// AddedFields returns all numeric fields that were incremented/decremented during
-// this mutation.
-func (m *AdminRobotAccessMutation) AddedFields() []string {
-	return nil
-}
-
-// AddedField returns the numeric value that was incremented/decremented on a field
-// with the given name. The second boolean return value indicates that this field
-// was not set, or was not defined in the schema.
-func (m *AdminRobotAccessMutation) AddedField(name string) (ent.Value, bool) {
-	return nil, false
-}
-
-// AddField adds the value to the field with the given name. It returns an error if
-// the field is not defined in the schema, or if the type mismatched the field
-// type.
-func (m *AdminRobotAccessMutation) AddField(name string, value ent.Value) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown AdminRobotAccess numeric field %s", name)
-}
-
-// ClearedFields returns all nullable fields that were cleared during this
-// mutation.
-func (m *AdminRobotAccessMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(adminrobotaccess.FieldExpiresAt) {
-		fields = append(fields, adminrobotaccess.FieldExpiresAt)
-	}
-	if m.FieldCleared(adminrobotaccess.FieldLastAccessAt) {
-		fields = append(fields, adminrobotaccess.FieldLastAccessAt)
-	}
-	return fields
-}
-
-// FieldCleared returns a boolean indicating if a field with the given name was
-// cleared in this mutation.
-func (m *AdminRobotAccessMutation) FieldCleared(name string) bool {
-	_, ok := m.clearedFields[name]
-	return ok
-}
-
-// ClearField clears the value of the field with the given name. It returns an
-// error if the field is not defined in the schema.
-func (m *AdminRobotAccessMutation) ClearField(name string) error {
-	switch name {
-	case adminrobotaccess.FieldExpiresAt:
-		m.ClearExpiresAt()
-		return nil
-	case adminrobotaccess.FieldLastAccessAt:
-		m.ClearLastAccessAt()
-		return nil
-	}
-	return fmt.Errorf("unknown AdminRobotAccess nullable field %s", name)
-}
-
-// ResetField resets all changes in the mutation for the field with the given name.
-// It returns an error if the field is not defined in the schema.
-func (m *AdminRobotAccessMutation) ResetField(name string) error {
-	switch name {
-	case adminrobotaccess.FieldToken:
-		m.ResetToken()
-		return nil
-	case adminrobotaccess.FieldExpiresAt:
-		m.ResetExpiresAt()
-		return nil
-	case adminrobotaccess.FieldCreatedAt:
-		m.ResetCreatedAt()
-		return nil
-	case adminrobotaccess.FieldLastAccessAt:
-		m.ResetLastAccessAt()
-		return nil
-	}
-	return fmt.Errorf("unknown AdminRobotAccess field %s", name)
-}
-
-// AddedEdges returns all edge names that were set/added in this mutation.
-func (m *AdminRobotAccessMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.user != nil {
-		edges = append(edges, adminrobotaccess.EdgeUser)
-	}
-	return edges
-}
-
-// AddedIDs returns all IDs (to other nodes) that were added for the given edge
-// name in this mutation.
-func (m *AdminRobotAccessMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case adminrobotaccess.EdgeUser:
-		ids := make([]ent.Value, 0, len(m.user))
-		for id := range m.user {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// RemovedEdges returns all edge names that were removed in this mutation.
-func (m *AdminRobotAccessMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.removeduser != nil {
-		edges = append(edges, adminrobotaccess.EdgeUser)
-	}
-	return edges
-}
-
-// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
-// the given name in this mutation.
-func (m *AdminRobotAccessMutation) RemovedIDs(name string) []ent.Value {
-	switch name {
-	case adminrobotaccess.EdgeUser:
-		ids := make([]ent.Value, 0, len(m.removeduser))
-		for id := range m.removeduser {
-			ids = append(ids, id)
-		}
-		return ids
-	}
-	return nil
-}
-
-// ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *AdminRobotAccessMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.cleareduser {
-		edges = append(edges, adminrobotaccess.EdgeUser)
-	}
-	return edges
-}
-
-// EdgeCleared returns a boolean which indicates if the edge with the given name
-// was cleared in this mutation.
-func (m *AdminRobotAccessMutation) EdgeCleared(name string) bool {
-	switch name {
-	case adminrobotaccess.EdgeUser:
-		return m.cleareduser
-	}
-	return false
-}
-
-// ClearEdge clears the value of the edge with the given name. It returns an error
-// if that edge is not defined in the schema.
-func (m *AdminRobotAccessMutation) ClearEdge(name string) error {
-	switch name {
-	}
-	return fmt.Errorf("unknown AdminRobotAccess unique edge %s", name)
-}
-
-// ResetEdge resets all changes to the edge with the given name in this mutation.
-// It returns an error if the edge is not defined in the schema.
-func (m *AdminRobotAccessMutation) ResetEdge(name string) error {
-	switch name {
-	case adminrobotaccess.EdgeUser:
-		m.ResetUser()
-		return nil
-	}
-	return fmt.Errorf("unknown AdminRobotAccess edge %s", name)
 }
 
 // AdminSessionMutation represents an operation that mutates the AdminSession nodes in the graph.
@@ -6358,6 +5770,667 @@ func (m *PostVideoMutation) ResetEdge(name string) error {
 		return nil
 	}
 	return fmt.Errorf("unknown PostVideo edge %s", name)
+}
+
+// RobotAccessMutation represents an operation that mutates the RobotAccess nodes in the graph.
+type RobotAccessMutation struct {
+	config
+	op             Op
+	typ            string
+	id             *int
+	token          *string
+	memo           *string
+	created_at     *time.Time
+	expires_at     *time.Time
+	last_access_at *time.Time
+	clearedFields  map[string]struct{}
+	user           map[int]struct{}
+	removeduser    map[int]struct{}
+	cleareduser    bool
+	done           bool
+	oldValue       func(context.Context) (*RobotAccess, error)
+	predicates     []predicate.RobotAccess
+}
+
+var _ ent.Mutation = (*RobotAccessMutation)(nil)
+
+// robotaccessOption allows management of the mutation configuration using functional options.
+type robotaccessOption func(*RobotAccessMutation)
+
+// newRobotAccessMutation creates new mutation for the RobotAccess entity.
+func newRobotAccessMutation(c config, op Op, opts ...robotaccessOption) *RobotAccessMutation {
+	m := &RobotAccessMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeRobotAccess,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withRobotAccessID sets the ID field of the mutation.
+func withRobotAccessID(id int) robotaccessOption {
+	return func(m *RobotAccessMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *RobotAccess
+		)
+		m.oldValue = func(ctx context.Context) (*RobotAccess, error) {
+			once.Do(func() {
+				if m.done {
+					err = fmt.Errorf("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().RobotAccess.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withRobotAccess sets the old RobotAccess of the mutation.
+func withRobotAccess(node *RobotAccess) robotaccessOption {
+	return func(m *RobotAccessMutation) {
+		m.oldValue = func(context.Context) (*RobotAccess, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m RobotAccessMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m RobotAccessMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, fmt.Errorf("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *RobotAccessMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// SetToken sets the "token" field.
+func (m *RobotAccessMutation) SetToken(s string) {
+	m.token = &s
+}
+
+// Token returns the value of the "token" field in the mutation.
+func (m *RobotAccessMutation) Token() (r string, exists bool) {
+	v := m.token
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldToken returns the old "token" field's value of the RobotAccess entity.
+// If the RobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RobotAccessMutation) OldToken(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldToken is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldToken requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldToken: %w", err)
+	}
+	return oldValue.Token, nil
+}
+
+// ResetToken resets all changes to the "token" field.
+func (m *RobotAccessMutation) ResetToken() {
+	m.token = nil
+}
+
+// SetMemo sets the "memo" field.
+func (m *RobotAccessMutation) SetMemo(s string) {
+	m.memo = &s
+}
+
+// Memo returns the value of the "memo" field in the mutation.
+func (m *RobotAccessMutation) Memo() (r string, exists bool) {
+	v := m.memo
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldMemo returns the old "memo" field's value of the RobotAccess entity.
+// If the RobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RobotAccessMutation) OldMemo(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldMemo is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldMemo requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldMemo: %w", err)
+	}
+	return oldValue.Memo, nil
+}
+
+// ClearMemo clears the value of the "memo" field.
+func (m *RobotAccessMutation) ClearMemo() {
+	m.memo = nil
+	m.clearedFields[robotaccess.FieldMemo] = struct{}{}
+}
+
+// MemoCleared returns if the "memo" field was cleared in this mutation.
+func (m *RobotAccessMutation) MemoCleared() bool {
+	_, ok := m.clearedFields[robotaccess.FieldMemo]
+	return ok
+}
+
+// ResetMemo resets all changes to the "memo" field.
+func (m *RobotAccessMutation) ResetMemo() {
+	m.memo = nil
+	delete(m.clearedFields, robotaccess.FieldMemo)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *RobotAccessMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *RobotAccessMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the RobotAccess entity.
+// If the RobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RobotAccessMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *RobotAccessMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *RobotAccessMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *RobotAccessMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the RobotAccess entity.
+// If the RobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RobotAccessMutation) OldExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (m *RobotAccessMutation) ClearExpiresAt() {
+	m.expires_at = nil
+	m.clearedFields[robotaccess.FieldExpiresAt] = struct{}{}
+}
+
+// ExpiresAtCleared returns if the "expires_at" field was cleared in this mutation.
+func (m *RobotAccessMutation) ExpiresAtCleared() bool {
+	_, ok := m.clearedFields[robotaccess.FieldExpiresAt]
+	return ok
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *RobotAccessMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	delete(m.clearedFields, robotaccess.FieldExpiresAt)
+}
+
+// SetLastAccessAt sets the "last_access_at" field.
+func (m *RobotAccessMutation) SetLastAccessAt(t time.Time) {
+	m.last_access_at = &t
+}
+
+// LastAccessAt returns the value of the "last_access_at" field in the mutation.
+func (m *RobotAccessMutation) LastAccessAt() (r time.Time, exists bool) {
+	v := m.last_access_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastAccessAt returns the old "last_access_at" field's value of the RobotAccess entity.
+// If the RobotAccess object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *RobotAccessMutation) OldLastAccessAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, fmt.Errorf("OldLastAccessAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, fmt.Errorf("OldLastAccessAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastAccessAt: %w", err)
+	}
+	return oldValue.LastAccessAt, nil
+}
+
+// ClearLastAccessAt clears the value of the "last_access_at" field.
+func (m *RobotAccessMutation) ClearLastAccessAt() {
+	m.last_access_at = nil
+	m.clearedFields[robotaccess.FieldLastAccessAt] = struct{}{}
+}
+
+// LastAccessAtCleared returns if the "last_access_at" field was cleared in this mutation.
+func (m *RobotAccessMutation) LastAccessAtCleared() bool {
+	_, ok := m.clearedFields[robotaccess.FieldLastAccessAt]
+	return ok
+}
+
+// ResetLastAccessAt resets all changes to the "last_access_at" field.
+func (m *RobotAccessMutation) ResetLastAccessAt() {
+	m.last_access_at = nil
+	delete(m.clearedFields, robotaccess.FieldLastAccessAt)
+}
+
+// AddUserIDs adds the "user" edge to the Admin entity by ids.
+func (m *RobotAccessMutation) AddUserIDs(ids ...int) {
+	if m.user == nil {
+		m.user = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.user[ids[i]] = struct{}{}
+	}
+}
+
+// ClearUser clears the "user" edge to the Admin entity.
+func (m *RobotAccessMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the Admin entity was cleared.
+func (m *RobotAccessMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// RemoveUserIDs removes the "user" edge to the Admin entity by IDs.
+func (m *RobotAccessMutation) RemoveUserIDs(ids ...int) {
+	if m.removeduser == nil {
+		m.removeduser = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.user, ids[i])
+		m.removeduser[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedUser returns the removed IDs of the "user" edge to the Admin entity.
+func (m *RobotAccessMutation) RemovedUserIDs() (ids []int) {
+	for id := range m.removeduser {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+func (m *RobotAccessMutation) UserIDs() (ids []int) {
+	for id := range m.user {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *RobotAccessMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+	m.removeduser = nil
+}
+
+// Where appends a list predicates to the RobotAccessMutation builder.
+func (m *RobotAccessMutation) Where(ps ...predicate.RobotAccess) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// Op returns the operation name.
+func (m *RobotAccessMutation) Op() Op {
+	return m.op
+}
+
+// Type returns the node type of this mutation (RobotAccess).
+func (m *RobotAccessMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *RobotAccessMutation) Fields() []string {
+	fields := make([]string, 0, 5)
+	if m.token != nil {
+		fields = append(fields, robotaccess.FieldToken)
+	}
+	if m.memo != nil {
+		fields = append(fields, robotaccess.FieldMemo)
+	}
+	if m.created_at != nil {
+		fields = append(fields, robotaccess.FieldCreatedAt)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, robotaccess.FieldExpiresAt)
+	}
+	if m.last_access_at != nil {
+		fields = append(fields, robotaccess.FieldLastAccessAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *RobotAccessMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case robotaccess.FieldToken:
+		return m.Token()
+	case robotaccess.FieldMemo:
+		return m.Memo()
+	case robotaccess.FieldCreatedAt:
+		return m.CreatedAt()
+	case robotaccess.FieldExpiresAt:
+		return m.ExpiresAt()
+	case robotaccess.FieldLastAccessAt:
+		return m.LastAccessAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *RobotAccessMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case robotaccess.FieldToken:
+		return m.OldToken(ctx)
+	case robotaccess.FieldMemo:
+		return m.OldMemo(ctx)
+	case robotaccess.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case robotaccess.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
+	case robotaccess.FieldLastAccessAt:
+		return m.OldLastAccessAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown RobotAccess field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RobotAccessMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case robotaccess.FieldToken:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetToken(v)
+		return nil
+	case robotaccess.FieldMemo:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetMemo(v)
+		return nil
+	case robotaccess.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case robotaccess.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
+		return nil
+	case robotaccess.FieldLastAccessAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastAccessAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown RobotAccess field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *RobotAccessMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *RobotAccessMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *RobotAccessMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown RobotAccess numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *RobotAccessMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(robotaccess.FieldMemo) {
+		fields = append(fields, robotaccess.FieldMemo)
+	}
+	if m.FieldCleared(robotaccess.FieldExpiresAt) {
+		fields = append(fields, robotaccess.FieldExpiresAt)
+	}
+	if m.FieldCleared(robotaccess.FieldLastAccessAt) {
+		fields = append(fields, robotaccess.FieldLastAccessAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *RobotAccessMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *RobotAccessMutation) ClearField(name string) error {
+	switch name {
+	case robotaccess.FieldMemo:
+		m.ClearMemo()
+		return nil
+	case robotaccess.FieldExpiresAt:
+		m.ClearExpiresAt()
+		return nil
+	case robotaccess.FieldLastAccessAt:
+		m.ClearLastAccessAt()
+		return nil
+	}
+	return fmt.Errorf("unknown RobotAccess nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *RobotAccessMutation) ResetField(name string) error {
+	switch name {
+	case robotaccess.FieldToken:
+		m.ResetToken()
+		return nil
+	case robotaccess.FieldMemo:
+		m.ResetMemo()
+		return nil
+	case robotaccess.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case robotaccess.FieldExpiresAt:
+		m.ResetExpiresAt()
+		return nil
+	case robotaccess.FieldLastAccessAt:
+		m.ResetLastAccessAt()
+		return nil
+	}
+	return fmt.Errorf("unknown RobotAccess field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *RobotAccessMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, robotaccess.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *RobotAccessMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case robotaccess.EdgeUser:
+		ids := make([]ent.Value, 0, len(m.user))
+		for id := range m.user {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *RobotAccessMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.removeduser != nil {
+		edges = append(edges, robotaccess.EdgeUser)
+	}
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *RobotAccessMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case robotaccess.EdgeUser:
+		ids := make([]ent.Value, 0, len(m.removeduser))
+		for id := range m.removeduser {
+			ids = append(ids, id)
+		}
+		return ids
+	}
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *RobotAccessMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, robotaccess.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *RobotAccessMutation) EdgeCleared(name string) bool {
+	switch name {
+	case robotaccess.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *RobotAccessMutation) ClearEdge(name string) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown RobotAccess unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *RobotAccessMutation) ResetEdge(name string) error {
+	switch name {
+	case robotaccess.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown RobotAccess edge %s", name)
 }
 
 // UnsavedPostMutation represents an operation that mutates the UnsavedPost nodes in the graph.

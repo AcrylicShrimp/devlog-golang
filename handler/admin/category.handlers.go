@@ -6,7 +6,6 @@ import (
 	"devlog/ent"
 	dbCategory "devlog/ent/category"
 	dbPost "devlog/ent/post"
-	"devlog/middleware"
 	"devlog/model"
 	"devlog/util"
 	"github.com/labstack/echo/v4"
@@ -14,9 +13,9 @@ import (
 )
 
 func AttachCategory(group *echo.Group) {
-	group.GET("", ListCategories, middleware.WithSession, middleware.RequireSession)
-	group.POST("", NewCategoryHandler, middleware.WithSession, middleware.RequireSession)
-	group.DELETE("/:name", DeleteCategoryHandler, middleware.WithSession, middleware.RequireSession)
+	group.GET("", ListCategories)
+	group.POST("", NewCategoryHandler)
+	group.DELETE("/:name", DeleteCategoryHandler)
 }
 
 // ListCategories godoc

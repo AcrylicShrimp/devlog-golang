@@ -9,9 +9,6 @@ import (
 // Admin is the predicate function for admin builders.
 type Admin func(*sql.Selector)
 
-// AdminRobotAccess is the predicate function for adminrobotaccess builders.
-type AdminRobotAccess func(*sql.Selector)
-
 // AdminSession is the predicate function for adminsession builders.
 type AdminSession func(*sql.Selector)
 
@@ -32,6 +29,9 @@ type PostThumbnail func(*sql.Selector)
 
 // PostVideo is the predicate function for postvideo builders.
 type PostVideo func(*sql.Selector)
+
+// RobotAccess is the predicate function for robotaccess builders.
+type RobotAccess func(*sql.Selector)
 
 // UnsavedPost is the predicate function for unsavedpost builders.
 type UnsavedPost func(*sql.Selector)

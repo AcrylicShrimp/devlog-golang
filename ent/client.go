@@ -10,7 +10,6 @@ import (
 	"devlog/ent/migrate"
 
 	"devlog/ent/admin"
-	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
@@ -18,6 +17,7 @@ import (
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
+	"devlog/ent/robotaccess"
 	"devlog/ent/unsavedpost"
 	"devlog/ent/unsavedpostattachment"
 	"devlog/ent/unsavedpostimage"
@@ -36,8 +36,6 @@ type Client struct {
 	Schema *migrate.Schema
 	// Admin is the client for interacting with the Admin builders.
 	Admin *AdminClient
-	// AdminRobotAccess is the client for interacting with the AdminRobotAccess builders.
-	AdminRobotAccess *AdminRobotAccessClient
 	// AdminSession is the client for interacting with the AdminSession builders.
 	AdminSession *AdminSessionClient
 	// Category is the client for interacting with the Category builders.
@@ -52,6 +50,8 @@ type Client struct {
 	PostThumbnail *PostThumbnailClient
 	// PostVideo is the client for interacting with the PostVideo builders.
 	PostVideo *PostVideoClient
+	// RobotAccess is the client for interacting with the RobotAccess builders.
+	RobotAccess *RobotAccessClient
 	// UnsavedPost is the client for interacting with the UnsavedPost builders.
 	UnsavedPost *UnsavedPostClient
 	// UnsavedPostAttachment is the client for interacting with the UnsavedPostAttachment builders.
@@ -76,7 +76,6 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Admin = NewAdminClient(c.config)
-	c.AdminRobotAccess = NewAdminRobotAccessClient(c.config)
 	c.AdminSession = NewAdminSessionClient(c.config)
 	c.Category = NewCategoryClient(c.config)
 	c.Post = NewPostClient(c.config)
@@ -84,6 +83,7 @@ func (c *Client) init() {
 	c.PostImage = NewPostImageClient(c.config)
 	c.PostThumbnail = NewPostThumbnailClient(c.config)
 	c.PostVideo = NewPostVideoClient(c.config)
+	c.RobotAccess = NewRobotAccessClient(c.config)
 	c.UnsavedPost = NewUnsavedPostClient(c.config)
 	c.UnsavedPostAttachment = NewUnsavedPostAttachmentClient(c.config)
 	c.UnsavedPostImage = NewUnsavedPostImageClient(c.config)
@@ -123,7 +123,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:                   ctx,
 		config:                cfg,
 		Admin:                 NewAdminClient(cfg),
-		AdminRobotAccess:      NewAdminRobotAccessClient(cfg),
 		AdminSession:          NewAdminSessionClient(cfg),
 		Category:              NewCategoryClient(cfg),
 		Post:                  NewPostClient(cfg),
@@ -131,6 +130,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		PostImage:             NewPostImageClient(cfg),
 		PostThumbnail:         NewPostThumbnailClient(cfg),
 		PostVideo:             NewPostVideoClient(cfg),
+		RobotAccess:           NewRobotAccessClient(cfg),
 		UnsavedPost:           NewUnsavedPostClient(cfg),
 		UnsavedPostAttachment: NewUnsavedPostAttachmentClient(cfg),
 		UnsavedPostImage:      NewUnsavedPostImageClient(cfg),
@@ -155,7 +155,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		config:                cfg,
 		Admin:                 NewAdminClient(cfg),
-		AdminRobotAccess:      NewAdminRobotAccessClient(cfg),
 		AdminSession:          NewAdminSessionClient(cfg),
 		Category:              NewCategoryClient(cfg),
 		Post:                  NewPostClient(cfg),
@@ -163,6 +162,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		PostImage:             NewPostImageClient(cfg),
 		PostThumbnail:         NewPostThumbnailClient(cfg),
 		PostVideo:             NewPostVideoClient(cfg),
+		RobotAccess:           NewRobotAccessClient(cfg),
 		UnsavedPost:           NewUnsavedPostClient(cfg),
 		UnsavedPostAttachment: NewUnsavedPostAttachmentClient(cfg),
 		UnsavedPostImage:      NewUnsavedPostImageClient(cfg),
@@ -198,7 +198,6 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Admin.Use(hooks...)
-	c.AdminRobotAccess.Use(hooks...)
 	c.AdminSession.Use(hooks...)
 	c.Category.Use(hooks...)
 	c.Post.Use(hooks...)
@@ -206,6 +205,7 @@ func (c *Client) Use(hooks ...Hook) {
 	c.PostImage.Use(hooks...)
 	c.PostThumbnail.Use(hooks...)
 	c.PostVideo.Use(hooks...)
+	c.RobotAccess.Use(hooks...)
 	c.UnsavedPost.Use(hooks...)
 	c.UnsavedPostAttachment.Use(hooks...)
 	c.UnsavedPostImage.Use(hooks...)
@@ -315,13 +315,13 @@ func (c *AdminClient) QuerySessions(a *Admin) *AdminSessionQuery {
 }
 
 // QueryRobotAccesses queries the robot_accesses edge of a Admin.
-func (c *AdminClient) QueryRobotAccesses(a *Admin) *AdminRobotAccessQuery {
-	query := &AdminRobotAccessQuery{config: c.config}
+func (c *AdminClient) QueryRobotAccesses(a *Admin) *RobotAccessQuery {
+	query := &RobotAccessQuery{config: c.config}
 	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
 		id := a.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(admin.Table, admin.FieldID, id),
-			sqlgraph.To(adminrobotaccess.Table, adminrobotaccess.FieldID),
+			sqlgraph.To(robotaccess.Table, robotaccess.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, admin.RobotAccessesTable, admin.RobotAccessesPrimaryKey...),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
@@ -365,112 +365,6 @@ func (c *AdminClient) QueryUnsavedPosts(a *Admin) *UnsavedPostQuery {
 // Hooks returns the client hooks.
 func (c *AdminClient) Hooks() []Hook {
 	return c.hooks.Admin
-}
-
-// AdminRobotAccessClient is a client for the AdminRobotAccess schema.
-type AdminRobotAccessClient struct {
-	config
-}
-
-// NewAdminRobotAccessClient returns a client for the AdminRobotAccess from the given config.
-func NewAdminRobotAccessClient(c config) *AdminRobotAccessClient {
-	return &AdminRobotAccessClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `adminrobotaccess.Hooks(f(g(h())))`.
-func (c *AdminRobotAccessClient) Use(hooks ...Hook) {
-	c.hooks.AdminRobotAccess = append(c.hooks.AdminRobotAccess, hooks...)
-}
-
-// Create returns a create builder for AdminRobotAccess.
-func (c *AdminRobotAccessClient) Create() *AdminRobotAccessCreate {
-	mutation := newAdminRobotAccessMutation(c.config, OpCreate)
-	return &AdminRobotAccessCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of AdminRobotAccess entities.
-func (c *AdminRobotAccessClient) CreateBulk(builders ...*AdminRobotAccessCreate) *AdminRobotAccessCreateBulk {
-	return &AdminRobotAccessCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for AdminRobotAccess.
-func (c *AdminRobotAccessClient) Update() *AdminRobotAccessUpdate {
-	mutation := newAdminRobotAccessMutation(c.config, OpUpdate)
-	return &AdminRobotAccessUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *AdminRobotAccessClient) UpdateOne(ara *AdminRobotAccess) *AdminRobotAccessUpdateOne {
-	mutation := newAdminRobotAccessMutation(c.config, OpUpdateOne, withAdminRobotAccess(ara))
-	return &AdminRobotAccessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *AdminRobotAccessClient) UpdateOneID(id int) *AdminRobotAccessUpdateOne {
-	mutation := newAdminRobotAccessMutation(c.config, OpUpdateOne, withAdminRobotAccessID(id))
-	return &AdminRobotAccessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for AdminRobotAccess.
-func (c *AdminRobotAccessClient) Delete() *AdminRobotAccessDelete {
-	mutation := newAdminRobotAccessMutation(c.config, OpDelete)
-	return &AdminRobotAccessDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a delete builder for the given entity.
-func (c *AdminRobotAccessClient) DeleteOne(ara *AdminRobotAccess) *AdminRobotAccessDeleteOne {
-	return c.DeleteOneID(ara.ID)
-}
-
-// DeleteOneID returns a delete builder for the given id.
-func (c *AdminRobotAccessClient) DeleteOneID(id int) *AdminRobotAccessDeleteOne {
-	builder := c.Delete().Where(adminrobotaccess.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &AdminRobotAccessDeleteOne{builder}
-}
-
-// Query returns a query builder for AdminRobotAccess.
-func (c *AdminRobotAccessClient) Query() *AdminRobotAccessQuery {
-	return &AdminRobotAccessQuery{
-		config: c.config,
-	}
-}
-
-// Get returns a AdminRobotAccess entity by its id.
-func (c *AdminRobotAccessClient) Get(ctx context.Context, id int) (*AdminRobotAccess, error) {
-	return c.Query().Where(adminrobotaccess.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *AdminRobotAccessClient) GetX(ctx context.Context, id int) *AdminRobotAccess {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryUser queries the user edge of a AdminRobotAccess.
-func (c *AdminRobotAccessClient) QueryUser(ara *AdminRobotAccess) *AdminQuery {
-	query := &AdminQuery{config: c.config}
-	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
-		id := ara.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(adminrobotaccess.Table, adminrobotaccess.FieldID, id),
-			sqlgraph.To(admin.Table, admin.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, adminrobotaccess.UserTable, adminrobotaccess.UserPrimaryKey...),
-		)
-		fromV = sqlgraph.Neighbors(ara.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *AdminRobotAccessClient) Hooks() []Hook {
-	return c.hooks.AdminRobotAccess
 }
 
 // AdminSessionClient is a client for the AdminSession schema.
@@ -1309,6 +1203,112 @@ func (c *PostVideoClient) QueryPost(pv *PostVideo) *PostQuery {
 // Hooks returns the client hooks.
 func (c *PostVideoClient) Hooks() []Hook {
 	return c.hooks.PostVideo
+}
+
+// RobotAccessClient is a client for the RobotAccess schema.
+type RobotAccessClient struct {
+	config
+}
+
+// NewRobotAccessClient returns a client for the RobotAccess from the given config.
+func NewRobotAccessClient(c config) *RobotAccessClient {
+	return &RobotAccessClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `robotaccess.Hooks(f(g(h())))`.
+func (c *RobotAccessClient) Use(hooks ...Hook) {
+	c.hooks.RobotAccess = append(c.hooks.RobotAccess, hooks...)
+}
+
+// Create returns a create builder for RobotAccess.
+func (c *RobotAccessClient) Create() *RobotAccessCreate {
+	mutation := newRobotAccessMutation(c.config, OpCreate)
+	return &RobotAccessCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of RobotAccess entities.
+func (c *RobotAccessClient) CreateBulk(builders ...*RobotAccessCreate) *RobotAccessCreateBulk {
+	return &RobotAccessCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for RobotAccess.
+func (c *RobotAccessClient) Update() *RobotAccessUpdate {
+	mutation := newRobotAccessMutation(c.config, OpUpdate)
+	return &RobotAccessUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *RobotAccessClient) UpdateOne(ra *RobotAccess) *RobotAccessUpdateOne {
+	mutation := newRobotAccessMutation(c.config, OpUpdateOne, withRobotAccess(ra))
+	return &RobotAccessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *RobotAccessClient) UpdateOneID(id int) *RobotAccessUpdateOne {
+	mutation := newRobotAccessMutation(c.config, OpUpdateOne, withRobotAccessID(id))
+	return &RobotAccessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for RobotAccess.
+func (c *RobotAccessClient) Delete() *RobotAccessDelete {
+	mutation := newRobotAccessMutation(c.config, OpDelete)
+	return &RobotAccessDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a delete builder for the given entity.
+func (c *RobotAccessClient) DeleteOne(ra *RobotAccess) *RobotAccessDeleteOne {
+	return c.DeleteOneID(ra.ID)
+}
+
+// DeleteOneID returns a delete builder for the given id.
+func (c *RobotAccessClient) DeleteOneID(id int) *RobotAccessDeleteOne {
+	builder := c.Delete().Where(robotaccess.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &RobotAccessDeleteOne{builder}
+}
+
+// Query returns a query builder for RobotAccess.
+func (c *RobotAccessClient) Query() *RobotAccessQuery {
+	return &RobotAccessQuery{
+		config: c.config,
+	}
+}
+
+// Get returns a RobotAccess entity by its id.
+func (c *RobotAccessClient) Get(ctx context.Context, id int) (*RobotAccess, error) {
+	return c.Query().Where(robotaccess.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *RobotAccessClient) GetX(ctx context.Context, id int) *RobotAccess {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a RobotAccess.
+func (c *RobotAccessClient) QueryUser(ra *RobotAccess) *AdminQuery {
+	query := &AdminQuery{config: c.config}
+	query.path = func(ctx context.Context) (fromV *sql.Selector, _ error) {
+		id := ra.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(robotaccess.Table, robotaccess.FieldID, id),
+			sqlgraph.To(admin.Table, admin.FieldID),
+			sqlgraph.Edge(sqlgraph.M2M, true, robotaccess.UserTable, robotaccess.UserPrimaryKey...),
+		)
+		fromV = sqlgraph.Neighbors(ra.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *RobotAccessClient) Hooks() []Hook {
+	return c.hooks.RobotAccess
 }
 
 // UnsavedPostClient is a client for the UnsavedPost schema.

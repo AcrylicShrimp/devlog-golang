@@ -79,6 +79,7 @@ func NewSessionHandler(c echo.Context) error {
 			return Token{Token: signed}, nil
 		},
 	)
+
 	if err != nil {
 		return err
 	}

@@ -689,7 +689,7 @@ func HasRobotAccesses() predicate.Admin {
 }
 
 // HasRobotAccessesWith applies the HasEdge predicate on the "robot_accesses" edge with a given conditions (other predicates).
-func HasRobotAccessesWith(preds ...predicate.AdminRobotAccess) predicate.Admin {
+func HasRobotAccessesWith(preds ...predicate.RobotAccess) predicate.Admin {
 	return predicate.Admin(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),

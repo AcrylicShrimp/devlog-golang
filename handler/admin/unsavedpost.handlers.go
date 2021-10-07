@@ -10,7 +10,6 @@ import (
 	dbUnsavedPostImage "devlog/ent/unsavedpostimage"
 	dbUnsavedPostThumbnail "devlog/ent/unsavedpostthumbnail"
 	"devlog/env"
-	"devlog/middleware"
 	"devlog/model"
 	"devlog/regex"
 	"devlog/util"
@@ -23,17 +22,17 @@ import (
 )
 
 func AttachUnsavedPost(group *echo.Group) {
-	group.GET("", ListUnsavedPosts, middleware.WithSession, middleware.RequireSession)
-	group.GET("/:uuid", GetUnsavedPost, middleware.WithSession, middleware.RequireSession)
-	group.POST("", NewUnsavedPost, middleware.WithSession, middleware.RequireSession)
-	group.PUT("/:uuid", UpdateUnsavedPost, middleware.WithSession, middleware.RequireSession)
-	group.DELETE("/:uuid", DeleteUnsavedPost, middleware.WithSession, middleware.RequireSession)
+	group.GET("", ListUnsavedPosts)
+	group.GET("/:uuid", GetUnsavedPost)
+	group.POST("", NewUnsavedPost)
+	group.PUT("/:uuid", UpdateUnsavedPost)
+	group.DELETE("/:uuid", DeleteUnsavedPost)
 	group.POST("/:uuid/thumbnail", NewUnsavedPostThumbnail)
-	group.GET("/:post/thumbnail", GetUnsavedPostThumbnail, middleware.WithSession, middleware.RequireSession)
+	group.GET("/:post/thumbnail", GetUnsavedPostThumbnail)
 	group.PUT("/:post/thumbnail", SetUnsavedPostThumbnail)
-	group.GET("/:post/images", ListUnsavedPostImage, middleware.WithSession, middleware.RequireSession)
+	group.GET("/:post/images", ListUnsavedPostImage)
 	group.POST("/:post/images", NewUnsavedPostImage)
-	group.GET("/:post/images/:image", GetUnsavedPostImage, middleware.WithSession, middleware.RequireSession)
+	group.GET("/:post/images/:image", GetUnsavedPostImage)
 	group.PUT("/:post/images/:image", SetUnsavedPostImage)
 }
 

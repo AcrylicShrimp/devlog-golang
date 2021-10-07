@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 	"github.com/swaggo/echo-swagger"
 	"os"
 )
@@ -33,8 +34,8 @@ func main() {
 	development := os.Getenv("DEVEL") == "true"
 
 	if development {
-		err := godotenv.Load()
-		if err != nil {
+
+		if err := godotenv.Load(); err != nil {
 			panic(err)
 		}
 	}
@@ -45,6 +46,10 @@ func main() {
 	e.Debug = development
 	e.HideBanner = true
 	e.Validator = NewValidator()
+
+	if development {
+		e.Logger.SetLevel(log.DEBUG)
+	}
 
 	client, err := InitDB()
 
@@ -65,8 +70,7 @@ func main() {
 	if development {
 		apiDocs := e.Group("/api-docs")
 		apiDocs.GET("/*", echoSwagger.WrapHandler)
-
-		e.StdLogger.Printf("Swagger API docs is live on http://localhost:%v/api-docs/index.html\n", env.Port)
+		e.Logger.Infof("Swagger API docs is live on http://localhost:%v/api-docs/index.html\n", env.Port)
 	}
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("0.0.0.0:%v", env.Port)))

@@ -4,7 +4,6 @@ package ent
 
 import (
 	"devlog/ent/admin"
-	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/category"
 	"devlog/ent/post"
@@ -12,6 +11,7 @@ import (
 	"devlog/ent/postimage"
 	"devlog/ent/postthumbnail"
 	"devlog/ent/postvideo"
+	"devlog/ent/robotaccess"
 	"devlog/ent/schema"
 	"devlog/ent/unsavedpost"
 	"devlog/ent/unsavedpostattachment"
@@ -47,16 +47,6 @@ func init() {
 	adminDescJoinedAt := adminFields[4].Descriptor()
 	// admin.DefaultJoinedAt holds the default value on creation for the joined_at field.
 	admin.DefaultJoinedAt = adminDescJoinedAt.Default.(func() time.Time)
-	adminrobotaccessFields := schema.AdminRobotAccess{}.Fields()
-	_ = adminrobotaccessFields
-	// adminrobotaccessDescToken is the schema descriptor for token field.
-	adminrobotaccessDescToken := adminrobotaccessFields[0].Descriptor()
-	// adminrobotaccess.TokenValidator is a validator for the "token" field. It is called by the builders before save.
-	adminrobotaccess.TokenValidator = adminrobotaccessDescToken.Validators[0].(func(string) error)
-	// adminrobotaccessDescCreatedAt is the schema descriptor for created_at field.
-	adminrobotaccessDescCreatedAt := adminrobotaccessFields[2].Descriptor()
-	// adminrobotaccess.DefaultCreatedAt holds the default value on creation for the created_at field.
-	adminrobotaccess.DefaultCreatedAt = adminrobotaccessDescCreatedAt.Default.(func() time.Time)
 	adminsessionFields := schema.AdminSession{}.Fields()
 	_ = adminsessionFields
 	// adminsessionDescToken is the schema descriptor for token field.
@@ -191,6 +181,20 @@ func init() {
 	postvideoDescCreatedAt := postvideoFields[3].Descriptor()
 	// postvideo.DefaultCreatedAt holds the default value on creation for the created_at field.
 	postvideo.DefaultCreatedAt = postvideoDescCreatedAt.Default.(func() time.Time)
+	robotaccessFields := schema.RobotAccess{}.Fields()
+	_ = robotaccessFields
+	// robotaccessDescToken is the schema descriptor for token field.
+	robotaccessDescToken := robotaccessFields[0].Descriptor()
+	// robotaccess.TokenValidator is a validator for the "token" field. It is called by the builders before save.
+	robotaccess.TokenValidator = robotaccessDescToken.Validators[0].(func(string) error)
+	// robotaccessDescMemo is the schema descriptor for memo field.
+	robotaccessDescMemo := robotaccessFields[1].Descriptor()
+	// robotaccess.MemoValidator is a validator for the "memo" field. It is called by the builders before save.
+	robotaccess.MemoValidator = robotaccessDescMemo.Validators[0].(func(string) error)
+	// robotaccessDescCreatedAt is the schema descriptor for created_at field.
+	robotaccessDescCreatedAt := robotaccessFields[2].Descriptor()
+	// robotaccess.DefaultCreatedAt holds the default value on creation for the created_at field.
+	robotaccess.DefaultCreatedAt = robotaccessDescCreatedAt.Default.(func() time.Time)
 	unsavedpostFields := schema.UnsavedPost{}.Fields()
 	_ = unsavedpostFields
 	// unsavedpostDescUUID is the schema descriptor for uuid field.

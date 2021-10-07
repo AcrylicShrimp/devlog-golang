@@ -21,19 +21,6 @@ func (f AdminFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error
 	return f(ctx, mv)
 }
 
-// The AdminRobotAccessFunc type is an adapter to allow the use of ordinary
-// function as AdminRobotAccess mutator.
-type AdminRobotAccessFunc func(context.Context, *ent.AdminRobotAccessMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f AdminRobotAccessFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	mv, ok := m.(*ent.AdminRobotAccessMutation)
-	if !ok {
-		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminRobotAccessMutation", m)
-	}
-	return f(ctx, mv)
-}
-
 // The AdminSessionFunc type is an adapter to allow the use of ordinary
 // function as AdminSession mutator.
 type AdminSessionFunc func(context.Context, *ent.AdminSessionMutation) (ent.Value, error)
@@ -121,6 +108,19 @@ func (f PostVideoFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	mv, ok := m.(*ent.PostVideoMutation)
 	if !ok {
 		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PostVideoMutation", m)
+	}
+	return f(ctx, mv)
+}
+
+// The RobotAccessFunc type is an adapter to allow the use of ordinary
+// function as RobotAccess mutator.
+type RobotAccessFunc func(context.Context, *ent.RobotAccessMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RobotAccessFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	mv, ok := m.(*ent.RobotAccessMutation)
+	if !ok {
+		return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RobotAccessMutation", m)
 	}
 	return f(ctx, mv)
 }

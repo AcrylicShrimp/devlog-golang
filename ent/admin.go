@@ -36,7 +36,7 @@ type AdminEdges struct {
 	// Sessions holds the value of the sessions edge.
 	Sessions []*AdminSession `json:"sessions,omitempty"`
 	// RobotAccesses holds the value of the robot_accesses edge.
-	RobotAccesses []*AdminRobotAccess `json:"robot_accesses,omitempty"`
+	RobotAccesses []*RobotAccess `json:"robot_accesses,omitempty"`
 	// Posts holds the value of the posts edge.
 	Posts []*Post `json:"posts,omitempty"`
 	// UnsavedPosts holds the value of the unsaved_posts edge.
@@ -57,7 +57,7 @@ func (e AdminEdges) SessionsOrErr() ([]*AdminSession, error) {
 
 // RobotAccessesOrErr returns the RobotAccesses value or an error if the edge
 // was not loaded in eager-loading.
-func (e AdminEdges) RobotAccessesOrErr() ([]*AdminRobotAccess, error) {
+func (e AdminEdges) RobotAccessesOrErr() ([]*RobotAccess, error) {
 	if e.loadedTypes[1] {
 		return e.RobotAccesses, nil
 	}
@@ -155,7 +155,7 @@ func (a *Admin) QuerySessions() *AdminSessionQuery {
 }
 
 // QueryRobotAccesses queries the "robot_accesses" edge of the Admin entity.
-func (a *Admin) QueryRobotAccesses() *AdminRobotAccessQuery {
+func (a *Admin) QueryRobotAccesses() *RobotAccessQuery {
 	return (&AdminClient{config: a.config}).QueryRobotAccesses(a)
 }
 

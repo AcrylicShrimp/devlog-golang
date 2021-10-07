@@ -6,10 +6,10 @@ import (
 	"context"
 	"database/sql/driver"
 	"devlog/ent/admin"
-	"devlog/ent/adminrobotaccess"
 	"devlog/ent/adminsession"
 	"devlog/ent/post"
 	"devlog/ent/predicate"
+	"devlog/ent/robotaccess"
 	"devlog/ent/unsavedpost"
 	"errors"
 	"fmt"
@@ -31,7 +31,7 @@ type AdminQuery struct {
 	predicates []predicate.Admin
 	// eager-loading edges.
 	withSessions      *AdminSessionQuery
-	withRobotAccesses *AdminRobotAccessQuery
+	withRobotAccesses *RobotAccessQuery
 	withPosts         *PostQuery
 	withUnsavedPosts  *UnsavedPostQuery
 	// intermediate query (i.e. traversal path).
@@ -93,8 +93,8 @@ func (aq *AdminQuery) QuerySessions() *AdminSessionQuery {
 }
 
 // QueryRobotAccesses chains the current query on the "robot_accesses" edge.
-func (aq *AdminQuery) QueryRobotAccesses() *AdminRobotAccessQuery {
-	query := &AdminRobotAccessQuery{config: aq.config}
+func (aq *AdminQuery) QueryRobotAccesses() *RobotAccessQuery {
+	query := &RobotAccessQuery{config: aq.config}
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := aq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -105,7 +105,7 @@ func (aq *AdminQuery) QueryRobotAccesses() *AdminRobotAccessQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(admin.Table, admin.FieldID, selector),
-			sqlgraph.To(adminrobotaccess.Table, adminrobotaccess.FieldID),
+			sqlgraph.To(robotaccess.Table, robotaccess.FieldID),
 			sqlgraph.Edge(sqlgraph.M2M, false, admin.RobotAccessesTable, admin.RobotAccessesPrimaryKey...),
 		)
 		fromU = sqlgraph.SetNeighbors(aq.driver.Dialect(), step)
@@ -362,8 +362,8 @@ func (aq *AdminQuery) WithSessions(opts ...func(*AdminSessionQuery)) *AdminQuery
 
 // WithRobotAccesses tells the query-builder to eager-load the nodes that are connected to
 // the "robot_accesses" edge. The optional arguments are used to configure the query builder of the edge.
-func (aq *AdminQuery) WithRobotAccesses(opts ...func(*AdminRobotAccessQuery)) *AdminQuery {
-	query := &AdminRobotAccessQuery{config: aq.config}
+func (aq *AdminQuery) WithRobotAccesses(opts ...func(*RobotAccessQuery)) *AdminQuery {
+	query := &RobotAccessQuery{config: aq.config}
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -520,7 +520,7 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 		for _, node := range nodes {
 			ids[node.ID] = node
 			fks = append(fks, node.ID)
-			node.Edges.RobotAccesses = []*AdminRobotAccess{}
+			node.Edges.RobotAccesses = []*RobotAccess{}
 		}
 		var (
 			edgeids []int
@@ -563,7 +563,7 @@ func (aq *AdminQuery) sqlAll(ctx context.Context) ([]*Admin, error) {
 		if err := sqlgraph.QueryEdges(ctx, aq.driver, _spec); err != nil {
 			return nil, fmt.Errorf(`query edges "robot_accesses": %w`, err)
 		}
-		query.Where(adminrobotaccess.IDIn(edgeids...))
+		query.Where(robotaccess.IDIn(edgeids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
