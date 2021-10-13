@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-type NewCategoryParam struct {
+type CategoryParam struct {
 	Name        string  `json:"name" validate:"required,max=32" example:"web"`
 	Description *string `json:"description" validate:"min=1,max=255" example:"web-related things"`
 }
 
-type DeleteCategoryParam struct {
+type CategoryNameParam struct {
 	Name string `param:"name" validate:"required,max=32" example:"web"`
 }
 

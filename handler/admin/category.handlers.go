@@ -68,23 +68,21 @@ func ListCategories(c echo.Context) error {
 // @failure 409 {object} model.HTTPError409 "Conflict: when the name is not unique(already taken)"
 // @failure 500 {object} model.HTTPError500
 func NewCategory(c echo.Context) error {
-	categoryParam := new(model.NewCategoryParam)
+	param := new(model.CategoryParam)
 
-	if err := c.Bind(categoryParam); err != nil {
+	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(categoryParam); err != nil {
+	if err := c.Validate(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	ctx := c.(*common.Context)
 
-	_, err := ctx.Client().Category.Create().
-		SetName(categoryParam.Name).
-		SetNillableDescription(categoryParam.Description).
-		Save(context.Background())
-
-	if err != nil {
+	if _, err := ctx.Client().Category.Create().
+		SetName(param.Name).
+		SetNillableDescription(param.Description).
+		Save(context.Background()); err != nil {
 		if _, ok := err.(*ent.ConstraintError); ok {
 			return echo.NewHTTPError(http.StatusConflict)
 		}
@@ -107,18 +105,18 @@ func NewCategory(c echo.Context) error {
 // @failure 404 {object} model.HTTPError404
 // @failure 500 {object} model.HTTPError500
 func DeleteCategory(c echo.Context) error {
-	categoryParam := new(model.DeleteCategoryParam)
+	param := new(model.CategoryNameParam)
 
-	if err := c.Bind(categoryParam); err != nil {
+	if err := c.Bind(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
-	if err := c.Validate(categoryParam); err != nil {
+	if err := c.Validate(param); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		category, err := ctx.Client().Category.Query().
-			Where(dbCategory.NameEQ(categoryParam.Name)).
+			Where(dbCategory.NameEQ(param.Name)).
 			Select(dbCategory.FieldID).
 			First(context.Background())
 
