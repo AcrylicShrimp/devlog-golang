@@ -60,7 +60,7 @@ func ListCategories(c echo.Context) error {
 // @description The field 'name' must be unique across all categories.
 // @tags admin category management
 // @accept json
-// @param category body model.NewCategoryParam true "The category to be created"
+// @param category body model.CategoryParam true "The category to be created"
 // @produce json
 // @success 201 "NoContent: when the category has been removed successfully"
 // @failure 400 {object} model.HTTPError400

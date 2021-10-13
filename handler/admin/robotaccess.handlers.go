@@ -66,7 +66,7 @@ func ListRobotAccesses(c echo.Context) error {
 // @description Creates a robot access.
 // @tags admin robot access management
 // @accept json
-// @param category body model.RobotAccessParam true "The robot access to be created"
+// @param robot-access body model.RobotAccessParam true "The robot access to be created"
 // @produce json
 // @success 201 {object} model.RobotAccessTokenOnly
 // @failure 400 {object} model.HTTPError400
