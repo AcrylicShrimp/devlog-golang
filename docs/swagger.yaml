@@ -70,6 +70,35 @@ definitions:
     required:
     - name
     type: object
+  model.RobotAccess:
+    properties:
+      created-at:
+        example: 2021-08-18T00:00:00Z00:00
+        type: string
+      issued-for:
+        example: issuer
+        type: string
+      last-access-at:
+        example: 2021-08-18T00:00:00Z00:00
+        type: string
+      memo:
+        example: for AWS Lambda
+        type: string
+      modified-at:
+        example: 2021-08-18T00:00:00Z00:00
+        type: string
+    required:
+    - created-at
+    - issued-for
+    type: object
+  model.RobotAccessTokenOnly:
+    properties:
+      token:
+        example: 175d2572edf5e47826021b8e4ed5ea0497bd58e45d2c69b79517ee53b10ebcd35ed035b96eee4fffa595e2777da45d27c5f4692891572adb29c3a904de38f457a1c89a4b9cf97c4365368207916388ab78f598f4c9cde71df54c613cc4eca23e48acc6e719291c0c3311354e0c009465382fb457244a64814891eda82d211626
+        type: string
+    required:
+    - token
+    type: object
   model.UnsavedPost:
     properties:
       access-level:
@@ -138,6 +167,24 @@ definitions:
     - uuid
     - validity
     type: object
+  model.UnsavedPostParam:
+    properties:
+      access-level:
+        example: public
+        type: string
+      category:
+        example: web
+        type: string
+      content:
+        example: '# My first post'
+        type: string
+      slug:
+        example: my-first-post
+        type: string
+      title:
+        example: My first post
+        type: string
+    type: object
   model.UnsavedPostThumbnail:
     properties:
       created-at:
@@ -200,24 +247,6 @@ definitions:
     - modified-at
     - uuid
     type: object
-  model.UpdateUnsavedPostParam:
-    properties:
-      access-level:
-        example: public
-        type: string
-      category:
-        example: web
-        type: string
-      content:
-        example: '# My first post'
-        type: string
-      slug:
-        example: my-first-post
-        type: string
-      title:
-        example: My first post
-        type: string
-    type: object
 info:
   contact:
     email: led789zxpp@naver.com
@@ -230,38 +259,6 @@ info:
   version: 0.0.1
 paths:
   /admin/categories:
-    delete:
-      description: Removes the given category.
-      parameters:
-      - description: A category name to be removed
-        in: path
-        name: name
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "204":
-          description: 'NoContent: when the category has been removed successfully'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/model.HTTPError400'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/model.HTTPError401'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/model.HTTPError404'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/model.HTTPError500'
-      summary: Remove category
-      tags:
-      - admin category management
     get:
       description: |-
         Lists all categories.
@@ -323,6 +320,121 @@ paths:
       summary: Create category
       tags:
       - admin category management
+  /admin/categories/{name}:
+    delete:
+      description: Removes the given category.
+      parameters:
+      - description: A category name to be removed
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 'NoContent: when the category has been removed successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Remove category
+      tags:
+      - admin category management
+  /admin/robot-accesses:
+    get:
+      description: |-
+        Lists all robot accesses.
+        The robot accesses are sorted by the field 'last-access-at' in descending order.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.RobotAccess'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: List robot accesses
+      tags:
+      - admin robot access management
+    post:
+      description: Creates a robot access.
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.RobotAccessTokenOnly'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Create robot access
+      tags:
+      - admin robot access management
+  /admin/robot-accesses/{token}:
+    delete:
+      description: Removes the given robot access.
+      parameters:
+      - description: A robot access token to be removed
+        in: path
+        name: token
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: 'NoContent: when the robot access has been removed successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Remove robot access
+      tags:
+      - admin robot access management
   /admin/unsaved-posts:
     get:
       description: |-
@@ -371,9 +483,41 @@ paths:
       tags:
       - admin post management
   /admin/unsaved-posts/{uuid}:
+    delete:
+      description: Updates an unsaved post by its UUID.
+      parameters:
+      - description: An UUID of the unsaved post to be deleted
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'NoContent: when the unsaved post has been deleted successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Update unsaved post
+      tags:
+      - admin post management
     get:
       description: |-
-        Gets a unsaved post by its UUID.
+        Gets an unsaved post by its UUID.
         The unsaved post will contain images if any.
       parameters:
       - description: An UUID of the unsaved post to be fetched
@@ -410,7 +554,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Updates a unsaved post by its UUID.
+      description: Updates an unsaved post by its UUID.
       parameters:
       - description: An UUID of the unsaved post to be updated
         in: path
@@ -422,7 +566,7 @@ paths:
         name: unsaved-post
         required: true
         schema:
-          $ref: '#/definitions/model.UpdateUnsavedPostParam'
+          $ref: '#/definitions/model.UnsavedPostParam'
       produces:
       - application/json
       responses:
@@ -445,6 +589,78 @@ paths:
           schema:
             $ref: '#/definitions/model.HTTPError500'
       summary: Update unsaved post
+      tags:
+      - admin post management
+  /admin/unsaved-posts/{uuid}/thumbnail:
+    get:
+      description: Gets a thumbnail of an unsaved post by its UUID.
+      parameters:
+      - description: An UUID of the unsaved post to be fetched
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UnsavedPostThumbnail'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Get unsaved post thumbnail
+      tags:
+      - admin post management
+    post:
+      description: Creates a new thumbnail for the unsaved post.
+      parameters:
+      - description: An UUID of the unsaved post to be created
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'NoContent: when the thumbnail of the unsaved post has been
+            created successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.HTTPError409'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Create unsaved post thumbnail
       tags:
       - admin post management
 securityDefinitions:

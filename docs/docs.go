@@ -116,7 +116,9 @@ var doc = `{
                         }
                     }
                 }
-            },
+            }
+        },
+        "/admin/categories/{name}": {
             "delete": {
                 "description": "Removes the given category.",
                 "produces": [
@@ -138,6 +140,127 @@ var doc = `{
                 "responses": {
                     "204": {
                         "description": "NoContent: when the category has been removed successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/robot-accesses": {
+            "get": {
+                "description": "Lists all robot accesses.\nThe robot accesses are sorted by the field 'last-access-at' in descending order.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin robot access management"
+                ],
+                "summary": "List robot accesses",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.RobotAccess"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a robot access.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin robot access management"
+                ],
+                "summary": "Create robot access",
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.RobotAccessTokenOnly"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/robot-accesses/{token}": {
+            "delete": {
+                "description": "Removes the given robot access.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin robot access management"
+                ],
+                "summary": "Remove robot access",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "A robot access token to be removed",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "NoContent: when the robot access has been removed successfully"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -233,7 +356,7 @@ var doc = `{
         },
         "/admin/unsaved-posts/{uuid}": {
             "get": {
-                "description": "Gets a unsaved post by its UUID.\nThe unsaved post will contain images if any.",
+                "description": "Gets an unsaved post by its UUID.\nThe unsaved post will contain images if any.",
                 "produces": [
                     "application/json"
                 ],
@@ -284,7 +407,7 @@ var doc = `{
                 }
             },
             "put": {
-                "description": "Updates a unsaved post by its UUID.",
+                "description": "Updates an unsaved post by its UUID.",
                 "consumes": [
                     "application/json"
                 ],
@@ -309,7 +432,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.UpdateUnsavedPostParam"
+                            "$ref": "#/definitions/model.UnsavedPostParam"
                         }
                     }
                 ],
@@ -333,6 +456,161 @@ var doc = `{
                         "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Updates an unsaved post by its UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Update unsaved post",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be deleted",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "NoContent: when the unsaved post has been deleted successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/unsaved-posts/{uuid}/thumbnail": {
+            "get": {
+                "description": "Gets a thumbnail of an unsaved post by its UUID.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Get unsaved post thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be fetched",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.UnsavedPostThumbnail"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new thumbnail for the unsaved post.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Create unsaved post thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be created",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "NoContent: when the thumbnail of the unsaved post has been created successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError409"
                         }
                     },
                     "500": {
@@ -448,6 +726,47 @@ var doc = `{
                 }
             }
         },
+        "model.RobotAccess": {
+            "type": "object",
+            "required": [
+                "created-at",
+                "issued-for"
+            ],
+            "properties": {
+                "created-at": {
+                    "type": "string",
+                    "example": "2021-08-18T00:00:00Z00:00"
+                },
+                "issued-for": {
+                    "type": "string",
+                    "example": "issuer"
+                },
+                "last-access-at": {
+                    "type": "string",
+                    "example": "2021-08-18T00:00:00Z00:00"
+                },
+                "memo": {
+                    "type": "string",
+                    "example": "for AWS Lambda"
+                },
+                "modified-at": {
+                    "type": "string",
+                    "example": "2021-08-18T00:00:00Z00:00"
+                }
+            }
+        },
+        "model.RobotAccessTokenOnly": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "example": "175d2572edf5e47826021b8e4ed5ea0497bd58e45d2c69b79517ee53b10ebcd35ed035b96eee4fffa595e2777da45d27c5f4692891572adb29c3a904de38f457a1c89a4b9cf97c4365368207916388ab78f598f4c9cde71df54c613cc4eca23e48acc6e719291c0c3311354e0c009465382fb457244a64814891eda82d211626"
+                }
+            }
+        },
         "model.UnsavedPost": {
             "type": "object",
             "required": [
@@ -541,6 +860,31 @@ var doc = `{
                 }
             }
         },
+        "model.UnsavedPostParam": {
+            "type": "object",
+            "properties": {
+                "access-level": {
+                    "type": "string",
+                    "example": "public"
+                },
+                "category": {
+                    "type": "string",
+                    "example": "web"
+                },
+                "content": {
+                    "type": "string",
+                    "example": "# My first post"
+                },
+                "slug": {
+                    "type": "string",
+                    "example": "my-first-post"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "My first post"
+                }
+            }
+        },
         "model.UnsavedPostThumbnail": {
             "type": "object",
             "required": [
@@ -624,31 +968,6 @@ var doc = `{
                 "uuid": {
                     "type": "string",
                     "example": "fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"
-                }
-            }
-        },
-        "model.UpdateUnsavedPostParam": {
-            "type": "object",
-            "properties": {
-                "access-level": {
-                    "type": "string",
-                    "example": "public"
-                },
-                "category": {
-                    "type": "string",
-                    "example": "web"
-                },
-                "content": {
-                    "type": "string",
-                    "example": "# My first post"
-                },
-                "slug": {
-                    "type": "string",
-                    "example": "my-first-post"
-                },
-                "title": {
-                    "type": "string",
-                    "example": "My first post"
                 }
             }
         }
