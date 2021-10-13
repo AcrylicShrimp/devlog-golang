@@ -83,7 +83,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.NewCategoryParam"
+                            "$ref": "#/definitions/model.CategoryParam"
                         }
                     }
                 ],
@@ -204,6 +204,9 @@ var doc = `{
             },
             "post": {
                 "description": "Creates a robot access.",
+                "consumes": [
+                    "application/json"
+                ],
                 "produces": [
                     "application/json"
                 ],
@@ -211,6 +214,17 @@ var doc = `{
                     "admin robot access management"
                 ],
                 "summary": "Create robot access",
+                "parameters": [
+                    {
+                        "description": "The robot access to be created",
+                        "name": "robot-access",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.RobotAccessParam"
+                        }
+                    }
+                ],
                 "responses": {
                     "201": {
                         "description": "Created",
@@ -650,6 +664,22 @@ var doc = `{
                 }
             }
         },
+        "model.CategoryParam": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string",
+                    "example": "web-related things"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "web"
+                }
+            }
+        },
         "model.HTTPError400": {
             "type": "object",
             "required": [
@@ -710,22 +740,6 @@ var doc = `{
                 }
             }
         },
-        "model.NewCategoryParam": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string",
-                    "example": "web-related things"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "web"
-                }
-            }
-        },
         "model.RobotAccess": {
             "type": "object",
             "required": [
@@ -752,6 +766,20 @@ var doc = `{
                 "modified-at": {
                     "type": "string",
                     "example": "2021-08-18T00:00:00Z00:00"
+                }
+            }
+        },
+        "model.RobotAccessParam": {
+            "type": "object",
+            "properties": {
+                "slug": {
+                    "type": "string",
+                    "example": "for AWS Lambda"
+                },
+                "ttl": {
+                    "description": "Time-to-live in seconds",
+                    "type": "integer",
+                    "example": 86400
                 }
             }
         },

@@ -19,6 +19,17 @@ definitions:
     - modified-at
     - name
     type: object
+  model.CategoryParam:
+    properties:
+      description:
+        example: web-related things
+        type: string
+      name:
+        example: web
+        type: string
+    required:
+    - name
+    type: object
   model.HTTPError400:
     properties:
       message:
@@ -59,17 +70,6 @@ definitions:
     required:
     - message
     type: object
-  model.NewCategoryParam:
-    properties:
-      description:
-        example: web-related things
-        type: string
-      name:
-        example: web
-        type: string
-    required:
-    - name
-    type: object
   model.RobotAccess:
     properties:
       created-at:
@@ -90,6 +90,16 @@ definitions:
     required:
     - created-at
     - issued-for
+    type: object
+  model.RobotAccessParam:
+    properties:
+      slug:
+        example: for AWS Lambda
+        type: string
+      ttl:
+        description: Time-to-live in seconds
+        example: 86400
+        type: integer
     type: object
   model.RobotAccessTokenOnly:
     properties:
@@ -295,7 +305,7 @@ paths:
         name: category
         required: true
         schema:
-          $ref: '#/definitions/model.NewCategoryParam'
+          $ref: '#/definitions/model.CategoryParam'
       produces:
       - application/json
       responses:
@@ -379,7 +389,16 @@ paths:
       tags:
       - admin robot access management
     post:
+      consumes:
+      - application/json
       description: Creates a robot access.
+      parameters:
+      - description: The robot access to be created
+        in: body
+        name: robot-access
+        required: true
+        schema:
+          $ref: '#/definitions/model.RobotAccessParam'
       produces:
       - application/json
       responses:
