@@ -323,6 +323,12 @@ var doc = `{
                             }
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
@@ -351,6 +357,12 @@ var doc = `{
                         "description": "Created",
                         "schema": {
                             "$ref": "#/definitions/model.UnsavedPostUUIDOnly"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
                         }
                     },
                     "401": {
@@ -529,9 +541,225 @@ var doc = `{
                 }
             }
         },
+        "/admin/unsaved-posts/{uuid}/images": {
+            "get": {
+                "description": "Lists all images for the given unsaved post.\nThe images are sorted by the field 'created-at' in ascending order.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "List unsaved post images",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model.UnsavedPostImage"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Creates a new image in pending state for the unsaved post.\nA subsequent request must be sent to fill its state and fields.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Create unsaved post image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be created",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "NoContent: when the image of the unsaved post has been created successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/unsaved-posts/{uuid}/images/{image}": {
+            "get": {
+                "description": "Gets the image of the unsaved post.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Get unsaved post image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be fetched",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "An UUID of the image to be fetched",
+                        "name": "image",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.UnsavedPostImage"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "description": "Updates the image for the given unsaved post.\nThe image can be either valid or invalid. The fields are required if it is valid. Ignored otherwise.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Update unsaved post image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be updated",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "An UUID of the image to be fetched",
+                        "name": "image",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The image of the unsaved post to be updated",
+                        "name": "fields",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UnsavedPostImageParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "NoContent: when the image of the unsaved post has been updated successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/unsaved-posts/{uuid}/thumbnail": {
             "get": {
-                "description": "Gets a thumbnail of an unsaved post by its UUID.",
+                "description": "Gets the thumbnail of the unsaved post.",
                 "produces": [
                     "application/json"
                 ],
@@ -581,8 +809,68 @@ var doc = `{
                     }
                 }
             },
+            "put": {
+                "description": "Updates the thumbnail for the given unsaved post.\nThe thumbnail can be either valid or invalid. The fields are required if it is valid. Ignored otherwise.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Update unsaved post thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be updated",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "The thumbnail of the unsaved post to be updated",
+                        "name": "fields",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UnsavedPostThumbnailParam"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "NoContent: when the thumbnail of the unsaved post has been updated successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
             "post": {
-                "description": "Creates a new thumbnail for the unsaved post.",
+                "description": "Creates a new thumbnail in pending state for the unsaved post.\nA subsequent request must be sent to fill its state and fields.",
                 "produces": [
                     "application/json"
                 ],
@@ -888,6 +1176,38 @@ var doc = `{
                 }
             }
         },
+        "model.UnsavedPostImageParam": {
+            "type": "object",
+            "required": [
+                "validity"
+            ],
+            "properties": {
+                "hash": {
+                    "type": "string",
+                    "example": "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+                },
+                "height": {
+                    "type": "integer",
+                    "example": 128
+                },
+                "title": {
+                    "type": "string",
+                    "example": "My image"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://image.example.com/example-image"
+                },
+                "validity": {
+                    "type": "string",
+                    "example": "valid"
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 256
+                }
+            }
+        },
         "model.UnsavedPostParam": {
             "type": "object",
             "properties": {
@@ -939,6 +1259,34 @@ var doc = `{
                 "validity": {
                     "type": "string",
                     "example": "pending"
+                },
+                "width": {
+                    "type": "integer",
+                    "example": 256
+                }
+            }
+        },
+        "model.UnsavedPostThumbnailParam": {
+            "type": "object",
+            "required": [
+                "validity"
+            ],
+            "properties": {
+                "hash": {
+                    "type": "string",
+                    "example": "LEHV6nWB2yk8pyo0adR*.7kCMdnj"
+                },
+                "height": {
+                    "type": "integer",
+                    "example": 128
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://image.example.com/example-image"
+                },
+                "validity": {
+                    "type": "string",
+                    "example": "valid"
                 },
                 "width": {
                     "type": "integer",

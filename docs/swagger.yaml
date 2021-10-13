@@ -177,6 +177,29 @@ definitions:
     - uuid
     - validity
     type: object
+  model.UnsavedPostImageParam:
+    properties:
+      hash:
+        example: LEHV6nWB2yk8pyo0adR*.7kCMdnj
+        type: string
+      height:
+        example: 128
+        type: integer
+      title:
+        example: My image
+        type: string
+      url:
+        example: https://image.example.com/example-image
+        type: string
+      validity:
+        example: valid
+        type: string
+      width:
+        example: 256
+        type: integer
+    required:
+    - validity
+    type: object
   model.UnsavedPostParam:
     properties:
       access-level:
@@ -217,6 +240,26 @@ definitions:
         type: integer
     required:
     - created-at
+    - validity
+    type: object
+  model.UnsavedPostThumbnailParam:
+    properties:
+      hash:
+        example: LEHV6nWB2yk8pyo0adR*.7kCMdnj
+        type: string
+      height:
+        example: 128
+        type: integer
+      url:
+        example: https://image.example.com/example-image
+        type: string
+      validity:
+        example: valid
+        type: string
+      width:
+        example: 256
+        type: integer
+    required:
     - validity
     type: object
   model.UnsavedPostUUIDOnly:
@@ -468,6 +511,10 @@ paths:
             items:
               $ref: '#/definitions/model.UnsavedPostWithoutImage'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
         "401":
           description: Unauthorized
           schema:
@@ -490,6 +537,10 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/model.UnsavedPostUUIDOnly'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
         "401":
           description: Unauthorized
           schema:
@@ -610,9 +661,161 @@ paths:
       summary: Update unsaved post
       tags:
       - admin post management
+  /admin/unsaved-posts/{uuid}/images:
+    get:
+      description: |-
+        Lists all images for the given unsaved post.
+        The images are sorted by the field 'created-at' in ascending order.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.UnsavedPostImage'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: List unsaved post images
+      tags:
+      - admin post management
+    post:
+      description: |-
+        Creates a new image in pending state for the unsaved post.
+        A subsequent request must be sent to fill its state and fields.
+      parameters:
+      - description: An UUID of the unsaved post to be created
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: 'NoContent: when the image of the unsaved post has been created
+            successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Create unsaved post image
+      tags:
+      - admin post management
+  /admin/unsaved-posts/{uuid}/images/{image}:
+    get:
+      description: Gets the image of the unsaved post.
+      parameters:
+      - description: An UUID of the unsaved post to be fetched
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: An UUID of the image to be fetched
+        in: path
+        name: image
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.UnsavedPostImage'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Get unsaved post image
+      tags:
+      - admin post management
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Updates the image for the given unsaved post.
+        The image can be either valid or invalid. The fields are required if it is valid. Ignored otherwise.
+      parameters:
+      - description: An UUID of the unsaved post to be updated
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: An UUID of the image to be fetched
+        in: path
+        name: image
+        required: true
+        type: string
+      - description: The image of the unsaved post to be updated
+        in: body
+        name: fields
+        required: true
+        schema:
+          $ref: '#/definitions/model.UnsavedPostImageParam'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'NoContent: when the image of the unsaved post has been updated
+            successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Update unsaved post image
+      tags:
+      - admin post management
   /admin/unsaved-posts/{uuid}/thumbnail:
     get:
-      description: Gets a thumbnail of an unsaved post by its UUID.
+      description: Gets the thumbnail of the unsaved post.
       parameters:
       - description: An UUID of the unsaved post to be fetched
         in: path
@@ -646,7 +849,9 @@ paths:
       tags:
       - admin post management
     post:
-      description: Creates a new thumbnail for the unsaved post.
+      description: |-
+        Creates a new thumbnail in pending state for the unsaved post.
+        A subsequent request must be sent to fill its state and fields.
       parameters:
       - description: An UUID of the unsaved post to be created
         in: path
@@ -680,6 +885,49 @@ paths:
           schema:
             $ref: '#/definitions/model.HTTPError500'
       summary: Create unsaved post thumbnail
+      tags:
+      - admin post management
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Updates the thumbnail for the given unsaved post.
+        The thumbnail can be either valid or invalid. The fields are required if it is valid. Ignored otherwise.
+      parameters:
+      - description: An UUID of the unsaved post to be updated
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: The thumbnail of the unsaved post to be updated
+        in: body
+        name: fields
+        required: true
+        schema:
+          $ref: '#/definitions/model.UnsavedPostThumbnailParam'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'NoContent: when the thumbnail of the unsaved post has been
+            updated successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Update unsaved post thumbnail
       tags:
       - admin post management
 securityDefinitions:

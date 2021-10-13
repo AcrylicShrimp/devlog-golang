@@ -12,6 +12,11 @@ type UnsavedPostUUIDParam struct {
 	UUID string `json:"-" param:"uuid" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
 }
 
+type UnsavedPostUUIDWithImageParam struct {
+	UUID  string `json:"-" param:"uuid" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
+	Image string `json:"-" param:"image" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
+}
+
 type UnsavedPostParam struct {
 	UUID        string                     `json:"-" param:"uuid" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
 	Slug        *string                    `json:"slug" validate:"min=1,max=255" example:"my-first-post"`
@@ -19,6 +24,26 @@ type UnsavedPostParam struct {
 	Title       *string                    `json:"title" validate:"min=1,max=255" example:"My first post"`
 	Content     *string                    `json:"content" validate:"min=1" example:"# My first post"`
 	Category    *string                    `json:"category" validate:"min=1" example:"web"`
+}
+
+type UnsavedPostThumbnailParam struct {
+	UUID     string  `json:"-" param:"post" validate:"required,hexadecimal,len=64"`
+	Validity string  `json:"validity" validate:"required,oneof=valid invalid" example:"valid"`
+	Width    *uint32 `json:"width" validate:"min=1" example:"256"`
+	Height   *uint32 `json:"height" validate:"min=1" example:"128"`
+	Hash     *string `json:"hash" validate:"min=1,max=64" example:"LEHV6nWB2yk8pyo0adR*.7kCMdnj"`
+	URL      *string `json:"url" validate:"min=1,max=512" example:"https://image.example.com/example-image"`
+}
+
+type UnsavedPostImageParam struct {
+	UUID     string  `json:"-" param:"uuid" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
+	Image    string  `json:"-" param:"image" validate:"required,hexadecimal,len=64" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
+	Validity string  `json:"validity" validate:"required,oneof=valid invalid" example:"valid"`
+	Width    *uint32 `json:"width" validate:"min=1" example:"256"`
+	Height   *uint32 `json:"height" validate:"min=1" example:"128"`
+	Hash     *string `json:"hash" validate:"min=1,max=64" example:"LEHV6nWB2yk8pyo0adR*.7kCMdnj"`
+	Title    *string `json:"title" validate:"min=1,max=255" example:"My image"`
+	URL      *string `json:"url" validate:"min=1,max=512" example:"https://image.example.com/example-image"`
 }
 
 type UnsavedPostThumbnail struct {
@@ -155,6 +180,16 @@ type UnsavedPostUUIDOnly struct {
 
 func UnsavedPostUUIDOnlyFromUUID(uuid string) UnsavedPostUUIDOnly {
 	return UnsavedPostUUIDOnly{
+		UUID: uuid,
+	}
+}
+
+type UnsavedPostImageUUIDOnly struct {
+	UUID string `json:"uuid" validate:"required" example:"fd00000aa8660b5b010006acdc0100000101000100010000fd00000aa8660b5b"`
+}
+
+func UnsavedPostImageUUIDOnlyFromUUID(uuid string) UnsavedPostImageUUIDOnly {
+	return UnsavedPostImageUUIDOnly{
 		UUID: uuid,
 	}
 }
