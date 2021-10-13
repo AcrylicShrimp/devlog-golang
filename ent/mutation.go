@@ -5784,8 +5784,7 @@ type RobotAccessMutation struct {
 	expires_at     *time.Time
 	last_access_at *time.Time
 	clearedFields  map[string]struct{}
-	user           map[int]struct{}
-	removeduser    map[int]struct{}
+	user           *int
 	cleareduser    bool
 	done           bool
 	oldValue       func(context.Context) (*RobotAccess, error)
@@ -6090,14 +6089,9 @@ func (m *RobotAccessMutation) ResetLastAccessAt() {
 	delete(m.clearedFields, robotaccess.FieldLastAccessAt)
 }
 
-// AddUserIDs adds the "user" edge to the Admin entity by ids.
-func (m *RobotAccessMutation) AddUserIDs(ids ...int) {
-	if m.user == nil {
-		m.user = make(map[int]struct{})
-	}
-	for i := range ids {
-		m.user[ids[i]] = struct{}{}
-	}
+// SetUserID sets the "user" edge to the Admin entity by id.
+func (m *RobotAccessMutation) SetUserID(id int) {
+	m.user = &id
 }
 
 // ClearUser clears the "user" edge to the Admin entity.
@@ -6110,29 +6104,20 @@ func (m *RobotAccessMutation) UserCleared() bool {
 	return m.cleareduser
 }
 
-// RemoveUserIDs removes the "user" edge to the Admin entity by IDs.
-func (m *RobotAccessMutation) RemoveUserIDs(ids ...int) {
-	if m.removeduser == nil {
-		m.removeduser = make(map[int]struct{})
-	}
-	for i := range ids {
-		delete(m.user, ids[i])
-		m.removeduser[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedUser returns the removed IDs of the "user" edge to the Admin entity.
-func (m *RobotAccessMutation) RemovedUserIDs() (ids []int) {
-	for id := range m.removeduser {
-		ids = append(ids, id)
+// UserID returns the "user" edge ID in the mutation.
+func (m *RobotAccessMutation) UserID() (id int, exists bool) {
+	if m.user != nil {
+		return *m.user, true
 	}
 	return
 }
 
 // UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
 func (m *RobotAccessMutation) UserIDs() (ids []int) {
-	for id := range m.user {
-		ids = append(ids, id)
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
 	}
 	return
 }
@@ -6141,7 +6126,6 @@ func (m *RobotAccessMutation) UserIDs() (ids []int) {
 func (m *RobotAccessMutation) ResetUser() {
 	m.user = nil
 	m.cleareduser = false
-	m.removeduser = nil
 }
 
 // Where appends a list predicates to the RobotAccessMutation builder.
@@ -6363,11 +6347,9 @@ func (m *RobotAccessMutation) AddedEdges() []string {
 func (m *RobotAccessMutation) AddedIDs(name string) []ent.Value {
 	switch name {
 	case robotaccess.EdgeUser:
-		ids := make([]ent.Value, 0, len(m.user))
-		for id := range m.user {
-			ids = append(ids, id)
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
 		}
-		return ids
 	}
 	return nil
 }
@@ -6375,9 +6357,6 @@ func (m *RobotAccessMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *RobotAccessMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 1)
-	if m.removeduser != nil {
-		edges = append(edges, robotaccess.EdgeUser)
-	}
 	return edges
 }
 
@@ -6385,12 +6364,6 @@ func (m *RobotAccessMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *RobotAccessMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case robotaccess.EdgeUser:
-		ids := make([]ent.Value, 0, len(m.removeduser))
-		for id := range m.removeduser {
-			ids = append(ids, id)
-		}
-		return ids
 	}
 	return nil
 }
@@ -6418,6 +6391,9 @@ func (m *RobotAccessMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *RobotAccessMutation) ClearEdge(name string) error {
 	switch name {
+	case robotaccess.EdgeUser:
+		m.ClearUser()
+		return nil
 	}
 	return fmt.Errorf("unknown RobotAccess unique edge %s", name)
 }

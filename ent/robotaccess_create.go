@@ -83,19 +83,15 @@ func (rac *RobotAccessCreate) SetNillableLastAccessAt(t *time.Time) *RobotAccess
 	return rac
 }
 
-// AddUserIDs adds the "user" edge to the Admin entity by IDs.
-func (rac *RobotAccessCreate) AddUserIDs(ids ...int) *RobotAccessCreate {
-	rac.mutation.AddUserIDs(ids...)
+// SetUserID sets the "user" edge to the Admin entity by ID.
+func (rac *RobotAccessCreate) SetUserID(id int) *RobotAccessCreate {
+	rac.mutation.SetUserID(id)
 	return rac
 }
 
-// AddUser adds the "user" edges to the Admin entity.
-func (rac *RobotAccessCreate) AddUser(a ...*Admin) *RobotAccessCreate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return rac.AddUserIDs(ids...)
+// SetUser sets the "user" edge to the Admin entity.
+func (rac *RobotAccessCreate) SetUser(a *Admin) *RobotAccessCreate {
+	return rac.SetUserID(a.ID)
 }
 
 // Mutation returns the RobotAccessMutation object of the builder.
@@ -193,7 +189,7 @@ func (rac *RobotAccessCreate) check() error {
 	if _, ok := rac.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "created_at"`)}
 	}
-	if len(rac.mutation.UserIDs()) == 0 {
+	if _, ok := rac.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user", err: errors.New("ent: missing required edge \"user\"")}
 	}
 	return nil
@@ -265,10 +261,10 @@ func (rac *RobotAccessCreate) createSpec() (*RobotAccess, *sqlgraph.CreateSpec) 
 	}
 	if nodes := rac.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   robotaccess.UserTable,
-			Columns: robotaccess.UserPrimaryKey,
+			Columns: []string{robotaccess.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -280,6 +276,7 @@ func (rac *RobotAccessCreate) createSpec() (*RobotAccess, *sqlgraph.CreateSpec) 
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_node.admin_robot_accesses = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

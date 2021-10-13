@@ -7,6 +7,7 @@ import (
 	"devlog/ent/admin"
 	"devlog/ent/predicate"
 	"devlog/ent/robotaccess"
+	"errors"
 	"fmt"
 	"time"
 
@@ -108,19 +109,15 @@ func (rau *RobotAccessUpdate) ClearLastAccessAt() *RobotAccessUpdate {
 	return rau
 }
 
-// AddUserIDs adds the "user" edge to the Admin entity by IDs.
-func (rau *RobotAccessUpdate) AddUserIDs(ids ...int) *RobotAccessUpdate {
-	rau.mutation.AddUserIDs(ids...)
+// SetUserID sets the "user" edge to the Admin entity by ID.
+func (rau *RobotAccessUpdate) SetUserID(id int) *RobotAccessUpdate {
+	rau.mutation.SetUserID(id)
 	return rau
 }
 
-// AddUser adds the "user" edges to the Admin entity.
-func (rau *RobotAccessUpdate) AddUser(a ...*Admin) *RobotAccessUpdate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return rau.AddUserIDs(ids...)
+// SetUser sets the "user" edge to the Admin entity.
+func (rau *RobotAccessUpdate) SetUser(a *Admin) *RobotAccessUpdate {
+	return rau.SetUserID(a.ID)
 }
 
 // Mutation returns the RobotAccessMutation object of the builder.
@@ -128,25 +125,10 @@ func (rau *RobotAccessUpdate) Mutation() *RobotAccessMutation {
 	return rau.mutation
 }
 
-// ClearUser clears all "user" edges to the Admin entity.
+// ClearUser clears the "user" edge to the Admin entity.
 func (rau *RobotAccessUpdate) ClearUser() *RobotAccessUpdate {
 	rau.mutation.ClearUser()
 	return rau
-}
-
-// RemoveUserIDs removes the "user" edge to Admin entities by IDs.
-func (rau *RobotAccessUpdate) RemoveUserIDs(ids ...int) *RobotAccessUpdate {
-	rau.mutation.RemoveUserIDs(ids...)
-	return rau
-}
-
-// RemoveUser removes "user" edges to Admin entities.
-func (rau *RobotAccessUpdate) RemoveUser(a ...*Admin) *RobotAccessUpdate {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return rau.RemoveUserIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -220,6 +202,9 @@ func (rau *RobotAccessUpdate) check() error {
 		if err := robotaccess.MemoValidator(v); err != nil {
 			return &ValidationError{Name: "memo", err: fmt.Errorf("ent: validator failed for field \"memo\": %w", err)}
 		}
+	}
+	if _, ok := rau.mutation.UserID(); rau.mutation.UserCleared() && !ok {
+		return errors.New("ent: clearing a required unique edge \"user\"")
 	}
 	return nil
 }
@@ -297,10 +282,10 @@ func (rau *RobotAccessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if rau.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   robotaccess.UserTable,
-			Columns: robotaccess.UserPrimaryKey,
+			Columns: []string{robotaccess.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -308,34 +293,15 @@ func (rau *RobotAccessUpdate) sqlSave(ctx context.Context) (n int, err error) {
 					Column: admin.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := rau.mutation.RemovedUserIDs(); len(nodes) > 0 && !rau.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   robotaccess.UserTable,
-			Columns: robotaccess.UserPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: admin.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := rau.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   robotaccess.UserTable,
-			Columns: robotaccess.UserPrimaryKey,
+			Columns: []string{robotaccess.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -448,19 +414,15 @@ func (rauo *RobotAccessUpdateOne) ClearLastAccessAt() *RobotAccessUpdateOne {
 	return rauo
 }
 
-// AddUserIDs adds the "user" edge to the Admin entity by IDs.
-func (rauo *RobotAccessUpdateOne) AddUserIDs(ids ...int) *RobotAccessUpdateOne {
-	rauo.mutation.AddUserIDs(ids...)
+// SetUserID sets the "user" edge to the Admin entity by ID.
+func (rauo *RobotAccessUpdateOne) SetUserID(id int) *RobotAccessUpdateOne {
+	rauo.mutation.SetUserID(id)
 	return rauo
 }
 
-// AddUser adds the "user" edges to the Admin entity.
-func (rauo *RobotAccessUpdateOne) AddUser(a ...*Admin) *RobotAccessUpdateOne {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return rauo.AddUserIDs(ids...)
+// SetUser sets the "user" edge to the Admin entity.
+func (rauo *RobotAccessUpdateOne) SetUser(a *Admin) *RobotAccessUpdateOne {
+	return rauo.SetUserID(a.ID)
 }
 
 // Mutation returns the RobotAccessMutation object of the builder.
@@ -468,25 +430,10 @@ func (rauo *RobotAccessUpdateOne) Mutation() *RobotAccessMutation {
 	return rauo.mutation
 }
 
-// ClearUser clears all "user" edges to the Admin entity.
+// ClearUser clears the "user" edge to the Admin entity.
 func (rauo *RobotAccessUpdateOne) ClearUser() *RobotAccessUpdateOne {
 	rauo.mutation.ClearUser()
 	return rauo
-}
-
-// RemoveUserIDs removes the "user" edge to Admin entities by IDs.
-func (rauo *RobotAccessUpdateOne) RemoveUserIDs(ids ...int) *RobotAccessUpdateOne {
-	rauo.mutation.RemoveUserIDs(ids...)
-	return rauo
-}
-
-// RemoveUser removes "user" edges to Admin entities.
-func (rauo *RobotAccessUpdateOne) RemoveUser(a ...*Admin) *RobotAccessUpdateOne {
-	ids := make([]int, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
-	}
-	return rauo.RemoveUserIDs(ids...)
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
@@ -567,6 +514,9 @@ func (rauo *RobotAccessUpdateOne) check() error {
 		if err := robotaccess.MemoValidator(v); err != nil {
 			return &ValidationError{Name: "memo", err: fmt.Errorf("ent: validator failed for field \"memo\": %w", err)}
 		}
+	}
+	if _, ok := rauo.mutation.UserID(); rauo.mutation.UserCleared() && !ok {
+		return errors.New("ent: clearing a required unique edge \"user\"")
 	}
 	return nil
 }
@@ -661,10 +611,10 @@ func (rauo *RobotAccessUpdateOne) sqlSave(ctx context.Context) (_node *RobotAcce
 	}
 	if rauo.mutation.UserCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   robotaccess.UserTable,
-			Columns: robotaccess.UserPrimaryKey,
+			Columns: []string{robotaccess.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{
@@ -672,34 +622,15 @@ func (rauo *RobotAccessUpdateOne) sqlSave(ctx context.Context) (_node *RobotAcce
 					Column: admin.FieldID,
 				},
 			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := rauo.mutation.RemovedUserIDs(); len(nodes) > 0 && !rauo.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
-			Inverse: true,
-			Table:   robotaccess.UserTable,
-			Columns: robotaccess.UserPrimaryKey,
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: &sqlgraph.FieldSpec{
-					Type:   field.TypeInt,
-					Column: admin.FieldID,
-				},
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
 	if nodes := rauo.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   robotaccess.UserTable,
-			Columns: robotaccess.UserPrimaryKey,
+			Columns: []string{robotaccess.UserColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

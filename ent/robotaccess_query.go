@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"devlog/ent/admin"
 	"devlog/ent/predicate"
 	"devlog/ent/robotaccess"
@@ -28,6 +27,7 @@ type RobotAccessQuery struct {
 	predicates []predicate.RobotAccess
 	// eager-loading edges.
 	withUser *AdminQuery
+	withFKs  bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -78,7 +78,7 @@ func (raq *RobotAccessQuery) QueryUser() *AdminQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(robotaccess.Table, robotaccess.FieldID, selector),
 			sqlgraph.To(admin.Table, admin.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, robotaccess.UserTable, robotaccess.UserPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, robotaccess.UserTable, robotaccess.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(raq.driver.Dialect(), step)
 		return fromU, nil
@@ -349,11 +349,18 @@ func (raq *RobotAccessQuery) prepareQuery(ctx context.Context) error {
 func (raq *RobotAccessQuery) sqlAll(ctx context.Context) ([]*RobotAccess, error) {
 	var (
 		nodes       = []*RobotAccess{}
+		withFKs     = raq.withFKs
 		_spec       = raq.querySpec()
 		loadedTypes = [1]bool{
 			raq.withUser != nil,
 		}
 	)
+	if raq.withUser != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, robotaccess.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]interface{}, error) {
 		node := &RobotAccess{config: raq.config}
 		nodes = append(nodes, node)
@@ -375,66 +382,30 @@ func (raq *RobotAccessQuery) sqlAll(ctx context.Context) ([]*RobotAccess, error)
 	}
 
 	if query := raq.withUser; query != nil {
-		fks := make([]driver.Value, 0, len(nodes))
-		ids := make(map[int]*RobotAccess, len(nodes))
-		for _, node := range nodes {
-			ids[node.ID] = node
-			fks = append(fks, node.ID)
-			node.Edges.User = []*Admin{}
+		ids := make([]int, 0, len(nodes))
+		nodeids := make(map[int][]*RobotAccess)
+		for i := range nodes {
+			if nodes[i].admin_robot_accesses == nil {
+				continue
+			}
+			fk := *nodes[i].admin_robot_accesses
+			if _, ok := nodeids[fk]; !ok {
+				ids = append(ids, fk)
+			}
+			nodeids[fk] = append(nodeids[fk], nodes[i])
 		}
-		var (
-			edgeids []int
-			edges   = make(map[int][]*RobotAccess)
-		)
-		_spec := &sqlgraph.EdgeQuerySpec{
-			Edge: &sqlgraph.EdgeSpec{
-				Inverse: true,
-				Table:   robotaccess.UserTable,
-				Columns: robotaccess.UserPrimaryKey,
-			},
-			Predicate: func(s *sql.Selector) {
-				s.Where(sql.InValues(robotaccess.UserPrimaryKey[1], fks...))
-			},
-			ScanValues: func() [2]interface{} {
-				return [2]interface{}{new(sql.NullInt64), new(sql.NullInt64)}
-			},
-			Assign: func(out, in interface{}) error {
-				eout, ok := out.(*sql.NullInt64)
-				if !ok || eout == nil {
-					return fmt.Errorf("unexpected id value for edge-out")
-				}
-				ein, ok := in.(*sql.NullInt64)
-				if !ok || ein == nil {
-					return fmt.Errorf("unexpected id value for edge-in")
-				}
-				outValue := int(eout.Int64)
-				inValue := int(ein.Int64)
-				node, ok := ids[outValue]
-				if !ok {
-					return fmt.Errorf("unexpected node id in edges: %v", outValue)
-				}
-				if _, ok := edges[inValue]; !ok {
-					edgeids = append(edgeids, inValue)
-				}
-				edges[inValue] = append(edges[inValue], node)
-				return nil
-			},
-		}
-		if err := sqlgraph.QueryEdges(ctx, raq.driver, _spec); err != nil {
-			return nil, fmt.Errorf(`query edges "user": %w`, err)
-		}
-		query.Where(admin.IDIn(edgeids...))
+		query.Where(admin.IDIn(ids...))
 		neighbors, err := query.All(ctx)
 		if err != nil {
 			return nil, err
 		}
 		for _, n := range neighbors {
-			nodes, ok := edges[n.ID]
+			nodes, ok := nodeids[n.ID]
 			if !ok {
-				return nil, fmt.Errorf(`unexpected "user" node returned %v`, n.ID)
+				return nil, fmt.Errorf(`unexpected foreign-key "admin_robot_accesses" returned %v`, n.ID)
 			}
 			for i := range nodes {
-				nodes[i].Edges.User = append(nodes[i].Edges.User, n)
+				nodes[i].Edges.User = n
 			}
 		}
 	}

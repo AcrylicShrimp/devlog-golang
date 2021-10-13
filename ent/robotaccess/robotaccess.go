@@ -25,11 +25,13 @@ const (
 	EdgeUser = "user"
 	// Table holds the table name of the robotaccess in the database.
 	Table = "robot_accesses"
-	// UserTable is the table that holds the user relation/edge. The primary key declared below.
-	UserTable = "admin_robot_accesses"
+	// UserTable is the table that holds the user relation/edge.
+	UserTable = "robot_accesses"
 	// UserInverseTable is the table name for the Admin entity.
 	// It exists in this package in order to avoid circular dependency with the "admin" package.
 	UserInverseTable = "admins"
+	// UserColumn is the table column denoting the user relation/edge.
+	UserColumn = "admin_robot_accesses"
 )
 
 // Columns holds all SQL columns for robotaccess fields.
@@ -42,16 +44,21 @@ var Columns = []string{
 	FieldLastAccessAt,
 }
 
-var (
-	// UserPrimaryKey and UserColumn2 are the table columns denoting the
-	// primary key for the user relation (M2M).
-	UserPrimaryKey = []string{"admin_id", "robot_access_id"}
-)
+// ForeignKeys holds the SQL foreign-keys that are owned by the "robot_accesses"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"admin_robot_accesses",
+}
 
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}

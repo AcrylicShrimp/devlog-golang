@@ -324,10 +324,10 @@ func (ac *AdminCreate) createSpec() (*Admin, *sqlgraph.CreateSpec) {
 	}
 	if nodes := ac.mutation.RobotAccessesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2M,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
 			Table:   admin.RobotAccessesTable,
-			Columns: admin.RobotAccessesPrimaryKey,
+			Columns: []string{admin.RobotAccessesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: &sqlgraph.FieldSpec{

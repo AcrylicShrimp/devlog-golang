@@ -26,6 +26,6 @@ func (RobotAccess) Fields() []ent.Field {
 // Edges of the RobotAccess.
 func (RobotAccess) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", Admin.Type).Ref("robot_accesses").Required(),
+		edge.From("user", Admin.Type).Ref("robot_accesses").Unique().Required(),
 	}
 }

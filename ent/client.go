@@ -322,7 +322,7 @@ func (c *AdminClient) QueryRobotAccesses(a *Admin) *RobotAccessQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(admin.Table, admin.FieldID, id),
 			sqlgraph.To(robotaccess.Table, robotaccess.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, admin.RobotAccessesTable, admin.RobotAccessesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, admin.RobotAccessesTable, admin.RobotAccessesColumn),
 		)
 		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
 		return fromV, nil
@@ -1298,7 +1298,7 @@ func (c *RobotAccessClient) QueryUser(ra *RobotAccess) *AdminQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(robotaccess.Table, robotaccess.FieldID, id),
 			sqlgraph.To(admin.Table, admin.FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, true, robotaccess.UserTable, robotaccess.UserPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.M2O, true, robotaccess.UserTable, robotaccess.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(ra.driver.Dialect(), step)
 		return fromV, nil

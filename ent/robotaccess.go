@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"devlog/ent/admin"
 	"devlog/ent/robotaccess"
 	"fmt"
 	"strings"
@@ -28,22 +29,28 @@ type RobotAccess struct {
 	LastAccessAt *time.Time `json:"last_access_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the RobotAccessQuery when eager-loading is set.
-	Edges RobotAccessEdges `json:"edges"`
+	Edges                RobotAccessEdges `json:"edges"`
+	admin_robot_accesses *int
 }
 
 // RobotAccessEdges holds the relations/edges for other nodes in the graph.
 type RobotAccessEdges struct {
 	// User holds the value of the user edge.
-	User []*Admin `json:"user,omitempty"`
+	User *Admin `json:"user,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
-// was not loaded in eager-loading.
-func (e RobotAccessEdges) UserOrErr() ([]*Admin, error) {
+// was not loaded in eager-loading, or loaded but was not found.
+func (e RobotAccessEdges) UserOrErr() (*Admin, error) {
 	if e.loadedTypes[0] {
+		if e.User == nil {
+			// The edge user was loaded in eager-loading,
+			// but was not found.
+			return nil, &NotFoundError{label: admin.Label}
+		}
 		return e.User, nil
 	}
 	return nil, &NotLoadedError{edge: "user"}
@@ -60,6 +67,8 @@ func (*RobotAccess) scanValues(columns []string) ([]interface{}, error) {
 			values[i] = new(sql.NullString)
 		case robotaccess.FieldCreatedAt, robotaccess.FieldExpiresAt, robotaccess.FieldLastAccessAt:
 			values[i] = new(sql.NullTime)
+		case robotaccess.ForeignKeys[0]: // admin_robot_accesses
+			values[i] = new(sql.NullInt64)
 		default:
 			return nil, fmt.Errorf("unexpected column %q for type RobotAccess", columns[i])
 		}
@@ -113,6 +122,13 @@ func (ra *RobotAccess) assignValues(columns []string, values []interface{}) erro
 			} else if value.Valid {
 				ra.LastAccessAt = new(time.Time)
 				*ra.LastAccessAt = value.Time
+			}
+		case robotaccess.ForeignKeys[0]:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for edge-field admin_robot_accesses", value)
+			} else if value.Valid {
+				ra.admin_robot_accesses = new(int)
+				*ra.admin_robot_accesses = int(value.Int64)
 			}
 		}
 	}

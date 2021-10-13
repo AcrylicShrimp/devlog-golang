@@ -200,12 +200,21 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
 		{Name: "last_access_at", Type: field.TypeTime, Nullable: true},
+		{Name: "admin_robot_accesses", Type: field.TypeInt, Nullable: true},
 	}
 	// RobotAccessesTable holds the schema information for the "robot_accesses" table.
 	RobotAccessesTable = &schema.Table{
 		Name:       "robot_accesses",
 		Columns:    RobotAccessesColumns,
 		PrimaryKey: []*schema.Column{RobotAccessesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "robot_accesses_admins_robot_accesses",
+				Columns:    []*schema.Column{RobotAccessesColumns[6]},
+				RefColumns: []*schema.Column{AdminsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 	}
 	// UnsavedPostsColumns holds the columns for the "unsaved_posts" table.
 	UnsavedPostsColumns = []*schema.Column{
@@ -342,31 +351,6 @@ var (
 			},
 		},
 	}
-	// AdminRobotAccessesColumns holds the columns for the "admin_robot_accesses" table.
-	AdminRobotAccessesColumns = []*schema.Column{
-		{Name: "admin_id", Type: field.TypeInt},
-		{Name: "robot_access_id", Type: field.TypeInt},
-	}
-	// AdminRobotAccessesTable holds the schema information for the "admin_robot_accesses" table.
-	AdminRobotAccessesTable = &schema.Table{
-		Name:       "admin_robot_accesses",
-		Columns:    AdminRobotAccessesColumns,
-		PrimaryKey: []*schema.Column{AdminRobotAccessesColumns[0], AdminRobotAccessesColumns[1]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "admin_robot_accesses_admin_id",
-				Columns:    []*schema.Column{AdminRobotAccessesColumns[0]},
-				RefColumns: []*schema.Column{AdminsColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-			{
-				Symbol:     "admin_robot_accesses_robot_access_id",
-				Columns:    []*schema.Column{AdminRobotAccessesColumns[1]},
-				RefColumns: []*schema.Column{RobotAccessesColumns[0]},
-				OnDelete:   schema.Cascade,
-			},
-		},
-	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminsTable,
@@ -383,7 +367,6 @@ var (
 		UnsavedPostImagesTable,
 		UnsavedPostThumbnailsTable,
 		UnsavedPostVideosTable,
-		AdminRobotAccessesTable,
 	}
 )
 
@@ -395,12 +378,11 @@ func init() {
 	PostImagesTable.ForeignKeys[0].RefTable = PostsTable
 	PostThumbnailsTable.ForeignKeys[0].RefTable = PostsTable
 	PostVideosTable.ForeignKeys[0].RefTable = PostsTable
+	RobotAccessesTable.ForeignKeys[0].RefTable = AdminsTable
 	UnsavedPostsTable.ForeignKeys[0].RefTable = AdminsTable
 	UnsavedPostsTable.ForeignKeys[1].RefTable = CategoriesTable
 	UnsavedPostAttachmentsTable.ForeignKeys[0].RefTable = UnsavedPostsTable
 	UnsavedPostImagesTable.ForeignKeys[0].RefTable = UnsavedPostsTable
 	UnsavedPostThumbnailsTable.ForeignKeys[0].RefTable = UnsavedPostsTable
 	UnsavedPostVideosTable.ForeignKeys[0].RefTable = UnsavedPostsTable
-	AdminRobotAccessesTable.ForeignKeys[0].RefTable = AdminsTable
-	AdminRobotAccessesTable.ForeignKeys[1].RefTable = RobotAccessesTable
 }

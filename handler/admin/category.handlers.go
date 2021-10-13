@@ -14,8 +14,8 @@ import (
 
 func AttachCategory(group *echo.Group) {
 	group.GET("", ListCategories)
-	group.POST("", NewCategoryHandler)
-	group.DELETE("/:name", DeleteCategoryHandler)
+	group.POST("", NewCategory)
+	group.DELETE("/:name", DeleteCategory)
 }
 
 // ListCategories godoc
@@ -53,7 +53,7 @@ func ListCategories(c echo.Context) error {
 	return c.JSON(http.StatusOK, categoryJSONs)
 }
 
-// NewCategoryHandler godoc
+// NewCategory godoc
 // @router /admin/categories [post]
 // @summary Create category
 // @description Creates a new category.
@@ -67,7 +67,7 @@ func ListCategories(c echo.Context) error {
 // @failure 401 {object} model.HTTPError401
 // @failure 409 {object} model.HTTPError409 "Conflict: when the name is not unique(already taken)"
 // @failure 500 {object} model.HTTPError500
-func NewCategoryHandler(c echo.Context) error {
+func NewCategory(c echo.Context) error {
 	categoryParam := new(model.NewCategoryParam)
 
 	if err := c.Bind(categoryParam); err != nil {
@@ -94,8 +94,8 @@ func NewCategoryHandler(c echo.Context) error {
 	return c.NoContent(http.StatusCreated)
 }
 
-// DeleteCategoryHandler godoc
-// @router /admin/categories [delete]
+// DeleteCategory godoc
+// @router /admin/categories/{name} [delete]
 // @summary Remove category
 // @description Removes the given category.
 // @tags admin category management
@@ -106,7 +106,7 @@ func NewCategoryHandler(c echo.Context) error {
 // @failure 401 {object} model.HTTPError401
 // @failure 404 {object} model.HTTPError404
 // @failure 500 {object} model.HTTPError500
-func DeleteCategoryHandler(c echo.Context) error {
+func DeleteCategory(c echo.Context) error {
 	categoryParam := new(model.DeleteCategoryParam)
 
 	if err := c.Bind(categoryParam); err != nil {
@@ -133,6 +133,10 @@ func DeleteCategoryHandler(c echo.Context) error {
 			Where(dbPost.HasCategoryWith(dbCategory.IDEQ(category.ID))).
 			ClearCategory().
 			Save(context.Background()); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
+		}
+
+		if err := tx.Category.DeleteOneID(category.ID).Exec(context.Background()); err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
 

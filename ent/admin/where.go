@@ -682,7 +682,7 @@ func HasRobotAccesses() predicate.Admin {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(RobotAccessesTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, RobotAccessesTable, RobotAccessesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, RobotAccessesTable, RobotAccessesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
@@ -694,7 +694,7 @@ func HasRobotAccessesWith(preds ...predicate.RobotAccess) predicate.Admin {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
 			sqlgraph.To(RobotAccessesInverseTable, FieldID),
-			sqlgraph.Edge(sqlgraph.M2M, false, RobotAccessesTable, RobotAccessesPrimaryKey...),
+			sqlgraph.Edge(sqlgraph.O2M, false, RobotAccessesTable, RobotAccessesColumn),
 		)
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
