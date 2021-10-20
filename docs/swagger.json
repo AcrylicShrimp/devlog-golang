@@ -478,14 +478,14 @@
                 }
             },
             "delete": {
-                "description": "Updates an unsaved post by its UUID.",
+                "description": "Deletes an unsaved post by its UUID.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "admin post management"
                 ],
-                "summary": "Update unsaved post",
+                "summary": "Delete unsaved post",
                 "parameters": [
                     {
                         "type": "string",
@@ -740,6 +740,61 @@
                         }
                     }
                 }
+            },
+            "delete": {
+                "description": "Deletes the image for the given unsaved post.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Delete unsaved post image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be updated",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "An UUID of the image to be fetched",
+                        "name": "image",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "NoContent: when the image of the unsaved post has been deleted successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
             }
         },
         "/admin/unsaved-posts/{uuid}/thumbnail": {
@@ -898,6 +953,54 @@
                         "description": "Conflict",
                         "schema": {
                             "$ref": "#/definitions/model.HTTPError409"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError500"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Deletes the thumbnail for the given unsaved post.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin post management"
+                ],
+                "summary": "Delete unsaved post thumbnail",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "An UUID of the unsaved post to be deleted",
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "NoContent: when the thumbnail of the unsaved post has been deleted successfully"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError400"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError401"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.HTTPError404"
                         }
                     },
                     "500": {

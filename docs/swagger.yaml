@@ -554,7 +554,7 @@ paths:
       - admin post management
   /admin/unsaved-posts/{uuid}:
     delete:
-      description: Updates an unsaved post by its UUID.
+      description: Deletes an unsaved post by its UUID.
       parameters:
       - description: An UUID of the unsaved post to be deleted
         in: path
@@ -582,7 +582,7 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/model.HTTPError500'
-      summary: Update unsaved post
+      summary: Delete unsaved post
       tags:
       - admin post management
     get:
@@ -726,6 +726,44 @@ paths:
       tags:
       - admin post management
   /admin/unsaved-posts/{uuid}/images/{image}:
+    delete:
+      description: Deletes the image for the given unsaved post.
+      parameters:
+      - description: An UUID of the unsaved post to be updated
+        in: path
+        name: uuid
+        required: true
+        type: string
+      - description: An UUID of the image to be fetched
+        in: path
+        name: image
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'NoContent: when the image of the unsaved post has been deleted
+            successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Delete unsaved post image
+      tags:
+      - admin post management
     get:
       description: Gets the image of the unsaved post.
       parameters:
@@ -814,6 +852,39 @@ paths:
       tags:
       - admin post management
   /admin/unsaved-posts/{uuid}/thumbnail:
+    delete:
+      description: Deletes the thumbnail for the given unsaved post.
+      parameters:
+      - description: An UUID of the unsaved post to be deleted
+        in: path
+        name: uuid
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: 'NoContent: when the thumbnail of the unsaved post has been
+            deleted successfully'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.HTTPError400'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.HTTPError401'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.HTTPError404'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.HTTPError500'
+      summary: Delete unsaved post thumbnail
+      tags:
+      - admin post management
     get:
       description: Gets the thumbnail of the unsaved post.
       parameters:

@@ -29,10 +29,12 @@ func AttachUnsavedPost(group *echo.Group) {
 	group.GET("/:uuid/thumbnail", GetUnsavedPostThumbnail)
 	group.POST("/:uuid/thumbnail", NewUnsavedPostThumbnail)
 	group.PUT("/:uuid/thumbnail", UpdateUnsavedPostThumbnail)
+	group.DELETE("/:uuid/thumbnail", DeleteUnsavedPostThumbnail)
 	group.GET("/:uuid/images", ListUnsavedPostImage)
 	group.GET("/:uuid/images/:image", GetUnsavedPostImage)
 	group.POST("/:uuid/images", NewUnsavedPostImage)
 	group.PUT("/:uuid/images/:image", UpdateUnsavedPostImage)
+	group.DELETE("/:uuid/images/:image", DeleteUnsavedPostImage)
 }
 
 // ListUnsavedPosts godoc
@@ -50,7 +52,9 @@ func ListUnsavedPosts(c echo.Context) error {
 	ctx := c.(*common.Context)
 
 	posts, err := ctx.Client().UnsavedPost.Query().
-		Where(dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID))).
+		Where(
+			dbUnsavedPost.HasAuthorWith(
+				dbAdmin.IDEQ(ctx.Admin().ID))).
 		Select(
 			dbUnsavedPost.FieldUUID,
 			dbUnsavedPost.FieldSlug,
@@ -226,9 +230,10 @@ func UpdateUnsavedPost(c echo.Context) error {
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		post, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.And(
-				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
-				dbUnsavedPost.UUIDEQ(param.UUID))).
+			Where(
+				dbUnsavedPost.And(
+					dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+					dbUnsavedPost.UUIDEQ(param.UUID))).
 			Select(dbUnsavedPost.FieldID).
 			First(context.Background())
 
@@ -284,8 +289,8 @@ func UpdateUnsavedPost(c echo.Context) error {
 
 // DeleteUnsavedPost godoc
 // @router /admin/unsaved-posts/{uuid} [delete]
-// @summary Update unsaved post
-// @description Updates an unsaved post by its UUID.
+// @summary Delete unsaved post
+// @description Deletes an unsaved post by its UUID.
 // @tags admin post management
 // @param uuid path string true "An UUID of the unsaved post to be deleted"
 // @produce json
@@ -306,9 +311,10 @@ func DeleteUnsavedPost(c echo.Context) error {
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		post, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.And(
-				dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
-				dbUnsavedPost.UUIDEQ(param.UUID))).
+			Where(
+				dbUnsavedPost.And(
+					dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+					dbUnsavedPost.UUIDEQ(param.UUID))).
 			Select(
 				dbUnsavedPost.FieldID,
 				dbUnsavedPost.FieldUUID).
@@ -406,10 +412,15 @@ func GetUnsavedPostThumbnail(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
-	client := c.(*common.Context).Client()
+	ctx := c.(*common.Context)
+	client := ctx.Client()
 
 	thumbnail, err := client.UnsavedPostThumbnail.Query().
-		Where(dbUnsavedPostThumbnail.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(param.UUID))).
+		Where(
+			dbUnsavedPostThumbnail.HasUnsavedPostWith(
+				dbUnsavedPost.And(
+					dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+					dbUnsavedPost.UUIDEQ(param.UUID)))).
 		Select(
 			dbUnsavedPostThumbnail.FieldValidity,
 			dbUnsavedPostThumbnail.FieldWidth,
@@ -455,7 +466,10 @@ func NewUnsavedPostThumbnail(c echo.Context) error {
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		post, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.UUIDEQ(param.UUID)).
+			Where(
+				dbUnsavedPost.And(
+					dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+					dbUnsavedPost.UUIDEQ(param.UUID))).
 			Select(dbUnsavedPost.FieldID).
 			First(context.Background())
 
@@ -512,7 +526,11 @@ func UpdateUnsavedPostThumbnail(c echo.Context) error {
 
 	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		thumbnail, err := tx.UnsavedPostThumbnail.Query().
-			Where(dbUnsavedPostThumbnail.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(param.UUID))).
+			Where(
+				dbUnsavedPostThumbnail.HasUnsavedPostWith(
+					dbUnsavedPost.And(
+						dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+						dbUnsavedPost.UUIDEQ(param.UUID)))).
 			Select(dbUnsavedPostThumbnail.FieldID, dbUnsavedPostThumbnail.FieldValidity).
 			First(context.Background())
 
@@ -548,6 +566,82 @@ func UpdateUnsavedPostThumbnail(c echo.Context) error {
 
 		if _, err = query.Save(context.Background()); err != nil {
 			return nil, err
+		}
+
+		return nil, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusOK)
+}
+
+// DeleteUnsavedPostThumbnail godoc
+// @router /admin/unsaved-posts/{uuid}/thumbnail [delete]
+// @summary Delete unsaved post thumbnail
+// @description Deletes the thumbnail for the given unsaved post.
+// @tags admin post management
+// @param uuid path string true "An UUID of the unsaved post to be deleted"
+// @produce json
+// @success 200 "NoContent: when the thumbnail of the unsaved post has been deleted successfully"
+// @failure 400 {object} model.HTTPError400
+// @failure 401 {object} model.HTTPError401
+// @failure 404 {object} model.HTTPError404
+// @failure 500 {object} model.HTTPError500
+func DeleteUnsavedPostThumbnail(c echo.Context) error {
+	param := new(model.UnsavedPostUUIDParam)
+
+	if err := c.Bind(param); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(param); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
+		thumbnail, err := tx.UnsavedPostThumbnail.Query().
+			Where(
+				dbUnsavedPostThumbnail.HasUnsavedPostWith(
+					dbUnsavedPost.And(
+						dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+						dbUnsavedPost.UUIDEQ(param.UUID)))).
+			Select(
+				dbUnsavedPostThumbnail.FieldID,
+				dbUnsavedPostThumbnail.FieldValidity).
+			First(context.Background())
+
+		if err != nil {
+			if _, ok := err.(*ent.NotFoundError); ok {
+				return nil, echo.NewHTTPError(http.StatusNotFound)
+			}
+			return nil, err
+		}
+
+		var deletionWaitGroup sync.WaitGroup
+
+		if thumbnail.Validity == dbUnsavedPostThumbnail.ValidityValid {
+			deletionWaitGroup.Add(1)
+
+			go func() {
+				defer deletionWaitGroup.Done()
+
+				key := fmt.Sprintf("v1/%v/thumbnail", param.UUID)
+
+				if _, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
+					Bucket: &env.AWSS3Bucket,
+					Key:    &key,
+				}); err != nil {
+					ctx.Logger().Warnf("unable to remove the thumbnail of the post %v from the AWS S3 due to: %v", param.UUID, err)
+				}
+			}()
+		}
+
+		deletionWaitGroup.Wait()
+
+		if err := tx.UnsavedPostThumbnail.DeleteOneID(thumbnail.ID).Exec(context.Background()); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		return nil, nil
@@ -643,12 +737,17 @@ func GetUnsavedPostImage(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest)
 	}
 
-	client := c.(*common.Context).Client()
+	ctx := c.(*common.Context)
+	client := ctx.Client()
 
 	image, err := client.UnsavedPostImage.Query().
-		Where(dbUnsavedPostImage.And(
-			dbUnsavedPostImage.HasUnsavedPostWith(dbUnsavedPost.UUIDEQ(param.UUID)),
-			dbUnsavedPostImage.UUIDEQ(param.Image))).
+		Where(
+			dbUnsavedPostImage.And(
+				dbUnsavedPostImage.HasUnsavedPostWith(
+					dbUnsavedPost.And(
+						dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+						dbUnsavedPost.UUIDEQ(param.UUID))),
+				dbUnsavedPostImage.UUIDEQ(param.Image))).
 		Select(
 			dbUnsavedPostImage.FieldValidity,
 			dbUnsavedPostImage.FieldWidth,
@@ -693,7 +792,10 @@ func NewUnsavedPostImage(c echo.Context) error {
 
 	uuid, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
 		post, err := tx.UnsavedPost.Query().
-			Where(dbUnsavedPost.UUIDEQ(param.UUID)).
+			Where(
+				dbUnsavedPost.And(
+					dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+					dbUnsavedPost.UUIDEQ(param.UUID))).
 			Select(dbUnsavedPost.FieldID).
 			First(context.Background())
 
@@ -792,6 +894,75 @@ func UpdateUnsavedPostImage(c echo.Context) error {
 
 		if err != nil {
 			return nil, err
+		}
+
+		return nil, nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return c.NoContent(http.StatusOK)
+}
+
+// DeleteUnsavedPostImage godoc
+// @router /admin/unsaved-posts/{uuid}/images/{image} [delete]
+// @summary Delete unsaved post image
+// @description Deletes the image for the given unsaved post.
+// @tags admin post management
+// @param uuid path string true "An UUID of the unsaved post to be updated"
+// @param image path string true "An UUID of the image to be fetched"
+// @produce json
+// @success 200 "NoContent: when the image of the unsaved post has been deleted successfully"
+// @failure 400 {object} model.HTTPError400
+// @failure 401 {object} model.HTTPError401
+// @failure 404 {object} model.HTTPError404
+// @failure 500 {object} model.HTTPError500
+func DeleteUnsavedPostImage(c echo.Context) error {
+	param := new(model.UnsavedPostUUIDWithImageParam)
+
+	if err := c.Bind(param); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+	if err := c.Validate(param); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest)
+	}
+
+	_, err := util.WithTx(c, func(ctx *common.Context, tx *ent.Tx) (interface{}, error) {
+		image, err := tx.UnsavedPostImage.Query().
+			Where(dbUnsavedPostImage.And(
+				dbUnsavedPostImage.HasUnsavedPostWith(
+					dbUnsavedPost.And(
+						dbUnsavedPost.HasAuthorWith(dbAdmin.IDEQ(ctx.Admin().ID)),
+						dbUnsavedPost.UUIDEQ(param.UUID))),
+				dbUnsavedPostImage.UUIDEQ(param.Image))).
+			Select(
+				dbUnsavedPostImage.FieldID,
+				dbUnsavedPostImage.FieldUUID,
+				dbUnsavedPostImage.FieldValidity).
+			First(context.Background())
+
+		if err != nil {
+			if _, ok := err.(*ent.NotFoundError); ok {
+				return nil, echo.NewHTTPError(http.StatusNotFound)
+			}
+			return nil, err
+		}
+
+		if image.Validity == dbUnsavedPostImage.ValidityValid {
+			key := fmt.Sprintf("v1/%v/images/%v", param.UUID, image.UUID)
+
+			if _, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
+				Bucket: &env.AWSS3Bucket,
+				Key:    &key,
+			}); err != nil {
+				ctx.Logger().Warnf("unable to remove the image %v of the post %v from the AWS S3 due to: %v", image.UUID, param.UUID, err)
+			}
+		}
+
+		if err := tx.UnsavedPostImage.DeleteOneID(image.ID).Exec(context.Background()); err != nil {
+			return nil, echo.NewHTTPError(http.StatusInternalServerError)
 		}
 
 		return nil, nil
