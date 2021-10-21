@@ -619,26 +619,16 @@ func DeleteUnsavedPostThumbnail(c echo.Context) error {
 			return nil, err
 		}
 
-		var deletionWaitGroup sync.WaitGroup
-
 		if thumbnail.Validity == dbUnsavedPostThumbnail.ValidityValid {
-			deletionWaitGroup.Add(1)
+			key := fmt.Sprintf("v1/%v/thumbnail", param.UUID)
 
-			go func() {
-				defer deletionWaitGroup.Done()
-
-				key := fmt.Sprintf("v1/%v/thumbnail", param.UUID)
-
-				if _, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
-					Bucket: &env.AWSS3Bucket,
-					Key:    &key,
-				}); err != nil {
-					ctx.Logger().Warnf("unable to remove the thumbnail of the post %v from the AWS S3 due to: %v", param.UUID, err)
-				}
-			}()
+			if _, err := ctx.AWSS3Client().DeleteObject(context.Background(), &awsS3.DeleteObjectInput{
+				Bucket: &env.AWSS3Bucket,
+				Key:    &key,
+			}); err != nil {
+				ctx.Logger().Warnf("unable to remove the thumbnail of the post %v from the AWS S3 due to: %v", param.UUID, err)
+			}
 		}
-
-		deletionWaitGroup.Wait()
 
 		if err := tx.UnsavedPostThumbnail.DeleteOneID(thumbnail.ID).Exec(context.Background()); err != nil {
 			return nil, echo.NewHTTPError(http.StatusInternalServerError)
